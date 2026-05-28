@@ -7,6 +7,7 @@
     "babel-preset-expo": "^56.0.13",
     "expo": "~56.0.5",
     "expo-constants": "~56.0.16",
+    "expo-dev-client": "~56.0.16",
     "expo-device": "~56.0.4",
     "expo-font": "~56.0.5",
     "expo-glass-effect": "~56.0.4",
@@ -45,6 +46,7 @@
     "ios": "expo start --ios",
     "web": "expo start --web",
     "lint": "expo lint",
+    "typecheck": "tsc --noEmit",
     "format": "prettier . --write"
   },
   "private": true
