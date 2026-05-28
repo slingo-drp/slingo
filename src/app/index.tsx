@@ -1,8 +1,10 @@
-import { SPANISH_LESSON_CLIPS } from "@/data/generatedSpanishLessons";
+import type { LessonClip, SelectedWord, SubtitleWord } from "@/lib/lessons";
+import { fetchLessonClips } from "@/lib/lessons";
 import { StatusBar } from "expo-status-bar";
-import { useVideoPlayer, VideoView, type VideoSource } from "expo-video";
+import { useVideoPlayer, VideoView } from "expo-video";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
+  ActivityIndicator,
   FlatList,
   Platform,
   Pressable,
@@ -17,48 +19,13 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-type WordRole =
-  | "article"
-  | "adjective"
-  | "adverb"
-  | "conjunction"
-  | "noun"
-  | "preposition"
-  | "pronoun"
-  | "proper noun"
-  | "verb";
-
-type SubtitleWord = {
-  text: string;
-  role: WordRole;
-  definition: string;
-};
-
-type LessonClip = {
-  id: string;
-  source: VideoSource;
-  language: string;
-  level: string;
-  creator: string;
-  topic: string;
-  caption: string;
-  sentence: string;
-  translation: string;
-  words: SubtitleWord[];
-};
-
-type SelectedWord = {
-  word: SubtitleWord;
-  clip: LessonClip;
-};
-
-const LESSON_CLIPS: LessonClip[] = SPANISH_LESSON_CLIPS;
+// ─── Constants ────────────────────────────────────────────────────────────────
 
 const FEED_REPEAT_COUNT = 120;
 
-const createFeedClips = () =>
+const createFeedClips = (clips: LessonClip[]) =>
   Array.from({ length: FEED_REPEAT_COUNT }, (_, batchIndex) =>
-    LESSON_CLIPS.map((clip) => ({
+    clips.map((clip) => ({
       ...clip,
       id: `${clip.id}-${batchIndex}`,
     })),
@@ -66,6 +33,8 @@ const createFeedClips = () =>
 
 const getSubtitleBottomOffset = (height: number) =>
   Math.max(188, Math.min(236, height * 0.25));
+
+// ─── LessonVideo ─────────────────────────────────────────────────────────────
 
 function LessonVideo({
   clip,
@@ -84,7 +53,6 @@ function LessonVideo({
       player.play();
       return;
     }
-
     player.pause();
   }, [isActive, player]);
 
@@ -98,6 +66,8 @@ function LessonVideo({
     />
   );
 }
+
+// ─── SubtitleLine ─────────────────────────────────────────────────────────────
 
 function SubtitleLine({
   clip,
@@ -134,6 +104,8 @@ function SubtitleLine({
   );
 }
 
+// ─── WordInsightPanel ─────────────────────────────────────────────────────────
+
 function WordInsightPanel({
   selected,
   bottom,
@@ -143,9 +115,7 @@ function WordInsightPanel({
   bottom: number;
   onDismiss: () => void;
 }) {
-  if (!selected) {
-    return null;
-  }
+  if (!selected) return null;
 
   return (
     <View
@@ -190,6 +160,8 @@ function WordInsightPanel({
     </View>
   );
 }
+
+// ─── LessonClipCard ───────────────────────────────────────────────────────────
 
 function LessonClipCard({
   clip,
@@ -316,22 +288,70 @@ function LessonClipCard({
   );
 }
 
+// ─── Loading screen ───────────────────────────────────────────────────────────
+
+function LoadingScreen() {
+  return (
+    <View className="flex-1 items-center justify-center bg-slate-950">
+      <StatusBar style="light" />
+      <ActivityIndicator color="#34d399" size="large" />
+      <Text className="mt-4 text-sm font-bold text-white/60">
+        Loading lessons…
+      </Text>
+    </View>
+  );
+}
+
+// ─── Error screen ─────────────────────────────────────────────────────────────
+
+function ErrorScreen({ message }: { message: string }) {
+  return (
+    <View className="flex-1 items-center justify-center bg-slate-950 px-6">
+      <StatusBar style="light" />
+      <Text className="mb-2 text-lg font-black text-white">
+        Failed to load lessons
+      </Text>
+      <Text className="text-center text-sm text-white/60">{message}</Text>
+    </View>
+  );
+}
+
+// ─── App ──────────────────────────────────────────────────────────────────────
+
 export default function App() {
   const { height } = useWindowDimensions();
   const feedRef = useRef<FlatList<LessonClip>>(null);
-  const feedClips = useMemo(() => createFeedClips(), []);
-  const [activeClipId, setActiveClipId] = useState(feedClips[0].id);
+
+  // Remote data state
+  const [clips, setClips] = useState<LessonClip[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState<string | null>(null);
+
+  // UI state
+  const feedClips = useMemo(() => createFeedClips(clips), [clips]);
+  const [activeClipId, setActiveClipId] = useState<string | null>(null);
   const [selectedWord, setSelectedWord] = useState<SelectedWord | null>(null);
   const [subtitlesVisible, setSubtitlesVisible] = useState(true);
+
+  // Fetch from Supabase on mount
+  useEffect(() => {
+    fetchLessonClips()
+      .then((data) => {
+        setClips(data);
+        if (data.length > 0) {
+          // The first feed entry gets the "-0" batch suffix
+          setActiveClipId(`${data[0].id}-0`);
+        }
+      })
+      .catch((err: Error) => setFetchError(err.message))
+      .finally(() => setLoading(false));
+  }, []);
 
   const onViewableItemsChanged = useMemo(
     () =>
       ({ viewableItems }: { viewableItems: ViewToken<LessonClip>[] }) => {
         const visibleClip = viewableItems.find((item) => item.isViewable)?.item;
-
-        if (visibleClip) {
-          setActiveClipId(visibleClip.id);
-        }
+        if (visibleClip) setActiveClipId(visibleClip.id);
       },
     [],
   );
@@ -363,7 +383,6 @@ export default function App() {
         Math.min(feedClips.length - 1, Math.round(roughIndex)),
       );
       const activeClip = feedClips[activeIndex];
-
       if (activeClip) {
         setActiveClipId(activeClip.id);
         setSelectedWord(null);
@@ -379,13 +398,13 @@ export default function App() {
   const handleScrollEndDrag = useCallback(
     (event: NativeSyntheticEvent<NativeScrollEvent>) => {
       const velocityY = event.nativeEvent.velocity?.y ?? 0;
-
-      if (Math.abs(velocityY) < 0.2) {
-        settleToNearestClip(event);
-      }
+      if (Math.abs(velocityY) < 0.2) settleToNearestClip(event);
     },
     [settleToNearestClip],
   );
+
+  if (loading) return <LoadingScreen />;
+  if (fetchError) return <ErrorScreen message={fetchError} />;
 
   return (
     <View className="flex-1 bg-slate-950">
