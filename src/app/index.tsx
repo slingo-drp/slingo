@@ -195,7 +195,7 @@ function LessonClipCard({
         className="flex-1 justify-between px-4"
       >
         <View className="flex-row items-center justify-between pt-2">
-          <Text className="text-2xl font-extrabold text-white">Slingo</Text>
+          <Text className="text-2xl font-extrabold text-white">Slingo!!</Text>
           <View className="min-w-12 items-center rounded-lg border border-white/25 bg-white/20 px-2.5 py-1.5">
             <Text className="text-sm font-extrabold text-white">
               {clip.level}
