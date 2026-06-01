@@ -6,6 +6,8 @@
     "@expo/ui": "~56.0.14",
     "@supabase/supabase-js": "^2.106.2",
     "babel-preset-expo": "^56.0.13",
+    "dotenv": "^17.4.2",
+    "drizzle-orm": "^0.45.2",
     "expo": "~56.0.5",
     "expo-constants": "~56.0.16",
     "expo-dev-client": "~56.0.16",
@@ -23,6 +25,7 @@
     "expo-video": "~56.1.2",
     "expo-web-browser": "~56.0.5",
     "nativewind": "^4.2.4",
+    "postgres": "^3.4.9",
     "react": "19.2.3",
     "react-dom": "19.2.3",
     "react-native": "0.85.3",
@@ -37,10 +40,12 @@
   },
   "devDependencies": {
     "@types/react": "~19.2.2",
+    "drizzle-kit": "^0.31.10",
     "eslint": "^9.0.0",
     "eslint-config-expo": "~56.0.4",
     "prettier": "^3.8.3",
     "prettier-plugin-tailwindcss": "^0.8.0",
+    "tsx": "^4.22.4",
     "typescript": "~6.0.3"
   },
   "scripts": {
