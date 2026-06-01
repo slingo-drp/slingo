@@ -6,29 +6,29 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
-  Platform,
   Pressable,
   StyleSheet,
   Text,
   useWindowDimensions,
   View,
   type ListRenderItemInfo,
-  type NativeScrollEvent,
-  type NativeSyntheticEvent,
   type ViewToken,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
+/** Repeats the clip array to simulate an infinite feed */
 const FEED_REPEAT_COUNT = 120;
+const VIEWABILITY_CONFIG = { itemVisiblePercentThreshold: 70 } as const;
+/** Approximate height of the subtitle bar, used to offset the word panel above it */
+const SUBTITLE_LINE_HEIGHT = 118;
+
+// ─── Utilities ────────────────────────────────────────────────────────────────
 
 const createFeedClips = (clips: LessonClip[]) =>
   Array.from({ length: FEED_REPEAT_COUNT }, (_, batchIndex) =>
-    clips.map((clip) => ({
-      ...clip,
-      id: `${clip.id}-${batchIndex}`,
-    })),
+    clips.map((clip) => ({ ...clip, id: `${clip.id}-${batchIndex}` })),
   ).flat();
 
 const getSubtitleBottomOffset = (height: number) =>
@@ -43,17 +43,14 @@ function LessonVideo({
   clip: LessonClip;
   isActive: boolean;
 }) {
-  const player = useVideoPlayer(clip.source, (videoPlayer) => {
-    videoPlayer.loop = true;
-    videoPlayer.muted = false;
+  const player = useVideoPlayer(clip.source, (p) => {
+    p.loop = true;
+    p.muted = false;
   });
 
   useEffect(() => {
-    if (isActive) {
-      player.play();
-      return;
-    }
-    player.pause();
+    if (isActive) player.play();
+    else player.pause();
   }, [isActive, player]);
 
   return (
@@ -62,7 +59,6 @@ function LessonVideo({
       nativeControls={false}
       player={player}
       style={StyleSheet.absoluteFill}
-      surfaceType={Platform.OS === "android" ? "textureView" : undefined}
     />
   );
 }
@@ -82,12 +78,12 @@ function SubtitleLine({
         AI subtitles
       </Text>
       <View className="flex-row flex-wrap items-center justify-center gap-1.5">
-        {clip.words.map((word) => (
+        {clip.words.map((word, i) => (
           <Pressable
             accessibilityLabel={`${word.text}, ${word.role}. Tap for definition and sentence translation.`}
             accessibilityRole="button"
             hitSlop={8}
-            key={`${clip.id}-${word.text}`}
+            key={`${clip.id}-${i}`}
             onPress={() => onWordPress(word, clip)}
             className="min-h-10 rounded-lg border border-white/20 bg-white/15 px-2 py-1.5 active:scale-95 active:bg-emerald-400/30"
           >
@@ -106,15 +102,17 @@ function SubtitleLine({
 
 // ─── WordInsightPanel ─────────────────────────────────────────────────────────
 
+type WordInsightPanelProps = {
+  selected: SelectedWord | null;
+  bottom: number;
+  onDismiss: () => void;
+};
+
 function WordInsightPanel({
   selected,
   bottom,
   onDismiss,
-}: {
-  selected: SelectedWord | null;
-  bottom: number;
-  onDismiss: () => void;
-}) {
+}: WordInsightPanelProps) {
   if (!selected) return null;
 
   return (
@@ -142,7 +140,7 @@ function WordInsightPanel({
               className="h-8 w-8 items-center justify-center rounded-lg bg-slate-200"
             >
               <Text className="text-lg font-black leading-none text-slate-800">
-                x
+                ×
               </Text>
             </Pressable>
           </View>
@@ -161,29 +159,90 @@ function WordInsightPanel({
   );
 }
 
+// ─── ClipActions ──────────────────────────────────────────────────────────────
+
+type ClipActionButtonProps = {
+  label: string;
+  onPress?: () => void;
+  active?: boolean;
+  accessibilityLabel?: string;
+};
+
+function ClipActionButton({
+  label,
+  onPress,
+  active = false,
+  accessibilityLabel,
+}: ClipActionButtonProps) {
+  return (
+    <Pressable
+      accessibilityLabel={accessibilityLabel}
+      accessibilityRole="button"
+      onPress={onPress}
+      className={`h-12 w-12 items-center justify-center rounded-full border ${
+        active
+          ? "border-emerald-400/70 bg-emerald-400/30"
+          : "border-white/20 bg-slate-950/55"
+      }`}
+    >
+      <Text className="text-base font-extrabold text-white">{label}</Text>
+    </Pressable>
+  );
+}
+
+type ClipActionsProps = {
+  subtitlesVisible: boolean;
+  onToggleSubtitles: () => void;
+};
+
+function ClipActions({
+  subtitlesVisible,
+  onToggleSubtitles,
+}: ClipActionsProps) {
+  return (
+    <View
+      className="absolute right-4 top-[38%] z-20 items-center gap-3.5"
+      style={{ elevation: 16 }}
+    >
+      <ClipActionButton label="+" />
+      <ClipActionButton label="Aa" />
+      <ClipActionButton
+        active={subtitlesVisible}
+        accessibilityLabel={
+          subtitlesVisible ? "Hide subtitles" : "Show subtitles"
+        }
+        label="CC"
+        onPress={onToggleSubtitles}
+      />
+      <ClipActionButton label="Go" />
+    </View>
+  );
+}
+
 // ─── LessonClipCard ───────────────────────────────────────────────────────────
+
+type LessonClipCardProps = {
+  clip: LessonClip;
+  height: number;
+  isActive: boolean;
+  activeInsight: SelectedWord | null;
+  onWordPress: (word: SubtitleWord, clip: LessonClip) => void;
+  subtitlesVisible: boolean;
+  onToggleSubtitles: () => void;
+  onDismissWord: () => void;
+};
 
 function LessonClipCard({
   clip,
   height,
   isActive,
+  activeInsight,
   onWordPress,
   subtitlesVisible,
   onToggleSubtitles,
   onDismissWord,
-  selectedWord,
-}: {
-  clip: LessonClip;
-  height: number;
-  isActive: boolean;
-  onWordPress: (word: SubtitleWord, clip: LessonClip) => void;
-  subtitlesVisible: boolean;
-  onToggleSubtitles: () => void;
-  onDismissWord: () => void;
-  selectedWord: SelectedWord | null;
-}) {
+}: LessonClipCardProps) {
   const subtitleBottom = getSubtitleBottomOffset(height);
-  const activeInsight = selectedWord?.clip.id === clip.id ? selectedWord : null;
 
   return (
     <View className="w-full overflow-hidden bg-slate-900" style={{ height }}>
@@ -203,49 +262,15 @@ function LessonClipCard({
           </View>
         </View>
 
-        <View
-          className="absolute right-4 top-[38%] z-20 items-center gap-3.5"
-          style={{ elevation: 16 }}
-        >
-          <Pressable
-            accessibilityRole="button"
-            className="h-12 w-12 items-center justify-center rounded-full border border-white/20 bg-slate-950/55"
-          >
-            <Text className="text-base font-extrabold text-white">+</Text>
-          </Pressable>
-          <Pressable
-            accessibilityRole="button"
-            className="h-12 w-12 items-center justify-center rounded-full border border-white/20 bg-slate-950/55"
-          >
-            <Text className="text-base font-extrabold text-white">Aa</Text>
-          </Pressable>
-          <Pressable
-            accessibilityLabel={
-              subtitlesVisible ? "Hide subtitles" : "Show subtitles"
-            }
-            accessibilityRole="button"
-            onPress={onToggleSubtitles}
-            className={[
-              "h-12 w-12 items-center justify-center rounded-full border",
-              subtitlesVisible
-                ? "border-emerald-400/70 bg-emerald-400/30"
-                : "border-white/20 bg-slate-950/55",
-            ].join(" ")}
-          >
-            <Text className="text-base font-extrabold text-white">CC</Text>
-          </Pressable>
-          <Pressable
-            accessibilityRole="button"
-            className="h-12 w-12 items-center justify-center rounded-full border border-white/20 bg-slate-950/55"
-          >
-            <Text className="text-base font-extrabold text-white">Go</Text>
-          </Pressable>
-        </View>
+        <ClipActions
+          subtitlesVisible={subtitlesVisible}
+          onToggleSubtitles={onToggleSubtitles}
+        />
 
-        {subtitlesVisible ? (
+        {subtitlesVisible && (
           <>
             <WordInsightPanel
-              bottom={subtitleBottom + 118}
+              bottom={subtitleBottom + SUBTITLE_LINE_HEIGHT}
               onDismiss={onDismissWord}
               selected={activeInsight}
             />
@@ -257,7 +282,7 @@ function LessonClipCard({
               <SubtitleLine clip={clip} onWordPress={onWordPress} />
             </View>
           </>
-        ) : null}
+        )}
 
         <View
           pointerEvents="none"
@@ -288,7 +313,7 @@ function LessonClipCard({
   );
 }
 
-// ─── Loading screen ───────────────────────────────────────────────────────────
+// ─── Loading / Error screens ──────────────────────────────────────────────────
 
 function LoadingScreen() {
   return (
@@ -302,8 +327,6 @@ function LoadingScreen() {
   );
 }
 
-// ─── Error screen ─────────────────────────────────────────────────────────────
-
 function ErrorScreen({ message }: { message: string }) {
   return (
     <View className="flex-1 items-center justify-center bg-slate-950 px-6">
@@ -316,95 +339,54 @@ function ErrorScreen({ message }: { message: string }) {
   );
 }
 
-// ─── App ──────────────────────────────────────────────────────────────────────
+// ─── Feed ─────────────────────────────────────────────────────────────────────
 
-export default function App() {
+function Feed({ clips }: { clips: LessonClip[] }) {
   const { height } = useWindowDimensions();
   const feedRef = useRef<FlatList<LessonClip>>(null);
 
-  // Remote data state
-  const [clips, setClips] = useState<LessonClip[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [fetchError, setFetchError] = useState<string | null>(null);
-
-  // UI state
   const feedClips = useMemo(() => createFeedClips(clips), [clips]);
-  const [activeClipId, setActiveClipId] = useState<string | null>(null);
+  const [activeClipId, setActiveClipId] = useState<string | null>(
+    clips.length > 0 ? `${clips[0].id}-0` : null,
+  );
   const [selectedWord, setSelectedWord] = useState<SelectedWord | null>(null);
   const [subtitlesVisible, setSubtitlesVisible] = useState(true);
 
-  // Fetch from Supabase on mount
-  useEffect(() => {
-    fetchLessonClips()
-      .then((data) => {
-        setClips(data);
-        if (data.length > 0) {
-          // The first feed entry gets the "-0" batch suffix
-          setActiveClipId(`${data[0].id}-0`);
-        }
-      })
-      .catch((err: Error) => setFetchError(err.message))
-      .finally(() => setLoading(false));
-  }, []);
+  const getItemLayout = useCallback(
+    (_: unknown, index: number) => ({
+      index,
+      length: height,
+      offset: height * index,
+    }),
+    [height],
+  );
 
-  const onViewableItemsChanged = useMemo(
-    () =>
-      ({ viewableItems }: { viewableItems: ViewToken<LessonClip>[] }) => {
-        const visibleClip = viewableItems.find((item) => item.isViewable)?.item;
-        if (visibleClip) setActiveClipId(visibleClip.id);
-      },
+  const onViewableItemsChanged = useCallback(
+    ({ viewableItems }: { viewableItems: ViewToken<LessonClip>[] }) => {
+      const visibleClip = viewableItems.find((item) => item.isViewable)?.item;
+      if (visibleClip) setActiveClipId(visibleClip.id);
+    },
     [],
   );
 
   const renderItem = useCallback(
     ({ item }: ListRenderItemInfo<LessonClip>) => (
       <LessonClipCard
+        activeInsight={selectedWord?.clip.id === item.id ? selectedWord : null}
         clip={item}
         height={height}
         isActive={item.id === activeClipId}
         onDismissWord={() => setSelectedWord(null)}
-        onWordPress={(word, clip) => setSelectedWord({ word, clip })}
         onToggleSubtitles={() => {
           setSelectedWord(null);
-          setSubtitlesVisible((visible) => !visible);
+          setSubtitlesVisible((v) => !v);
         }}
-        selectedWord={selectedWord}
+        onWordPress={(word, clip) => setSelectedWord({ word, clip })}
         subtitlesVisible={subtitlesVisible}
       />
     ),
     [activeClipId, height, selectedWord, subtitlesVisible],
   );
-
-  const settleToNearestClip = useCallback(
-    (event: NativeSyntheticEvent<NativeScrollEvent>) => {
-      const roughIndex = event.nativeEvent.contentOffset.y / height;
-      const activeIndex = Math.max(
-        0,
-        Math.min(feedClips.length - 1, Math.round(roughIndex)),
-      );
-      const activeClip = feedClips[activeIndex];
-      if (activeClip) {
-        setActiveClipId(activeClip.id);
-        setSelectedWord(null);
-        feedRef.current?.scrollToOffset({
-          animated: true,
-          offset: activeIndex * height,
-        });
-      }
-    },
-    [feedClips, height],
-  );
-
-  const handleScrollEndDrag = useCallback(
-    (event: NativeSyntheticEvent<NativeScrollEvent>) => {
-      const velocityY = event.nativeEvent.velocity?.y ?? 0;
-      if (Math.abs(velocityY) < 0.2) settleToNearestClip(event);
-    },
-    [settleToNearestClip],
-  );
-
-  if (loading) return <LoadingScreen />;
-  if (fetchError) return <ErrorScreen message={fetchError} />;
 
   return (
     <View className="flex-1 bg-slate-950">
@@ -416,27 +398,38 @@ export default function App() {
         data={feedClips}
         decelerationRate="fast"
         disableIntervalMomentum
-        getItemLayout={(_, index) => ({
-          index,
-          length: height,
-          offset: height * index,
-        })}
+        getItemLayout={getItemLayout}
         initialNumToRender={3}
         keyExtractor={(item) => item.id}
         maxToRenderPerBatch={4}
-        onMomentumScrollEnd={settleToNearestClip}
-        onScrollEndDrag={handleScrollEndDrag}
         onViewableItemsChanged={onViewableItemsChanged}
         overScrollMode="never"
-        pagingEnabled
-        renderItem={renderItem}
         removeClippedSubviews
+        renderItem={renderItem}
         showsVerticalScrollIndicator={false}
-        snapToAlignment="start"
         snapToInterval={height}
-        viewabilityConfig={{ itemVisiblePercentThreshold: 70 }}
+        viewabilityConfig={VIEWABILITY_CONFIG}
         windowSize={4}
       />
     </View>
   );
+}
+
+// ─── App ──────────────────────────────────────────────────────────────────────
+
+export default function App() {
+  const [clips, setClips] = useState<LessonClip[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetchLessonClips()
+      .then(setClips)
+      .catch((err: Error) => setFetchError(err.message))
+      .finally(() => setLoading(false));
+  }, []);
+
+  if (loading) return <LoadingScreen />;
+  if (fetchError) return <ErrorScreen message={fetchError} />;
+  return <Feed clips={clips} />;
 }
