@@ -342,7 +342,8 @@ function ErrorScreen({ message }: { message: string }) {
 // ─── Feed ─────────────────────────────────────────────────────────────────────
 
 function Feed({ clips }: { clips: LessonClip[] }) {
-  const { height } = useWindowDimensions();
+  const [height, setHeight] = useState(0);
+
   const feedRef = useRef<FlatList<LessonClip>>(null);
 
   const feedClips = useMemo(() => createFeedClips(clips), [clips]);
@@ -389,7 +390,10 @@ function Feed({ clips }: { clips: LessonClip[] }) {
   );
 
   return (
-    <View className="flex-1 bg-slate-950">
+    <View 
+    className="flex-1 bg-slate-950"
+    onLayout={(e) => setHeight(e.nativeEvent.layout.height)}
+    >
       <StatusBar style="light" />
       <FlatList
         ref={feedRef}
