@@ -9,10 +9,9 @@ import {
   Pressable,
   StyleSheet,
   Text,
-  useWindowDimensions,
   View,
   type ListRenderItemInfo,
-  type ViewToken,
+  type ViewToken
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -53,13 +52,24 @@ function LessonVideo({
     else player.pause();
   }, [isActive, player]);
 
+  const onPress = () => {
+    if (player.playing) player.pause();
+    else player.play();
+  };
+
   return (
-    <VideoView
-      contentFit="cover"
-      nativeControls={false}
-      player={player}
-      style={StyleSheet.absoluteFill}
-    />
+    <View style={StyleSheet.absoluteFill}>
+      <VideoView
+        contentFit="cover"
+        nativeControls={false}
+        player={player}
+        style={StyleSheet.absoluteFill}
+      />
+      <Pressable 
+        onPress={onPress}
+        style={StyleSheet.absoluteFill}
+      />
+    </View>
   );
 }
 
@@ -247,7 +257,7 @@ function LessonClipCard({
   return (
     <View className="w-full overflow-hidden bg-slate-900" style={{ height }}>
       <LessonVideo clip={clip} isActive={isActive} />
-      <View className="absolute inset-0 bg-black/20" />
+      <View pointerEvents="none" className="absolute inset-0 bg-black/20" />
 
       <SafeAreaView
         pointerEvents="box-none"
