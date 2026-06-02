@@ -231,14 +231,23 @@ function ClipActions({
         onPress={onLike}
       />
       <ClipActionButton
-        accessibilityLabel="Save word"
+        accessibilityLabel="Comments"
+        icon={<Ionicons name="chatbubble-outline" size={32} color="white" style={iconStyle} />}
+        label="Comment"
+      />
+      <ClipActionButton
+        accessibilityLabel="Save this clip"
         icon={<Ionicons name="bookmark-outline" size={32} color="white" style={iconStyle} />}
         label="Save"
       />
       <ClipActionButton
-        accessibilityLabel={subtitlesVisible ? "Hide subtitles" : "Show subtitles"}
-        icon={<Ionicons name="chatbubble-ellipses-outline" size={32} color={subtitlesVisible ? "#34d399" : "white"} style={iconStyle} />}
-        label="Subs"
+        accessibilityLabel={subtitlesVisible ? "Hide AI subtitles" : "Show AI subtitles"}
+        icon={
+          <View className={`items-center justify-center rounded border-2 px-1 py-0.5 ${subtitlesVisible ? "border-emerald-400" : "border-white"}`}>
+            <Text className={`text-xs font-black leading-none ${subtitlesVisible ? "text-emerald-400" : "text-white"}`}>CC</Text>
+          </View>
+        }
+        label="AI Subs"
         onPress={onToggleSubtitles}
       />
       <ClipActionButton
