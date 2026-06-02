@@ -1,8 +1,8 @@
 import type { LessonClip, SelectedWord, SubtitleWord } from "@/lib/lessons";
 import { fetchLessonClips } from "@/lib/lessons";
+import { Ionicons } from "@expo/vector-icons";
 import { StatusBar } from "expo-status-bar";
 import { useVideoPlayer, VideoView } from "expo-video";
-import { Ionicons } from "@expo/vector-icons";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
@@ -125,7 +125,25 @@ function WordInsightPanel({
   bottom,
   onDismiss,
 }: WordInsightPanelProps) {
+  const [bookmarkedWords, setBookmarkedWords] = useState<Set<string>>(
+    new Set(),
+  );
+
   if (!selected) return null;
+
+  const isBookmarked = bookmarkedWords.has(selected.word.text);
+
+  const toggleBookmark = (word: SubtitleWord) => {
+    setBookmarkedWords((prev) => {
+      const updated = new Set(prev);
+      if (!updated.has(word.text)) {
+        // TODO: Implement actual save functionality (e.g., persist to DB)
+        updated.add(word.text);
+      }
+      console.log("Bookmarked words:", Array.from(updated));
+      return updated;
+    });
+  };
 
   return (
     <View
@@ -135,9 +153,25 @@ function WordInsightPanel({
     >
       <View className="w-full max-w-sm rounded-lg border border-white/45 bg-slate-50/95 p-3">
         <View className="mb-2 flex-row items-center justify-between gap-2.5">
-          <Text className="shrink text-2xl font-black text-slate-900">
-            {selected.word.text}
-          </Text>
+          <View className="flex-row items-center gap-2">
+            <Pressable
+              accessibilityLabel={
+                isBookmarked ? "Bookmarked word" : "Bookmark word"
+              }
+              accessibilityRole="button"
+              hitSlop={8}
+              onPress={() => toggleBookmark(selected.word)}
+              className="h-8 w-8 items-center justify-center rounded-lg bg-slate-100"
+            >
+              <Ionicons
+                name={isBookmarked ? "bookmark" : "bookmark-outline"}
+                size={20}
+              />
+            </Pressable>
+            <Text className="shrink text-2xl font-black text-slate-900">
+              {selected.word.text}
+            </Text>
+          </View>
           <View className="flex-row items-center gap-2">
             <View className="rounded-lg bg-slate-800 px-2.5 py-1.5">
               <Text className="text-xs font-black uppercase text-emerald-400">
