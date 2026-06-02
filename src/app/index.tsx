@@ -173,15 +173,15 @@ function WordInsightPanel({
 
 type ClipActionButtonProps = {
   icon: React.ReactNode;
+  label: string;
   onPress?: () => void;
-  active?: boolean;
   accessibilityLabel?: string;
 };
 
 function ClipActionButton({
   icon,
+  label,
   onPress,
-  active = false,
   accessibilityLabel,
 }: ClipActionButtonProps) {
   return (
@@ -189,13 +189,15 @@ function ClipActionButton({
       accessibilityLabel={accessibilityLabel}
       accessibilityRole="button"
       onPress={onPress}
-      className={`h-12 w-12 items-center justify-center rounded-full border ${
-        active
-          ? "border-emerald-400/70 bg-emerald-400/30"
-          : "border-white/20 bg-slate-950/55"
-      }`}
+      className="items-center gap-1 active:opacity-70"
     >
       {icon}
+      <Text
+        className="text-xs font-bold text-white"
+        style={{ textShadowColor: "rgba(0,0,0,0.6)", textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 3 }}
+      >
+        {label}
+      </Text>
     </Pressable>
   );
 }
@@ -215,32 +217,34 @@ function ClipActions({
   liked,
   onLike,
 }: ClipActionsProps) {
+  const iconStyle = { textShadowColor: "rgba(0,0,0,0.6)", textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 4 };
+
   return (
     <View
-      className="absolute right-4 top-[38%] z-20 items-center gap-3.5"
+      className="absolute right-3 top-[35%] z-20 items-center gap-6"
       style={{ elevation: 16 }}
     >
       <ClipActionButton
         accessibilityLabel={liked ? "Unlike this clip" : "Like this clip"}
-        active={liked}
-        icon={<Ionicons name={liked ? "heart" : "heart-outline"} size={22} color={liked ? "#34d399" : "white"} />}
+        icon={<Ionicons name={liked ? "heart" : "heart-outline"} size={32} color={liked ? "#34d399" : "white"} style={iconStyle} />}
+        label={liked ? "Liked" : "Like"}
         onPress={onLike}
       />
       <ClipActionButton
-        icon={<Ionicons name="text" size={22} color="white" />}
+        accessibilityLabel="Save word"
+        icon={<Ionicons name="bookmark-outline" size={32} color="white" style={iconStyle} />}
+        label="Save"
       />
       <ClipActionButton
-        active={subtitlesVisible}
         accessibilityLabel={subtitlesVisible ? "Hide subtitles" : "Show subtitles"}
-        icon={<Ionicons name="reader-outline" size={22} color={subtitlesVisible ? "#34d399" : "white"} />}
+        icon={<Ionicons name="chatbubble-ellipses-outline" size={32} color={subtitlesVisible ? "#34d399" : "white"} style={iconStyle} />}
+        label="Subs"
         onPress={onToggleSubtitles}
       />
       <ClipActionButton
-        icon={<Ionicons name="flash-outline" size={22} color="white" />}
-      />
-      <ClipActionButton
         accessibilityLabel="Share this clip"
-        icon={<Ionicons name="share-social-outline" size={22} color="white" />}
+        icon={<Ionicons name="paper-plane-outline" size={32} color="white" style={iconStyle} />}
+        label="Share"
         onPress={onShare}
       />
     </View>
