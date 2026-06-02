@@ -281,7 +281,7 @@ function ClipActions({
             <Text className={`text-xs font-black leading-none ${subtitlesVisible ? "text-emerald-400" : "text-white"}`}>CC</Text>
           </View>
         }
-        label="AI Subs"
+        label="Subs"
         onPress={onToggleSubtitles}
       />
       <ClipActionButton
