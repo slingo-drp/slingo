@@ -450,6 +450,189 @@ function CommentsPanel({ isOpen, onClose }: CommentsPanelProps) {
   );
 }
 
+// ─── UploadPanel ─────────────────────────────────────────────────────────────
+
+type UploadPanelProps = {
+  isOpen: boolean;
+  onClose: () => void;
+};
+
+function UploadPanel({ isOpen, onClose }: UploadPanelProps) {
+  const [topic, setTopic] = useState("");
+  const [description, setDescription] = useState("");
+  const [selectedLanguage, setSelectedLanguage] = useState("Spanish");
+  const [selectedLevel, setSelectedLevel] = useState("A2");
+  const [videoSelected, setVideoSelected] = useState(false);
+
+  const reset = () => {
+    setTopic("");
+    setDescription("");
+    setSelectedLanguage("Spanish");
+    setSelectedLevel("A2");
+    setVideoSelected(false);
+  };
+
+  const handleClose = () => {
+    reset();
+    onClose();
+  };
+
+  const canPost = videoSelected && topic.trim().length > 0;
+
+  return (
+    <View
+      pointerEvents={isOpen ? "box-none" : "none"}
+      style={[StyleSheet.absoluteFill, { zIndex: 60, display: isOpen ? "flex" : "none" }]}
+    >
+      {/* Full-screen dark bg */}
+      <View style={[StyleSheet.absoluteFill, { backgroundColor: "#0a0a0a" }]} />
+
+      <SafeAreaView style={{ flex: 1 }}>
+        {/* Header */}
+        <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: "rgba(255,255,255,0.08)" }}>
+          <Pressable onPress={handleClose} hitSlop={10} style={({ pressed }) => ({ opacity: pressed ? 0.5 : 1 })}>
+            <Ionicons name="close" size={26} color="#fff" />
+          </Pressable>
+          <Text style={{ color: "#fff", fontSize: 17, fontWeight: "700" }}>New Post</Text>
+          <Pressable
+            onPress={canPost ? handleClose : undefined}
+            style={({ pressed }) => ({
+              backgroundColor: canPost ? "#10b981" : "rgba(16,185,129,0.25)",
+              paddingHorizontal: 16,
+              paddingVertical: 7,
+              borderRadius: 20,
+              opacity: pressed && canPost ? 0.7 : 1,
+            })}
+          >
+            <Text style={{ color: canPost ? "#fff" : "rgba(255,255,255,0.35)", fontWeight: "700", fontSize: 15 }}>Post</Text>
+          </Pressable>
+        </View>
+
+        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ padding: 16, gap: 20 }}>
+          {/* Video picker */}
+          <Pressable
+            onPress={() => setVideoSelected((v) => !v)}
+            style={({ pressed }) => ({
+              height: 220,
+              borderRadius: 14,
+              backgroundColor: videoSelected ? "#111" : "rgba(255,255,255,0.04)",
+              borderWidth: 1.5,
+              borderColor: videoSelected ? "#10b981" : "rgba(255,255,255,0.1)",
+              borderStyle: videoSelected ? "solid" : "dashed",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 10,
+              opacity: pressed ? 0.7 : 1,
+            })}
+          >
+            {videoSelected ? (
+              <>
+                <View style={{ width: 60, height: 60, borderRadius: 30, backgroundColor: "rgba(16,185,129,0.15)", alignItems: "center", justifyContent: "center" }}>
+                  <Ionicons name="checkmark" size={30} color="#10b981" />
+                </View>
+                <Text style={{ color: "#10b981", fontWeight: "700", fontSize: 15 }}>video_lesson.mp4</Text>
+                <Text style={{ color: "rgba(255,255,255,0.35)", fontSize: 13 }}>Tap to change</Text>
+              </>
+            ) : (
+              <>
+                <View style={{ width: 64, height: 64, borderRadius: 32, backgroundColor: "rgba(255,255,255,0.06)", alignItems: "center", justifyContent: "center" }}>
+                  <Ionicons name="cloud-upload-outline" size={32} color="rgba(255,255,255,0.5)" />
+                </View>
+                <Text style={{ color: "#fff", fontWeight: "600", fontSize: 15 }}>Select video</Text>
+                <Text style={{ color: "rgba(255,255,255,0.35)", fontSize: 13 }}>MP4 · MOV · up to 500 MB</Text>
+              </>
+            )}
+          </Pressable>
+
+          {/* Topic */}
+          <View style={{ gap: 8 }}>
+            <Text style={{ color: "rgba(255,255,255,0.45)", fontSize: 11, fontWeight: "700", letterSpacing: 1.1, textTransform: "uppercase" }}>Title</Text>
+            <View style={{ backgroundColor: "rgba(255,255,255,0.06)", borderRadius: 12, paddingHorizontal: 14, paddingVertical: 12, borderWidth: 1, borderColor: topic ? "rgba(16,185,129,0.5)" : "rgba(255,255,255,0.08)" }}>
+              <TextInput
+                value={topic}
+                onChangeText={setTopic}
+                placeholder="e.g. Ordering coffee in Madrid"
+                placeholderTextColor="rgba(255,255,255,0.25)"
+                style={{ color: "#fff", fontSize: 15 }}
+                maxLength={80}
+              />
+            </View>
+            <Text style={{ color: "rgba(255,255,255,0.2)", fontSize: 12, textAlign: "right" }}>{topic.length}/80</Text>
+          </View>
+
+          {/* Description */}
+          <View style={{ gap: 8 }}>
+            <Text style={{ color: "rgba(255,255,255,0.45)", fontSize: 11, fontWeight: "700", letterSpacing: 1.1, textTransform: "uppercase" }}>Description</Text>
+            <View style={{ backgroundColor: "rgba(255,255,255,0.06)", borderRadius: 12, paddingHorizontal: 14, paddingVertical: 12, borderWidth: 1, borderColor: description ? "rgba(16,185,129,0.5)" : "rgba(255,255,255,0.08)", minHeight: 90 }}>
+              <TextInput
+                value={description}
+                onChangeText={setDescription}
+                placeholder="Describe what learners will practice…"
+                placeholderTextColor="rgba(255,255,255,0.25)"
+                style={{ color: "#fff", fontSize: 15 }}
+                multiline
+                maxLength={200}
+              />
+            </View>
+            <Text style={{ color: "rgba(255,255,255,0.2)", fontSize: 12, textAlign: "right" }}>{description.length}/200</Text>
+          </View>
+
+          {/* Language */}
+          <View style={{ gap: 10 }}>
+            <Text style={{ color: "rgba(255,255,255,0.45)", fontSize: 11, fontWeight: "700", letterSpacing: 1.1, textTransform: "uppercase" }}>Language</Text>
+            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+              {LANGUAGES.map((lang) => (
+                <Pressable
+                  key={lang}
+                  onPress={() => setSelectedLanguage(lang)}
+                  style={({ pressed }) => ({
+                    paddingHorizontal: 14,
+                    paddingVertical: 8,
+                    borderRadius: 999,
+                    backgroundColor: selectedLanguage === lang ? "#10b981" : "rgba(255,255,255,0.07)",
+                    borderWidth: 1,
+                    borderColor: selectedLanguage === lang ? "#10b981" : "rgba(255,255,255,0.1)",
+                    opacity: pressed ? 0.7 : 1,
+                  })}
+                >
+                  <Text style={{ color: selectedLanguage === lang ? "#fff" : "rgba(255,255,255,0.65)", fontWeight: "600", fontSize: 14 }}>{lang}</Text>
+                </Pressable>
+              ))}
+            </View>
+          </View>
+
+          {/* Level */}
+          <View style={{ gap: 10 }}>
+            <Text style={{ color: "rgba(255,255,255,0.45)", fontSize: 11, fontWeight: "700", letterSpacing: 1.1, textTransform: "uppercase" }}>Level</Text>
+            <View style={{ flexDirection: "row", gap: 8 }}>
+              {LEVELS.map((lvl) => (
+                <Pressable
+                  key={lvl}
+                  onPress={() => setSelectedLevel(lvl)}
+                  style={({ pressed }) => ({
+                    flex: 1,
+                    paddingVertical: 10,
+                    borderRadius: 10,
+                    backgroundColor: selectedLevel === lvl ? "#10b981" : "rgba(255,255,255,0.07)",
+                    borderWidth: 1,
+                    borderColor: selectedLevel === lvl ? "#10b981" : "rgba(255,255,255,0.1)",
+                    alignItems: "center",
+                    opacity: pressed ? 0.7 : 1,
+                  })}
+                >
+                  <Text style={{ color: selectedLevel === lvl ? "#fff" : "rgba(255,255,255,0.65)", fontWeight: "700", fontSize: 14 }}>{lvl}</Text>
+                </Pressable>
+              ))}
+            </View>
+          </View>
+
+          <View style={{ height: 8 }} />
+        </ScrollView>
+      </SafeAreaView>
+    </View>
+  );
+}
+
 // ─── ClipActions ──────────────────────────────────────────────────────────────
 
 type ClipActionButtonProps = {
@@ -695,6 +878,7 @@ function Feed({ clips }: { clips: LessonClip[] }) {
   const [height, setHeight] = useState(0);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [commentsOpen, setCommentsOpen] = useState(false);
+  const [uploadOpen, setUploadOpen] = useState(false);
 
   const feedRef = useRef<FlatList<LessonClip>>(null);
 
@@ -772,8 +956,32 @@ function Feed({ clips }: { clips: LessonClip[] }) {
         viewabilityConfig={VIEWABILITY_CONFIG}
         windowSize={4}
       />
+      {/* Floating upload button */}
+      <View pointerEvents="box-none" style={{ position: "absolute", bottom: 36, left: 0, right: 0, alignItems: "center" }}>
+        <Pressable
+          onPress={() => setUploadOpen(true)}
+          style={({ pressed }) => ({
+            width: 64,
+            height: 64,
+            borderRadius: 32,
+            backgroundColor: "#10b981",
+            alignItems: "center",
+            justifyContent: "center",
+            elevation: 12,
+            shadowColor: "#10b981",
+            shadowOffset: { width: 0, height: 4 },
+            shadowOpacity: 0.6,
+            shadowRadius: 10,
+            opacity: pressed ? 0.8 : 1,
+          })}
+        >
+          <Ionicons name="add" size={34} color="#fff" />
+        </Pressable>
+      </View>
+
       <SettingsPanel isOpen={settingsOpen} onClose={() => setSettingsOpen(false)} />
       <CommentsPanel isOpen={commentsOpen} onClose={() => setCommentsOpen(false)} />
+      <UploadPanel isOpen={uploadOpen} onClose={() => setUploadOpen(false)} />
     </View>
   );
 }
