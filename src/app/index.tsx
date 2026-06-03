@@ -7,12 +7,12 @@ import {
   ActivityIndicator,
   FlatList,
   Pressable,
+  Share,
   StyleSheet,
   Text,
-  useWindowDimensions,
   View,
   type ListRenderItemInfo,
-  type ViewToken,
+  type ViewToken
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -53,13 +53,24 @@ function LessonVideo({
     else player.pause();
   }, [isActive, player]);
 
+  const onPress = () => {
+    if (player.playing) player.pause();
+    else player.play();
+  };
+
   return (
-    <VideoView
-      contentFit="cover"
-      nativeControls={false}
-      player={player}
-      style={StyleSheet.absoluteFill}
-    />
+    <View style={StyleSheet.absoluteFill}>
+      <VideoView
+        contentFit="cover"
+        nativeControls={false}
+        player={player}
+        style={StyleSheet.absoluteFill}
+      />
+      <Pressable 
+        onPress={onPress}
+        style={StyleSheet.absoluteFill}
+      />
+    </View>
   );
 }
 
@@ -193,18 +204,19 @@ function ClipActionButton({
 type ClipActionsProps = {
   subtitlesVisible: boolean;
   onToggleSubtitles: () => void;
+  onShare: () => void;
 };
 
 function ClipActions({
   subtitlesVisible,
   onToggleSubtitles,
+  onShare,
 }: ClipActionsProps) {
   return (
     <View
       className="absolute right-4 top-[38%] z-20 items-center gap-3.5"
       style={{ elevation: 16 }}
     >
-      <ClipActionButton label="+" />
       <ClipActionButton label="Aa" />
       <ClipActionButton
         active={subtitlesVisible}
@@ -215,6 +227,11 @@ function ClipActions({
         onPress={onToggleSubtitles}
       />
       <ClipActionButton label="Go" />
+      <ClipActionButton
+        accessibilityLabel="Share this clip"
+        label="↑"
+        onPress={onShare}
+      />
     </View>
   );
 }
@@ -244,10 +261,17 @@ function LessonClipCard({
 }: LessonClipCardProps) {
   const subtitleBottom = getSubtitleBottomOffset(height);
 
+  const handleShare = async () => {
+    await Share.share({
+      message: `"${clip.sentence}" — ${clip.translation}\n\nLearn ${clip.language} with Slingo!`,
+      title: clip.topic,
+    });
+  };
+
   return (
     <View className="w-full overflow-hidden bg-slate-900" style={{ height }}>
       <LessonVideo clip={clip} isActive={isActive} />
-      <View className="absolute inset-0 bg-black/20" />
+      <View pointerEvents="none" className="absolute inset-0 bg-black/20" />
 
       <SafeAreaView
         pointerEvents="box-none"
@@ -265,6 +289,7 @@ function LessonClipCard({
         <ClipActions
           subtitlesVisible={subtitlesVisible}
           onToggleSubtitles={onToggleSubtitles}
+          onShare={handleShare}
         />
 
         {subtitlesVisible && (
