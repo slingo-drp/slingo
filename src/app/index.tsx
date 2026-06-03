@@ -183,40 +183,29 @@ type SettingsPanelProps = {
   onClose: () => void;
 };
 
-function SettingsPanel({ isOpen, onClose }: SettingsPanelProps) {
-  const [selectedLevels, setSelectedLevels] = useState<string[]>(["A2"]);
-  const [selectedLanguages, setSelectedLanguages] = useState<string[]>(["Spanish"]);
-  const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
-  const [speed, setSpeed] = useState("1.0x");
-  const [subtitleSize, setSubtitleSize] = useState("Medium");
+function toggleItem(item: string, selected: string[], setSelected: (v: string[]) => void) {
+  setSelected(selected.includes(item) ? selected.filter((i) => i !== item) : [...selected, item]);
+}
 
-  if (!isOpen) return null;
-
-  const toggleItem = (item: string, selected: string[], setSelected: (v: string[]) => void) => {
-    setSelected(selected.includes(item) ? selected.filter((i) => i !== item) : [...selected, item]);
-  };
-
-  const ChipRow = ({
-    items,
-    selected,
-    onToggle,
-    single = false,
-  }: {
-    items: string[];
-    selected: string[];
-    onToggle: (item: string) => void;
-    single?: boolean;
-  }) => (
+function ChipRow({
+  items,
+  selected,
+  onToggle,
+  single = false,
+}: {
+  items: string[];
+  selected: string[];
+  onToggle: (item: string) => void;
+  single?: boolean;
+}) {
+  return (
     <View className="flex-row flex-wrap gap-2">
       {items.map((item) => {
         const active = single ? selected[0] === item : selected.includes(item);
         return (
           <Pressable
             key={item}
-            onPress={() => single
-              ? onToggle(item)
-              : toggleItem(item, selected, () => {})}
-            onPressIn={() => !single && toggleItem(item, selected, () => {})}
+            onPress={() => onToggle(item)}
             className={`rounded-full px-3 py-1.5 ${active ? "bg-emerald-400" : "bg-slate-100 border border-slate-200"}`}
           >
             <Text className={`text-sm font-bold ${active ? "text-white" : "text-slate-700"}`}>
@@ -227,19 +216,29 @@ function SettingsPanel({ isOpen, onClose }: SettingsPanelProps) {
       })}
     </View>
   );
+}
 
-  const Section = ({ title, children }: { title: string; children: React.ReactNode }) => (
+function Section({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
     <View className="gap-2.5">
       <Text className="text-xs font-black uppercase tracking-widest text-slate-400">{title}</Text>
       {children}
     </View>
   );
+}
+
+function SettingsPanel({ isOpen, onClose }: SettingsPanelProps) {
+  const [selectedLevels, setSelectedLevels] = useState<string[]>(["A2"]);
+  const [selectedLanguages, setSelectedLanguages] = useState<string[]>(["Spanish"]);
+  const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
+  const [speed, setSpeed] = useState("1.0x");
+  const [subtitleSize, setSubtitleSize] = useState("Medium");
 
   return (
     <View
-      pointerEvents="box-none"
+      pointerEvents={isOpen ? "box-none" : "none"}
       className="absolute inset-0 z-50 justify-end"
-      style={{ elevation: 50 }}
+      style={{ elevation: 50, display: isOpen ? "flex" : "none" }}
     >
       <Pressable
         onPress={onClose}
