@@ -179,6 +179,9 @@ type SettingsPanelProps = {
 
 function SettingsPanel({ isOpen, onClose }: SettingsPanelProps) {
   if (!isOpen) return null;
+  
+  const [level, setLevel] = useState("A2");
+  const LEVELS = ["A1", "A2", "B1", "B2", "C1", "C2"];
 
   return (
     <View
@@ -213,6 +216,37 @@ function SettingsPanel({ isOpen, onClose }: SettingsPanelProps) {
             <Pressable className="rounded-lg border border-slate-300 bg-white px-3 py-2">
               <Text className="text-base text-slate-900">English</Text>
             </Pressable>
+          </View>
+
+          <View className="gap-2">
+            <Text className="text-sm font-bold text-slate-700">
+              Level
+            </Text>
+            <View className="rounded-lg border border-slate-300 bg-white px-3 py-2">
+              <View className="flex-row flex-wrap gap-2">
+                {LEVELS.map((l) => (
+                  <Pressable
+                    key={l}
+                    onPress={() => setLevel(l)}
+                    className={`rounded px-3 py-2 ${
+                      level === l
+                        ? "bg-emerald-400"
+                        : "bg-slate-200"
+                    }`}
+                  >
+                    <Text
+                      className={`font-semibold ${
+                        level === l
+                          ? "text-white"
+                          : "text-slate-900"
+                      }`}
+                    >
+                      {l}
+                    </Text>
+                  </Pressable>
+                ))}
+              </View>
+            </View>
           </View>
 
           <View className="gap-2">
