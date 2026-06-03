@@ -1,0 +1,19 @@
+[project]
+name = "slingo-backend"
+version = "0.1.0"
+description = "FastAPI backend for Slingo video ingestion and future AI processing."
+requires-python = ">=3.11"
+dependencies = [
+  "fastapi[standard]>=0.115.0",
+  "pydantic-settings>=2.6.0",
+  "supabase>=2.10.0",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8.3.0",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
