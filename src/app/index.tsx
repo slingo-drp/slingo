@@ -1,5 +1,11 @@
-import type { LessonClip, SelectedWord, SubtitleWord } from "@/lib/lessons";
+import type {
+  LessonClip,
+  LessonSentence,
+  SelectedWord,
+  SubtitleWord,
+} from "@/lib/lessons";
 import { fetchLessonClips } from "@/lib/lessons";
+import { useEventListener } from "expo";
 import { StatusBar } from "expo-status-bar";
 import { useVideoPlayer, VideoView } from "expo-video";
 import { Ionicons } from "@expo/vector-icons";
@@ -13,7 +19,7 @@ import {
   Text,
   View,
   type ListRenderItemInfo,
-  type ViewToken
+  type ViewToken,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -24,6 +30,7 @@ const FEED_REPEAT_COUNT = 120;
 const VIEWABILITY_CONFIG = { itemVisiblePercentThreshold: 70 } as const;
 /** Approximate height of the subtitle bar, used to offset the word panel above it */
 const SUBTITLE_LINE_HEIGHT = 118;
+const PLAYBACK_UPDATE_INTERVAL_SECONDS = 0.1;
 
 // ─── Utilities ────────────────────────────────────────────────────────────────
 
@@ -35,24 +42,61 @@ const createFeedClips = (clips: LessonClip[]) =>
 const getSubtitleBottomOffset = (height: number) =>
   Math.max(188, Math.min(236, height * 0.25));
 
+const getActiveSentence = (
+  transcript: LessonSentence[],
+  currentTimeSeconds: number,
+) => {
+  const currentTimeMs = currentTimeSeconds * 1000;
+  return (
+    transcript.find(
+      (sentence) =>
+        sentence.startMs <= currentTimeMs && currentTimeMs < sentence.endMs,
+    ) ?? null
+  );
+};
+
+const withDisplayedSentence = (
+  clip: LessonClip,
+  sentence: LessonSentence,
+): LessonClip => ({
+  ...clip,
+  id: `${clip.id}-${sentence.id}`,
+  sentence: sentence.sentence,
+  translation: sentence.translation,
+  words: sentence.words,
+});
+
 // ─── LessonVideo ─────────────────────────────────────────────────────────────
 
 function LessonVideo({
   clip,
   isActive,
+  onPlaybackTimeChange,
 }: {
   clip: LessonClip;
   isActive: boolean;
+  onPlaybackTimeChange: (currentTimeSeconds: number) => void;
 }) {
   const player = useVideoPlayer(clip.source, (p) => {
     p.loop = true;
     p.muted = false;
+    p.timeUpdateEventInterval = PLAYBACK_UPDATE_INTERVAL_SECONDS;
   });
 
   useEffect(() => {
+    onPlaybackTimeChange(player.currentTime);
+
     if (isActive) player.play();
     else player.pause();
-  }, [isActive, player]);
+  }, [isActive, onPlaybackTimeChange, player]);
+
+  useEventListener(player, "timeUpdate", ({ currentTime }) => {
+    onPlaybackTimeChange(currentTime);
+  });
+
+  useEventListener(player, "sourceLoad", () => {
+    onPlaybackTimeChange(player.currentTime);
+  });
 
   const onPress = () => {
     if (player.playing) player.pause();
@@ -67,10 +111,7 @@ function LessonVideo({
         player={player}
         style={StyleSheet.absoluteFill}
       />
-      <Pressable 
-        onPress={onPress}
-        style={StyleSheet.absoluteFill}
-      />
+      <Pressable onPress={onPress} style={StyleSheet.absoluteFill} />
     </View>
   );
 }
@@ -78,10 +119,10 @@ function LessonVideo({
 // ─── SubtitleLine ─────────────────────────────────────────────────────────────
 
 function SubtitleLine({
-  clip,
+  displayedClip,
   onWordPress,
 }: {
-  clip: LessonClip;
+  displayedClip: LessonClip;
   onWordPress: (word: SubtitleWord, clip: LessonClip) => void;
 }) {
   return (
@@ -90,13 +131,13 @@ function SubtitleLine({
         AI subtitles
       </Text>
       <View className="flex-row flex-wrap items-center justify-center gap-1.5">
-        {clip.words.map((word, i) => (
+        {displayedClip.words.map((word, i) => (
           <Pressable
             accessibilityLabel={`${word.text}, ${word.role}. Tap for definition and sentence translation.`}
             accessibilityRole="button"
             hitSlop={8}
-            key={`${clip.id}-${i}`}
-            onPress={() => onWordPress(word, clip)}
+            key={`${displayedClip.id}-${i}`}
+            onPress={() => onWordPress(word, displayedClip)}
             className="min-h-10 rounded-lg border border-white/20 bg-white/15 px-2 py-1.5 active:scale-95 active:bg-emerald-400/30"
           >
             <Text className="text-lg font-extrabold leading-normal text-white">
@@ -105,7 +146,7 @@ function SubtitleLine({
           </Pressable>
         ))}
         <Text className="text-xl font-extrabold text-white">
-          {clip.sentence.endsWith(".") ? "." : ""}
+          {displayedClip.sentence.endsWith(".") ? "." : ""}
         </Text>
       </View>
     </View>
@@ -194,7 +235,11 @@ function ClipActionButton({
       {icon}
       <Text
         className="text-xs font-bold text-white"
-        style={{ textShadowColor: "rgba(0,0,0,0.6)", textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 3 }}
+        style={{
+          textShadowColor: "rgba(0,0,0,0.6)",
+          textShadowOffset: { width: 0, height: 1 },
+          textShadowRadius: 3,
+        }}
       >
         {label}
       </Text>
@@ -217,7 +262,11 @@ function ClipActions({
   liked,
   onLike,
 }: ClipActionsProps) {
-  const iconStyle = { textShadowColor: "rgba(0,0,0,0.6)", textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 4 };
+  const iconStyle = {
+    textShadowColor: "rgba(0,0,0,0.6)",
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 4,
+  };
 
   return (
     <View
@@ -226,25 +275,54 @@ function ClipActions({
     >
       <ClipActionButton
         accessibilityLabel={liked ? "Unlike this clip" : "Like this clip"}
-        icon={<Ionicons name={liked ? "heart" : "heart-outline"} size={32} color={liked ? "#34d399" : "white"} style={iconStyle} />}
+        icon={
+          <Ionicons
+            name={liked ? "heart" : "heart-outline"}
+            size={32}
+            color={liked ? "#34d399" : "white"}
+            style={iconStyle}
+          />
+        }
         label={liked ? "Liked" : "Like"}
         onPress={onLike}
       />
       <ClipActionButton
         accessibilityLabel="Comments"
-        icon={<Ionicons name="chatbubble-outline" size={32} color="white" style={iconStyle} />}
+        icon={
+          <Ionicons
+            name="chatbubble-outline"
+            size={32}
+            color="white"
+            style={iconStyle}
+          />
+        }
         label="Comment"
       />
       <ClipActionButton
         accessibilityLabel="Save this clip"
-        icon={<Ionicons name="bookmark-outline" size={32} color="white" style={iconStyle} />}
+        icon={
+          <Ionicons
+            name="bookmark-outline"
+            size={32}
+            color="white"
+            style={iconStyle}
+          />
+        }
         label="Save"
       />
       <ClipActionButton
-        accessibilityLabel={subtitlesVisible ? "Hide AI subtitles" : "Show AI subtitles"}
+        accessibilityLabel={
+          subtitlesVisible ? "Hide AI subtitles" : "Show AI subtitles"
+        }
         icon={
-          <View className={`items-center justify-center rounded border-2 px-1 py-0.5 ${subtitlesVisible ? "border-emerald-400" : "border-white"}`}>
-            <Text className={`text-xs font-black leading-none ${subtitlesVisible ? "text-emerald-400" : "text-white"}`}>CC</Text>
+          <View
+            className={`items-center justify-center rounded border-2 px-1 py-0.5 ${subtitlesVisible ? "border-emerald-400" : "border-white"}`}
+          >
+            <Text
+              className={`text-xs font-black leading-none ${subtitlesVisible ? "text-emerald-400" : "text-white"}`}
+            >
+              CC
+            </Text>
           </View>
         }
         label="Subs"
@@ -252,7 +330,14 @@ function ClipActions({
       />
       <ClipActionButton
         accessibilityLabel="Share this clip"
-        icon={<Ionicons name="paper-plane-outline" size={32} color="white" style={iconStyle} />}
+        icon={
+          <Ionicons
+            name="paper-plane-outline"
+            size={32}
+            color="white"
+            style={iconStyle}
+          />
+        }
         label="Share"
         onPress={onShare}
       />
@@ -285,17 +370,54 @@ function LessonClipCard({
 }: LessonClipCardProps) {
   const subtitleBottom = getSubtitleBottomOffset(height);
   const [liked, setLiked] = useState(false);
+  const [currentTimeSeconds, setCurrentTimeSeconds] = useState(0);
+  const activeSentenceIdRef = useRef<number | null>(null);
+
+  const activeSentence = useMemo(
+    () => getActiveSentence(clip.transcript, currentTimeSeconds),
+    [clip.transcript, currentTimeSeconds],
+  );
+
+  useEffect(() => {
+    activeSentenceIdRef.current = null;
+  }, [clip.id]);
+
+  const displayedClip = useMemo(
+    () => (activeSentence ? withDisplayedSentence(clip, activeSentence) : null),
+    [activeSentence, clip],
+  );
+
+  const handlePlaybackTimeChange = useCallback(
+    (currentTimeSeconds: number) => {
+      const nextSentence = getActiveSentence(
+        clip.transcript,
+        currentTimeSeconds,
+      );
+      if (activeSentenceIdRef.current !== nextSentence?.id) {
+        activeSentenceIdRef.current = nextSentence?.id ?? null;
+        onDismissWord();
+      }
+      setCurrentTimeSeconds(currentTimeSeconds);
+    },
+    [clip.transcript, onDismissWord],
+  );
 
   const handleShare = async () => {
+    const shareClip = displayedClip ?? clip;
+
     await Share.share({
-      message: `"${clip.sentence}" — ${clip.translation}\n\nLearn ${clip.language} with Slingo!`,
-      title: clip.topic,
+      message: `"${shareClip.sentence}" — ${shareClip.translation ?? ""}\n\nLearn ${shareClip.language} with Slingo!`,
+      title: shareClip.topic,
     });
   };
 
   return (
     <View className="w-full overflow-hidden bg-slate-900" style={{ height }}>
-      <LessonVideo clip={clip} isActive={isActive} />
+      <LessonVideo
+        clip={clip}
+        isActive={isActive}
+        onPlaybackTimeChange={handlePlaybackTimeChange}
+      />
       <View pointerEvents="none" className="absolute inset-0 bg-black/20" />
 
       <SafeAreaView
@@ -319,7 +441,7 @@ function LessonClipCard({
           onLike={() => setLiked((v) => !v)}
         />
 
-        {subtitlesVisible && (
+        {subtitlesVisible && displayedClip && (
           <>
             <WordInsightPanel
               bottom={subtitleBottom + SUBTITLE_LINE_HEIGHT}
@@ -331,7 +453,10 @@ function LessonClipCard({
               className="absolute inset-x-0 z-30 items-center justify-center px-3"
               style={{ bottom: subtitleBottom, elevation: 30 }}
             >
-              <SubtitleLine clip={clip} onWordPress={onWordPress} />
+              <SubtitleLine
+                displayedClip={displayedClip}
+                onWordPress={onWordPress}
+              />
             </View>
           </>
         )}
@@ -404,6 +529,7 @@ function Feed({ clips }: { clips: LessonClip[] }) {
   );
   const [selectedWord, setSelectedWord] = useState<SelectedWord | null>(null);
   const [subtitlesVisible, setSubtitlesVisible] = useState(true);
+  const dismissWord = useCallback(() => setSelectedWord(null), []);
 
   const getItemLayout = useCallback(
     (_: unknown, index: number) => ({
@@ -425,11 +551,13 @@ function Feed({ clips }: { clips: LessonClip[] }) {
   const renderItem = useCallback(
     ({ item }: ListRenderItemInfo<LessonClip>) => (
       <LessonClipCard
-        activeInsight={selectedWord?.clip.id === item.id ? selectedWord : null}
+        activeInsight={
+          selectedWord?.clip.id.startsWith(`${item.id}-`) ? selectedWord : null
+        }
         clip={item}
         height={height}
         isActive={item.id === activeClipId}
-        onDismissWord={() => setSelectedWord(null)}
+        onDismissWord={dismissWord}
         onToggleSubtitles={() => {
           setSelectedWord(null);
           setSubtitlesVisible((v) => !v);
@@ -438,13 +566,13 @@ function Feed({ clips }: { clips: LessonClip[] }) {
         subtitlesVisible={subtitlesVisible}
       />
     ),
-    [activeClipId, height, selectedWord, subtitlesVisible],
+    [activeClipId, dismissWord, height, selectedWord, subtitlesVisible],
   );
 
   return (
-    <View 
-    className="flex-1 bg-slate-950"
-    onLayout={(e) => setHeight(e.nativeEvent.layout.height)}
+    <View
+      className="flex-1 bg-slate-950"
+      onLayout={(e) => setHeight(e.nativeEvent.layout.height)}
     >
       <StatusBar style="light" />
       <FlatList

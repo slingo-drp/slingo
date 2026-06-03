@@ -10,11 +10,21 @@ export type SubtitleWord = {
   definition: WordSenseRow["definition"] | null;
 };
 
+export type LessonSentence = {
+  id: number;
+  sentence: string;
+  translation: string | null;
+  startMs: number;
+  endMs: number;
+  words: SubtitleWord[];
+};
+
 export type LessonClip = {
   id: string;
   source: VideoSource;
   language: VideoRow["language"];
   level: VideoRow["level"];
+  transcript: LessonSentence[];
   sentence: string;
   translation: string | null;
   words: SubtitleWord[];
@@ -39,7 +49,7 @@ const UNTITLED_CAPTION = "Untitled lesson";
 const CLIP_QUERY = `
   id, video_url, language, level, title, description,
   sentences (
-    id, sentence_text, translation, start_ms,
+    id, sentence_text, translation, start_ms, end_ms,
     transcript_tokens (
       id, surface_form,
       word_senses ( pos, definition, domain )
@@ -99,17 +109,34 @@ function dominantDomain(tokens: TokenResult[]): string {
   );
 }
 
-function toClip(video: VideoResult, sentence: SentenceResult): LessonClip {
+function toSentence(sentence: SentenceResult): LessonSentence {
   return {
-    id: `${video.id}-${sentence.id}`,
+    id: sentence.id,
+    sentence: sentence.sentence_text,
+    translation: sentence.translation,
+    startMs: sentence.start_ms,
+    endMs: sentence.end_ms,
+    words: sentence.transcript_tokens.map(toSubtitleWord),
+  };
+}
+
+function toClip(video: VideoResult): LessonClip {
+  const transcript = video.sentences.map(toSentence);
+  const firstSentence = transcript[0];
+
+  return {
+    id: `${video.id}`,
     source: { uri: video.video_url } as VideoSource,
     language: video.language,
     level: video.level,
-    sentence: sentence.sentence_text,
-    translation: sentence.translation,
-    words: sentence.transcript_tokens.map(toSubtitleWord),
+    transcript,
+    sentence: firstSentence?.sentence ?? "",
+    translation: firstSentence?.translation ?? null,
+    words: firstSentence?.words ?? [],
     creator: UNKNOWN_CREATOR,
-    topic: dominantDomain(sentence.transcript_tokens),
+    topic: dominantDomain(
+      video.sentences.flatMap((sentence) => sentence.transcript_tokens),
+    ),
     caption: video.title || video.description || UNTITLED_CAPTION,
   };
 }
@@ -118,22 +145,21 @@ function toClip(video: VideoResult, sentence: SentenceResult): LessonClip {
 
 export async function fetchLessonClips(): Promise<LessonClip[]> {
   const videos = await queryClips();
+  const clips = videos.map(toClip).filter((clip) => clip.transcript.length > 0);
 
-  if (videos.length === 0) {
+  if (clips.length === 0) {
     throw new Error(
       "No lesson clips found. Please add some videos and sentences to the database.",
     );
   }
 
-  return videos.flatMap((video) =>
-    video.sentences.map((s) => toClip(video, s)),
-  );
+  return clips;
 }
 
 export async function fetchLessonClip(
   videoId: number,
 ): Promise<LessonClip | null> {
   const videos = await queryClips(videoId);
-  const sentence = videos[0]?.sentences[0];
-  return sentence ? toClip(videos[0], sentence) : null;
+  const clip = videos[0] ? toClip(videos[0]) : null;
+  return clip?.transcript.length ? clip : null;
 }
