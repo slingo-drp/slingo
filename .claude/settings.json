@@ -5,7 +5,9 @@
       "Bash(npm install *)",
       "Bash(npx expo *)",
       "Bash(gh pr *)",
-      "Bash(npx tsc *)"
+      "Bash(npx tsc *)",
+      "Bash(npm run *)",
+      "Bash(echo \"EXIT:$?\")"
     ]
   },
   "enabledPlugins": {

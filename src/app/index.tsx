@@ -12,6 +12,7 @@ import {
   Share,
   StyleSheet,
   Text,
+  TextInput,
   View,
   type ListRenderItemInfo,
   type ViewToken
@@ -315,6 +316,140 @@ function SettingsPanel({ isOpen, onClose }: SettingsPanelProps) {
   );
 }
 
+// ─── CommentsPanel ───────────────────────────────────────────────────────────
+
+type Comment = {
+  id: string;
+  avatar: string;
+  username: string;
+  text: string;
+  time: string;
+  likes: number;
+  liked: boolean;
+  reply?: { username: string; text: string };
+};
+
+const MOCK_COMMENTS: Comment[] = [
+  { id: "1", avatar: "S", username: "sara_learns", text: "This is exactly how my abuela says it 😭❤️", time: "2h", likes: 312, liked: false },
+  { id: "2", avatar: "M", username: "miguel.fluent", text: "The accent on \"están\" always gets me", time: "3h", likes: 87, liked: true, reply: { username: "slingo_app", text: "Keep practicing — you'll nail it! 💪" } },
+  { id: "3", avatar: "A", username: "annakowalski", text: "B2 content is so good. Finally something that doesn't treat me like a baby 😂", time: "5h", likes: 204, liked: false },
+  { id: "4", avatar: "J", username: "javierlingo", text: "Can we get more food & culture content?? This is my fav topic", time: "6h", likes: 55, liked: false },
+  { id: "5", avatar: "K", username: "k_polyglot", text: "I watch this one every morning with my coffee ☕", time: "8h", likes: 430, liked: true },
+  { id: "6", avatar: "L", username: "lu_br", text: "Studying for DELE and Slingo is genuinely helping more than my textbook", time: "10h", likes: 178, liked: false },
+  { id: "7", avatar: "T", username: "tomasz_es", text: "The word breakdown is 🤌🤌", time: "12h", likes: 93, liked: false },
+];
+
+const AVATAR_COLORS = ["#6366f1", "#f59e0b", "#10b981", "#ef4444", "#3b82f6", "#ec4899", "#8b5cf6"];
+
+type CommentsPanelProps = {
+  isOpen: boolean;
+  onClose: () => void;
+};
+
+function CommentRow({ comment }: { comment: Comment }) {
+  const [liked, setLiked] = useState(comment.liked);
+  const [likes, setLikes] = useState(comment.likes);
+  const color = AVATAR_COLORS[comment.id.charCodeAt(0) % AVATAR_COLORS.length];
+
+  const toggleLike = () => {
+    setLiked((v) => !v);
+    setLikes((v) => (liked ? v - 1 : v + 1));
+  };
+
+  return (
+    <View style={{ paddingHorizontal: 16, paddingVertical: 10 }}>
+      <View style={{ flexDirection: "row", gap: 10 }}>
+        <View style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: color, alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+          <Text style={{ color: "#fff", fontWeight: "800", fontSize: 14 }}>{comment.avatar}</Text>
+        </View>
+        <View style={{ flex: 1, gap: 3 }}>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+            <Text style={{ color: "#fff", fontWeight: "700", fontSize: 13 }}>{comment.username}</Text>
+            <Text style={{ color: "rgba(255,255,255,0.35)", fontSize: 12 }}>{comment.time}</Text>
+          </View>
+          <Text style={{ color: "rgba(255,255,255,0.88)", fontSize: 14, lineHeight: 20 }}>{comment.text}</Text>
+          <Pressable hitSlop={6}>
+            <Text style={{ color: "rgba(255,255,255,0.4)", fontSize: 12, fontWeight: "600", marginTop: 2 }}>Reply</Text>
+          </Pressable>
+          {comment.reply && (
+            <View style={{ marginTop: 8, paddingLeft: 10, borderLeftWidth: 2, borderLeftColor: "rgba(255,255,255,0.1)", gap: 2 }}>
+              <Text style={{ color: "rgba(255,255,255,0.5)", fontSize: 12, fontWeight: "700" }}>{comment.reply.username}</Text>
+              <Text style={{ color: "rgba(255,255,255,0.65)", fontSize: 13 }}>{comment.reply.text}</Text>
+            </View>
+          )}
+        </View>
+        <Pressable onPress={toggleLike} style={{ alignItems: "center", gap: 2, paddingTop: 2 }}>
+          <Ionicons name={liked ? "heart" : "heart-outline"} size={18} color={liked ? "#f43f5e" : "rgba(255,255,255,0.4)"} />
+          <Text style={{ color: "rgba(255,255,255,0.4)", fontSize: 11 }}>{likes}</Text>
+        </Pressable>
+      </View>
+    </View>
+  );
+}
+
+function CommentsPanel({ isOpen, onClose }: CommentsPanelProps) {
+  const [text, setText] = useState("");
+
+  return (
+    <View
+      pointerEvents={isOpen ? "box-none" : "none"}
+      className="absolute inset-0 z-50 justify-end"
+      style={{ elevation: 50, display: isOpen ? "flex" : "none" }}
+    >
+      <Pressable onPress={onClose} className="absolute inset-0 bg-black/60" pointerEvents="auto" />
+
+      <View style={{ backgroundColor: "#161616", borderTopLeftRadius: 20, borderTopRightRadius: 20, maxHeight: "80%", overflow: "hidden" }}>
+        {/* Handle */}
+        <View style={{ alignItems: "center", paddingTop: 10, paddingBottom: 6 }}>
+          <View style={{ width: 36, height: 4, borderRadius: 2, backgroundColor: "rgba(255,255,255,0.18)" }} />
+        </View>
+
+        {/* Header */}
+        <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "center", paddingHorizontal: 20, paddingBottom: 12, position: "relative" }}>
+          <Text style={{ color: "#fff", fontSize: 15, fontWeight: "700" }}>{MOCK_COMMENTS.length} comments</Text>
+          <Pressable
+            onPress={onClose}
+            hitSlop={8}
+            style={({ pressed }) => ({ position: "absolute", right: 16, opacity: pressed ? 0.5 : 1 })}
+          >
+            <Ionicons name="close" size={22} color="rgba(255,255,255,0.7)" />
+          </Pressable>
+        </View>
+
+        <View style={{ height: 1, backgroundColor: "rgba(255,255,255,0.07)" }} />
+
+        {/* Comments list */}
+        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingVertical: 6 }}>
+          {MOCK_COMMENTS.map((c) => <CommentRow key={c.id} comment={c} />)}
+          <View style={{ height: 12 }} />
+        </ScrollView>
+
+        {/* Input bar */}
+        <View style={{ height: 1, backgroundColor: "rgba(255,255,255,0.07)" }} />
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 10, paddingHorizontal: 16, paddingVertical: 12, paddingBottom: 28 }}>
+          <View style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: "#6366f1", alignItems: "center", justifyContent: "center" }}>
+            <Text style={{ color: "#fff", fontWeight: "800", fontSize: 13 }}>Y</Text>
+          </View>
+          <View style={{ flex: 1, flexDirection: "row", alignItems: "center", backgroundColor: "rgba(255,255,255,0.08)", borderRadius: 20, paddingHorizontal: 14, paddingVertical: 8 }}>
+            <TextInput
+              value={text}
+              onChangeText={setText}
+              placeholder="Add a comment…"
+              placeholderTextColor="rgba(255,255,255,0.3)"
+              style={{ flex: 1, color: "#fff", fontSize: 14 }}
+            />
+            {text.length > 0 && (
+              <Pressable onPress={() => setText("")} hitSlop={8}>
+                <Text style={{ color: "#10b981", fontWeight: "700", fontSize: 14 }}>Post</Text>
+              </Pressable>
+            )}
+          </View>
+        </View>
+      </View>
+    </View>
+  );
+}
+
 // ─── ClipActions ──────────────────────────────────────────────────────────────
 
 type ClipActionButtonProps = {
@@ -353,6 +488,7 @@ type ClipActionsProps = {
   onToggleSubtitles: () => void;
   onShare: () => void;
   settingsToggle: () => void;
+  commentsToggle: () => void;
   liked: boolean;
   onLike: () => void;
 };
@@ -362,6 +498,7 @@ function ClipActions({
   onToggleSubtitles,
   onShare,
   settingsToggle,
+  commentsToggle,
   liked,
   onLike,
 }: ClipActionsProps) {
@@ -382,6 +519,7 @@ function ClipActions({
         accessibilityLabel="Comments"
         icon={<Ionicons name="chatbubble-outline" size={32} color="white" style={iconStyle} />}
         label="Comment"
+        onPress={commentsToggle}
       />
       <ClipActionButton
         accessibilityLabel="Save this clip"
@@ -426,6 +564,7 @@ type LessonClipCardProps = {
   onToggleSubtitles: () => void;
   onDismissWord: () => void;
   settingsToggle: () => void;
+  commentsToggle: () => void;
 };
 
 function LessonClipCard({
@@ -438,6 +577,7 @@ function LessonClipCard({
   onToggleSubtitles,
   onDismissWord,
   settingsToggle,
+  commentsToggle,
 }: LessonClipCardProps) {
   const subtitleBottom = getSubtitleBottomOffset(height);
   const [liked, setLiked] = useState(false);
@@ -472,6 +612,7 @@ function LessonClipCard({
           onToggleSubtitles={onToggleSubtitles}
           onShare={handleShare}
           settingsToggle={settingsToggle}
+          commentsToggle={commentsToggle}
           liked={liked}
           onLike={() => setLiked((v) => !v)}
         />
@@ -553,6 +694,7 @@ function ErrorScreen({ message }: { message: string }) {
 function Feed({ clips }: { clips: LessonClip[] }) {
   const [height, setHeight] = useState(0);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [commentsOpen, setCommentsOpen] = useState(false);
 
   const feedRef = useRef<FlatList<LessonClip>>(null);
 
@@ -564,6 +706,7 @@ function Feed({ clips }: { clips: LessonClip[] }) {
   const [subtitlesVisible, setSubtitlesVisible] = useState(true);
 
   const toggleSettings = () => setSettingsOpen((prev) => !prev);
+  const toggleComments = () => setCommentsOpen((prev) => !prev);
 
   const getItemLayout = useCallback(
     (_: unknown, index: number) => ({
@@ -597,6 +740,7 @@ function Feed({ clips }: { clips: LessonClip[] }) {
         onWordPress={(word, clip) => setSelectedWord({ word, clip })}
         subtitlesVisible={subtitlesVisible}
         settingsToggle={toggleSettings}
+        commentsToggle={toggleComments}
       />
     ),
     [activeClipId, height, selectedWord, subtitlesVisible],
@@ -629,6 +773,7 @@ function Feed({ clips }: { clips: LessonClip[] }) {
         windowSize={4}
       />
       <SettingsPanel isOpen={settingsOpen} onClose={() => setSettingsOpen(false)} />
+      <CommentsPanel isOpen={commentsOpen} onClose={() => setCommentsOpen(false)} />
     </View>
   );
 }
