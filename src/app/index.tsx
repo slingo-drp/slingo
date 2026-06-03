@@ -1,8 +1,8 @@
 import type { LessonClip, SelectedWord, SubtitleWord } from "@/lib/lessons";
 import { fetchLessonClips } from "@/lib/lessons";
+import { Ionicons } from "@expo/vector-icons";
 import { StatusBar } from "expo-status-bar";
 import { useVideoPlayer, VideoView } from "expo-video";
-import { Ionicons } from "@expo/vector-icons";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
@@ -152,9 +152,7 @@ function WordInsightPanel({
               onPress={onDismiss}
               className="h-8 w-8 items-center justify-center rounded-lg bg-slate-200"
             >
-              <Text className="text-lg font-black leading-none text-slate-800">
-                ×
-              </Text>
+              <Ionicons name="close" size={18} color="#1e293b" />
             </Pressable>
           </View>
         </View>
@@ -321,16 +319,16 @@ function SettingsPanel({ isOpen, onClose }: SettingsPanelProps) {
 // ─── ClipActions ──────────────────────────────────────────────────────────────
 
 type ClipActionButtonProps = {
+  icon: React.ReactNode;
   label: string;
   onPress?: () => void;
-  active?: boolean;
   accessibilityLabel?: string;
 };
 
 function ClipActionButton({
+  icon,
   label,
   onPress,
-  active = false,
   accessibilityLabel,
 }: ClipActionButtonProps) {
   return (
@@ -338,13 +336,15 @@ function ClipActionButton({
       accessibilityLabel={accessibilityLabel}
       accessibilityRole="button"
       onPress={onPress}
-      className={`h-12 w-12 items-center justify-center rounded-full border ${
-        active
-          ? "border-emerald-400/70 bg-emerald-400/30"
-          : "border-white/20 bg-slate-950/55"
-      }`}
+      className="items-center gap-1 active:opacity-70"
     >
-      <Text className="text-base font-extrabold text-white">{label}</Text>
+      {icon}
+      <Text
+        className="text-xs font-bold text-white"
+        style={{ textShadowColor: "rgba(0,0,0,0.6)", textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 3 }}
+      >
+        {label}
+      </Text>
     </Pressable>
   );
 }
@@ -354,6 +354,8 @@ type ClipActionsProps = {
   onToggleSubtitles: () => void;
   onShare: () => void;
   settingsToggle: () => void;
+  liked: boolean;
+  onLike: () => void;
 };
 
 function ClipActions({
@@ -361,30 +363,52 @@ function ClipActions({
   onToggleSubtitles,
   onShare,
   settingsToggle,
+  liked,
+  onLike,
 }: ClipActionsProps) {
+  const iconStyle = { textShadowColor: "rgba(0,0,0,0.6)", textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 4 };
+
   return (
     <View
-      className="absolute right-4 top-[38%] z-20 items-center gap-3.5"
+      className="absolute right-3 top-[35%] z-20 items-center gap-6"
       style={{ elevation: 16 }}
     >
-      <ClipActionButton label="Aa" />
       <ClipActionButton
-        active={subtitlesVisible}
-        accessibilityLabel={
-          subtitlesVisible ? "Hide subtitles" : "Show subtitles"
+        accessibilityLabel={liked ? "Unlike this clip" : "Like this clip"}
+        icon={<Ionicons name={liked ? "heart" : "heart-outline"} size={32} color={liked ? "#34d399" : "white"} style={iconStyle} />}
+        label={liked ? "Liked" : "Like"}
+        onPress={onLike}
+      />
+      <ClipActionButton
+        accessibilityLabel="Comments"
+        icon={<Ionicons name="chatbubble-outline" size={32} color="white" style={iconStyle} />}
+        label="Comment"
+      />
+      <ClipActionButton
+        accessibilityLabel="Save this clip"
+        icon={<Ionicons name="bookmark-outline" size={32} color="white" style={iconStyle} />}
+        label="Save"
+      />
+      <ClipActionButton
+        accessibilityLabel={subtitlesVisible ? "Hide AI subtitles" : "Show AI subtitles"}
+        icon={
+          <View className={`items-center justify-center rounded border-2 px-1 py-0.5 ${subtitlesVisible ? "border-emerald-400" : "border-white"}`}>
+            <Text className={`text-xs font-black leading-none ${subtitlesVisible ? "text-emerald-400" : "text-white"}`}>CC</Text>
+          </View>
         }
-        label="CC"
+        label="Subs"
         onPress={onToggleSubtitles}
       />
-      <ClipActionButton label="Go" />
       <ClipActionButton
         accessibilityLabel="Share this clip"
-        label="↑"
+        icon={<Ionicons name="paper-plane-outline" size={32} color="white" style={iconStyle} />}
+        label="Share"
         onPress={onShare}
       />
       <ClipActionButton
         accessibilityLabel="Open settings"
-        label="⚙"
+        icon={<Ionicons name="settings-outline" size={32} color="white" style={iconStyle} />}
+        label="Settings"
         onPress={settingsToggle}
       />
     </View>
@@ -417,6 +441,7 @@ function LessonClipCard({
   settingsToggle,
 }: LessonClipCardProps) {
   const subtitleBottom = getSubtitleBottomOffset(height);
+  const [liked, setLiked] = useState(false);
 
   const handleShare = async () => {
     await Share.share({
@@ -448,6 +473,8 @@ function LessonClipCard({
           onToggleSubtitles={onToggleSubtitles}
           onShare={handleShare}
           settingsToggle={settingsToggle}
+          liked={liked}
+          onLike={() => setLiked((v) => !v)}
         />
 
         {subtitlesVisible && (
