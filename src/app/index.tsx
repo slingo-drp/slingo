@@ -170,6 +170,81 @@ function WordInsightPanel({
   );
 }
 
+// ─── SettingsPanel ───────────────────────────────────────────────────────────
+
+type SettingsPanelProps = {
+  isOpen: boolean;
+  onClose: () => void;
+};
+
+function SettingsPanel({ isOpen, onClose }: SettingsPanelProps) {
+  if (!isOpen) return null;
+
+  return (
+    <View
+      pointerEvents="box-none"
+      className="absolute inset-0 z-50 flex-1 items-center justify-center"
+      style={{ elevation: 50 }}
+    >
+      <Pressable
+        onPress={onClose}
+        className="absolute inset-0 bg-black/50"
+        pointerEvents="auto"
+      />
+      <View className="z-50 w-11/12 max-w-sm rounded-lg border border-white/45 bg-slate-50/95 p-5">
+        <View className="mb-4 flex-row items-center justify-between">
+          <Text className="text-2xl font-black text-slate-900">Settings</Text>
+          <Pressable
+            accessibilityLabel="Close settings"
+            accessibilityRole="button"
+            hitSlop={8}
+            onPress={onClose}
+            className="h-8 w-8 items-center justify-center rounded-lg bg-slate-200"
+          >
+            <Text className="text-lg font-black leading-none text-slate-800">
+              ×
+            </Text>
+          </Pressable>
+        </View>
+
+        <View className="gap-4">
+          <View className="gap-2">
+            <Text className="text-sm font-bold text-slate-700">Language</Text>
+            <Pressable className="rounded-lg border border-slate-300 bg-white px-3 py-2">
+              <Text className="text-base text-slate-900">English</Text>
+            </Pressable>
+          </View>
+
+          <View className="gap-2">
+            <Text className="text-sm font-bold text-slate-700">
+              Video Playback Speed
+            </Text>
+            <Pressable className="rounded-lg border border-slate-300 bg-white px-3 py-2">
+              <Text className="text-base text-slate-900">1.0x</Text>
+            </Pressable>
+          </View>
+
+          <View className="gap-2">
+            <Text className="text-sm font-bold text-slate-700">
+              Subtitle Size
+            </Text>
+            <Pressable className="rounded-lg border border-slate-300 bg-white px-3 py-2">
+              <Text className="text-base text-slate-900">Medium</Text>
+            </Pressable>
+          </View>
+
+          <View className="gap-2">
+            <Text className="text-sm font-bold text-slate-700">Version</Text>
+              <Text className="text-base text-slate-900">
+                Slingo v0.1.0
+              </Text>
+          </View>
+        </View>
+      </View>
+    </View>
+  );
+}
+
 // ─── ClipActions ──────────────────────────────────────────────────────────────
 
 type ClipActionButtonProps = {
@@ -205,12 +280,14 @@ type ClipActionsProps = {
   subtitlesVisible: boolean;
   onToggleSubtitles: () => void;
   onShare: () => void;
+  settingsToggle: () => void;
 };
 
 function ClipActions({
   subtitlesVisible,
   onToggleSubtitles,
   onShare,
+  settingsToggle,
 }: ClipActionsProps) {
   return (
     <View
@@ -232,6 +309,11 @@ function ClipActions({
         label="↑"
         onPress={onShare}
       />
+      <ClipActionButton
+        accessibilityLabel="Open settings"
+        label="⚙"
+        onPress={settingsToggle}
+      />
     </View>
   );
 }
@@ -247,6 +329,7 @@ type LessonClipCardProps = {
   subtitlesVisible: boolean;
   onToggleSubtitles: () => void;
   onDismissWord: () => void;
+  settingsToggle: () => void;
 };
 
 function LessonClipCard({
@@ -258,6 +341,7 @@ function LessonClipCard({
   subtitlesVisible,
   onToggleSubtitles,
   onDismissWord,
+  settingsToggle,
 }: LessonClipCardProps) {
   const subtitleBottom = getSubtitleBottomOffset(height);
 
@@ -290,6 +374,7 @@ function LessonClipCard({
           subtitlesVisible={subtitlesVisible}
           onToggleSubtitles={onToggleSubtitles}
           onShare={handleShare}
+          settingsToggle={settingsToggle}
         />
 
         {subtitlesVisible && (
@@ -368,6 +453,7 @@ function ErrorScreen({ message }: { message: string }) {
 
 function Feed({ clips }: { clips: LessonClip[] }) {
   const [height, setHeight] = useState(0);
+  const [settingsOpen, setSettingsOpen] = useState(false);
 
   const feedRef = useRef<FlatList<LessonClip>>(null);
 
@@ -377,6 +463,8 @@ function Feed({ clips }: { clips: LessonClip[] }) {
   );
   const [selectedWord, setSelectedWord] = useState<SelectedWord | null>(null);
   const [subtitlesVisible, setSubtitlesVisible] = useState(true);
+
+  const toggleSettings = () => setSettingsOpen((prev) => !prev);
 
   const getItemLayout = useCallback(
     (_: unknown, index: number) => ({
@@ -409,6 +497,7 @@ function Feed({ clips }: { clips: LessonClip[] }) {
         }}
         onWordPress={(word, clip) => setSelectedWord({ word, clip })}
         subtitlesVisible={subtitlesVisible}
+        settingsToggle={toggleSettings}
       />
     ),
     [activeClipId, height, selectedWord, subtitlesVisible],
@@ -440,6 +529,7 @@ function Feed({ clips }: { clips: LessonClip[] }) {
         viewabilityConfig={VIEWABILITY_CONFIG}
         windowSize={4}
       />
+      <SettingsPanel isOpen={settingsOpen} onClose={() => setSettingsOpen(false)} />
     </View>
   );
 }
