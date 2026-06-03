@@ -1,6 +1,12 @@
 {
   "permissions": {
-    "allow": ["Bash(xargs ls *)", "Bash(npm install *)", "Bash(npx expo *)"]
+    "allow": [
+      "Bash(xargs ls *)",
+      "Bash(npm install *)",
+      "Bash(npx expo *)",
+      "Bash(gh pr *)",
+      "Bash(npx tsc *)"
+    ]
   },
   "enabledPlugins": {
     "expo@claude-plugins-official": true
