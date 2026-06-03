@@ -6,6 +6,7 @@ import { useVideoPlayer, VideoView } from "expo-video";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
+  Animated,
   FlatList,
   Pressable,
   ScrollView,
@@ -89,7 +90,7 @@ function SubtitleLine({
   return (
     <View className="w-full max-w-sm self-center rounded-lg border border-white/15 bg-slate-950/75 p-3">
       <Text className="mb-2 text-xs font-extrabold uppercase text-emerald-400">
-        AI subtitles
+        Tap a word to reveal its meaning
       </Text>
       <View className="flex-row flex-wrap items-center justify-center gap-1.5">
         {clip.words.map((word, i) => (
@@ -450,6 +451,8 @@ function CommentsPanel({ isOpen, onClose }: CommentsPanelProps) {
   );
 }
 
+const AnimatedView = Animated.View;
+
 // ─── UploadPanel ─────────────────────────────────────────────────────────────
 
 type UploadPanelProps = {
@@ -463,6 +466,16 @@ function UploadPanel({ isOpen, onClose }: UploadPanelProps) {
   const [selectedLanguage, setSelectedLanguage] = useState("Spanish");
   const [selectedLevel, setSelectedLevel] = useState("A2");
   const [videoSelected, setVideoSelected] = useState(false);
+
+  const slideAnim = useRef(new Animated.Value(1000)).current;
+
+  useEffect(() => {
+    Animated.timing(slideAnim, {
+      toValue: isOpen ? 0 : 1000,
+      duration: 350,
+      useNativeDriver: true,
+    }).start();
+  }, [isOpen]);
 
   const reset = () => {
     setTopic("");
@@ -480,9 +493,9 @@ function UploadPanel({ isOpen, onClose }: UploadPanelProps) {
   const canPost = videoSelected && topic.trim().length > 0;
 
   return (
-    <View
+    <AnimatedView
       pointerEvents={isOpen ? "box-none" : "none"}
-      style={[StyleSheet.absoluteFill, { zIndex: 60, display: isOpen ? "flex" : "none" }]}
+      style={[StyleSheet.absoluteFill, { zIndex: 60, transform: [{ translateY: slideAnim }] }]}
     >
       {/* Full-screen dark bg */}
       <View style={[StyleSheet.absoluteFill, { backgroundColor: "#0a0a0a" }]} />
@@ -629,7 +642,7 @@ function UploadPanel({ isOpen, onClose }: UploadPanelProps) {
           <View style={{ height: 8 }} />
         </ScrollView>
       </SafeAreaView>
-    </View>
+    </AnimatedView>
   );
 }
 
@@ -820,28 +833,234 @@ function LessonClipCard({
         <View
           pointerEvents="none"
           className="z-10 mt-auto pb-8 pr-16"
-          style={{ elevation: 2 }}
+          style={{ elevation: 2, gap: 10 }}
         >
-          <Text className="mb-2 text-base font-extrabold text-white">
-            {clip.creator}
-          </Text>
-          <Text className="mb-1 text-3xl font-black text-white">
+          {/* Username row */}
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+            <View style={{ width: 34, height: 34, borderRadius: 17, backgroundColor: "#10b981", alignItems: "center", justifyContent: "center", borderWidth: 2, borderColor: "#fff" }}>
+              <Text style={{ color: "#fff", fontWeight: "800", fontSize: 13 }}>
+                {clip.creator?.[0]?.toUpperCase() ?? "S"}
+              </Text>
+            </View>
+            <Text style={{ color: "#fff", fontWeight: "700", fontSize: 15 }}>
+              @{clip.creator?.toLowerCase().replace(/\s+/g, "_") ?? "slingo"}
+            </Text>
+          </View>
+
+          {/* Topic / caption */}
+          <Text style={{ color: "#fff", fontWeight: "800", fontSize: 16, lineHeight: 22 }}>
             {clip.topic}
           </Text>
-          <Text className="mb-3.5 text-base leading-relaxed text-white/85">
+          <Text style={{ color: "rgba(255,255,255,0.82)", fontSize: 14, lineHeight: 20 }} numberOfLines={2}>
             {clip.caption}
           </Text>
-          <View className="mt-3 flex-row items-center gap-2">
-            <Text className="text-sm font-bold text-white/75">
-              {clip.language}
+
+          {/* Tags row */}
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+            <Text style={{ color: "rgba(255,255,255,0.9)", fontSize: 13, fontWeight: "700" }}>
+              #{clip.topic}
             </Text>
-            <Text className="text-base font-black text-emerald-400">/</Text>
-            <Text className="text-sm font-bold text-white/75">
-              Tap any subtitle word
+            <Text style={{ color: "rgba(255,255,255,0.9)", fontSize: 13, fontWeight: "700" }}>
+              #{clip.language.toLowerCase()}
+            </Text>
+            <Text style={{ color: "rgba(255,255,255,0.9)", fontSize: 13, fontWeight: "700" }}>
+              #{clip.level}
+            </Text>
+          </View>
+
+          {/* Audio pill — TikTok style */}
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+            <Ionicons name="musical-notes" size={13} color="rgba(255,255,255,0.75)" />
+            <Text style={{ color: "rgba(255,255,255,0.75)", fontSize: 13, fontWeight: "500" }}>
+              {clip.language} · {clip.level}
             </Text>
           </View>
         </View>
       </SafeAreaView>
+    </View>
+  );
+}
+
+// ─── AccountPage ─────────────────────────────────────────────────────────────
+
+const PLACEHOLDER_GRID = Array.from({ length: 9 }, (_, i) => ({
+  id: String(i),
+  label: ["A1", "A2", "B1", "B2", "C1", "B1", "A2", "C2", "B2"][i],
+  color: ["#1e293b", "#0f2027", "#1a1a2e", "#0d1b2a", "#16213e", "#1e293b", "#0f2027", "#0d1b2a", "#16213e"][i],
+}));
+
+type AccountPageProps = { onClose: () => void };
+
+function AccountPage({ onClose }: AccountPageProps) {
+  const [following, setFollowing] = useState(false);
+
+  return (
+    <View style={[StyleSheet.absoluteFill, { backgroundColor: "#0a0a0a", zIndex: 55 }]}>
+      <SafeAreaView style={{ flex: 1 }}>
+        {/* Header */}
+        <View style={{ flexDirection: "row", alignItems: "center", paddingHorizontal: 16, paddingVertical: 12 }}>
+          <Pressable onPress={onClose} hitSlop={10} style={({ pressed }) => ({ opacity: pressed ? 0.5 : 1, marginRight: 12 })}>
+            <Ionicons name="chevron-back" size={24} color="#fff" />
+          </Pressable>
+          <Text style={{ color: "#fff", fontSize: 17, fontWeight: "700", flex: 1 }}>@slingo_learner</Text>
+          <Ionicons name="ellipsis-horizontal" size={22} color="#fff" />
+        </View>
+
+        <ScrollView showsVerticalScrollIndicator={false}>
+          {/* Profile header */}
+          <View style={{ alignItems: "center", paddingHorizontal: 20, paddingTop: 8, paddingBottom: 20, gap: 12 }}>
+            <View style={{ width: 88, height: 88, borderRadius: 44, backgroundColor: "#10b981", alignItems: "center", justifyContent: "center", borderWidth: 3, borderColor: "#10b981" }}>
+              <Text style={{ color: "#fff", fontWeight: "900", fontSize: 34 }}>S</Text>
+            </View>
+            <Text style={{ color: "#fff", fontSize: 20, fontWeight: "800" }}>Slingo Learner</Text>
+            <Text style={{ color: "rgba(255,255,255,0.5)", fontSize: 14, textAlign: "center", lineHeight: 20 }}>
+              Learning Spanish 🇪🇸 · Level A2{"\n"}1 clip a day keeps the forgetting away
+            </Text>
+
+            {/* Stats */}
+            <View style={{ flexDirection: "row", gap: 32, marginTop: 4 }}>
+              {[["0", "Posts"], ["124", "Followers"], ["38", "Following"]].map(([n, label]) => (
+                <View key={label} style={{ alignItems: "center", gap: 2 }}>
+                  <Text style={{ color: "#fff", fontWeight: "800", fontSize: 18 }}>{n}</Text>
+                  <Text style={{ color: "rgba(255,255,255,0.45)", fontSize: 12 }}>{label}</Text>
+                </View>
+              ))}
+            </View>
+
+            {/* Action buttons */}
+            <View style={{ flexDirection: "row", gap: 10, width: "100%" }}>
+              <Pressable
+                onPress={() => setFollowing((v) => !v)}
+                style={({ pressed }) => ({
+                  flex: 1,
+                  paddingVertical: 9,
+                  borderRadius: 8,
+                  backgroundColor: following ? "rgba(255,255,255,0.08)" : "#10b981",
+                  alignItems: "center",
+                  opacity: pressed ? 0.75 : 1,
+                  borderWidth: following ? 1 : 0,
+                  borderColor: "rgba(255,255,255,0.15)",
+                })}
+              >
+                <Text style={{ color: "#fff", fontWeight: "700", fontSize: 14 }}>{following ? "Following" : "Follow"}</Text>
+              </Pressable>
+              <Pressable
+                style={({ pressed }) => ({
+                  flex: 1,
+                  paddingVertical: 9,
+                  borderRadius: 8,
+                  backgroundColor: "rgba(255,255,255,0.08)",
+                  alignItems: "center",
+                  opacity: pressed ? 0.75 : 1,
+                  borderWidth: 1,
+                  borderColor: "rgba(255,255,255,0.15)",
+                })}
+              >
+                <Text style={{ color: "#fff", fontWeight: "700", fontSize: 14 }}>Message</Text>
+              </Pressable>
+            </View>
+          </View>
+
+          {/* Divider */}
+          <View style={{ height: 1, backgroundColor: "rgba(255,255,255,0.07)", marginBottom: 2 }} />
+
+          {/* Grid */}
+          <View style={{ flexDirection: "row", flexWrap: "wrap" }}>
+            {PLACEHOLDER_GRID.map((item) => (
+              <View
+                key={item.id}
+                style={{
+                  width: "33.33%",
+                  aspectRatio: 0.6,
+                  backgroundColor: item.color,
+                  borderWidth: 0.5,
+                  borderColor: "#0a0a0a",
+                  alignItems: "center",
+                  justifyContent: "flex-end",
+                  padding: 8,
+                }}
+              >
+                <Ionicons name="play" size={20} color="rgba(255,255,255,0.3)" style={{ position: "absolute", top: "40%", alignSelf: "center" }} />
+                <View style={{ backgroundColor: "rgba(16,185,129,0.25)", borderRadius: 5, paddingHorizontal: 6, paddingVertical: 2 }}>
+                  <Text style={{ color: "#10b981", fontSize: 11, fontWeight: "800" }}>{item.label}</Text>
+                </View>
+              </View>
+            ))}
+          </View>
+
+          <View style={{ height: 80 }} />
+        </ScrollView>
+      </SafeAreaView>
+    </View>
+  );
+}
+
+// ─── BottomNav ────────────────────────────────────────────────────────────────
+
+type BottomNavTab = "feed" | "account";
+
+type BottomNavProps = {
+  activeTab: BottomNavTab;
+  onTabPress: (tab: BottomNavTab) => void;
+  onUploadPress: () => void;
+};
+
+function BottomNav({ activeTab, onTabPress, onUploadPress }: BottomNavProps) {
+  return (
+    <View
+      pointerEvents="box-none"
+      style={{
+        position: "absolute",
+        bottom: 0,
+        left: 0,
+        right: 0,
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "space-evenly",
+        paddingBottom: 30,
+        paddingTop: 12,
+        backgroundColor: "rgba(0,0,0,0.6)",
+        zIndex: 70,
+      }}
+    >
+      {/* Videos */}
+      <Pressable
+        onPress={() => onTabPress("feed")}
+        style={({ pressed }) => ({ alignItems: "center", gap: 4, paddingHorizontal: 24, opacity: pressed ? 0.6 : 1 })}
+      >
+        <Ionicons name={activeTab === "feed" ? "play-circle" : "play-circle-outline"} size={28} color={activeTab === "feed" ? "#fff" : "rgba(255,255,255,0.5)"} />
+        <Text style={{ color: activeTab === "feed" ? "#fff" : "rgba(255,255,255,0.5)", fontSize: 10, fontWeight: "700" }}>Videos</Text>
+      </Pressable>
+
+      {/* Upload — centre */}
+      <Pressable
+        onPress={onUploadPress}
+        style={({ pressed }) => ({
+          width: 52,
+          height: 52,
+          borderRadius: 14,
+          backgroundColor: "#10b981",
+          alignItems: "center",
+          justifyContent: "center",
+          shadowColor: "#10b981",
+          shadowOffset: { width: 0, height: 4 },
+          shadowOpacity: 0.5,
+          shadowRadius: 8,
+          elevation: 8,
+          opacity: pressed ? 0.75 : 1,
+        })}
+      >
+        <Ionicons name="add" size={30} color="#fff" />
+      </Pressable>
+
+      {/* Account */}
+      <Pressable
+        onPress={() => onTabPress("account")}
+        style={({ pressed }) => ({ alignItems: "center", gap: 4, paddingHorizontal: 24, opacity: pressed ? 0.6 : 1 })}
+      >
+        <Ionicons name={activeTab === "account" ? "person-circle" : "person-circle-outline"} size={28} color={activeTab === "account" ? "#fff" : "rgba(255,255,255,0.5)"} />
+        <Text style={{ color: activeTab === "account" ? "#fff" : "rgba(255,255,255,0.5)", fontSize: 10, fontWeight: "700" }}>Account</Text>
+      </Pressable>
     </View>
   );
 }
@@ -879,6 +1098,7 @@ function Feed({ clips }: { clips: LessonClip[] }) {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [commentsOpen, setCommentsOpen] = useState(false);
   const [uploadOpen, setUploadOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState<"feed" | "account">("feed");
 
   const feedRef = useRef<FlatList<LessonClip>>(null);
 
@@ -956,32 +1176,17 @@ function Feed({ clips }: { clips: LessonClip[] }) {
         viewabilityConfig={VIEWABILITY_CONFIG}
         windowSize={4}
       />
-      {/* Floating upload button */}
-      <View pointerEvents="box-none" style={{ position: "absolute", bottom: 36, left: 0, right: 0, alignItems: "center" }}>
-        <Pressable
-          onPress={() => setUploadOpen(true)}
-          style={({ pressed }) => ({
-            width: 64,
-            height: 64,
-            borderRadius: 32,
-            backgroundColor: "#10b981",
-            alignItems: "center",
-            justifyContent: "center",
-            elevation: 12,
-            shadowColor: "#10b981",
-            shadowOffset: { width: 0, height: 4 },
-            shadowOpacity: 0.6,
-            shadowRadius: 10,
-            opacity: pressed ? 0.8 : 1,
-          })}
-        >
-          <Ionicons name="add" size={34} color="#fff" />
-        </Pressable>
-      </View>
-
       <SettingsPanel isOpen={settingsOpen} onClose={() => setSettingsOpen(false)} />
       <CommentsPanel isOpen={commentsOpen} onClose={() => setCommentsOpen(false)} />
-      <UploadPanel isOpen={uploadOpen} onClose={() => setUploadOpen(false)} />
+      <UploadPanel isOpen={uploadOpen} onClose={() => { setUploadOpen(false); setActiveTab("feed"); }} />
+      {activeTab === "account" && <AccountPage onClose={() => setActiveTab("feed")} />}
+      {!uploadOpen && (
+        <BottomNav
+          activeTab={activeTab}
+          onTabPress={(tab) => { setActiveTab(tab); setUploadOpen(false); }}
+          onUploadPress={() => { if (!uploadOpen) setUploadOpen(true); }}
+        />
+      )}
     </View>
   );
 }
