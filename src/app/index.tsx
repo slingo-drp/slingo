@@ -2,11 +2,13 @@ import type { LessonClip, SelectedWord, SubtitleWord } from "@/lib/lessons";
 import { fetchLessonClips } from "@/lib/lessons";
 import { StatusBar } from "expo-status-bar";
 import { useVideoPlayer, VideoView } from "expo-video";
+import { Ionicons } from "@expo/vector-icons";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
   Pressable,
+  ScrollView,
   Share,
   StyleSheet,
   Text,
@@ -172,108 +174,145 @@ function WordInsightPanel({
 
 // ─── SettingsPanel ───────────────────────────────────────────────────────────
 
+const LEVELS = ["A1", "A2", "B1", "B2", "C1", "C2"];
+const LANGUAGES = ["Spanish", "French", "Portuguese", "Japanese", "German", "Italian", "Mandarin", "Korean"];
+const CONTENT_TYPES = ["Conversation", "News", "Comedy", "Education", "Food & Culture", "Travel", "Music", "Sports", "Documentary", "Lifestyle"];
+const SPEEDS = ["0.75x", "1.0x", "1.25x", "1.5x"];
+const SUBTITLE_SIZES = ["Small", "Medium", "Large"];
+
 type SettingsPanelProps = {
   isOpen: boolean;
   onClose: () => void;
 };
 
 function SettingsPanel({ isOpen, onClose }: SettingsPanelProps) {
+  const [selectedLevels, setSelectedLevels] = useState<string[]>(["A2"]);
+  const [selectedLanguages, setSelectedLanguages] = useState<string[]>(["Spanish"]);
+  const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
+  const [speed, setSpeed] = useState("1.0x");
+  const [subtitleSize, setSubtitleSize] = useState("Medium");
+
   if (!isOpen) return null;
-  
-  const [level, setLevel] = useState("A2");
-  const LEVELS = ["A1", "A2", "B1", "B2", "C1", "C2"];
+
+  const toggleItem = (item: string, selected: string[], setSelected: (v: string[]) => void) => {
+    setSelected(selected.includes(item) ? selected.filter((i) => i !== item) : [...selected, item]);
+  };
+
+  const ChipRow = ({
+    items,
+    selected,
+    onToggle,
+    single = false,
+  }: {
+    items: string[];
+    selected: string[];
+    onToggle: (item: string) => void;
+    single?: boolean;
+  }) => (
+    <View className="flex-row flex-wrap gap-2">
+      {items.map((item) => {
+        const active = single ? selected[0] === item : selected.includes(item);
+        return (
+          <Pressable
+            key={item}
+            onPress={() => single
+              ? onToggle(item)
+              : toggleItem(item, selected, () => {})}
+            onPressIn={() => !single && toggleItem(item, selected, () => {})}
+            className={`rounded-full px-3 py-1.5 ${active ? "bg-emerald-400" : "bg-slate-100 border border-slate-200"}`}
+          >
+            <Text className={`text-sm font-bold ${active ? "text-white" : "text-slate-700"}`}>
+              {item}
+            </Text>
+          </Pressable>
+        );
+      })}
+    </View>
+  );
+
+  const Section = ({ title, children }: { title: string; children: React.ReactNode }) => (
+    <View className="gap-2.5">
+      <Text className="text-xs font-black uppercase tracking-widest text-slate-400">{title}</Text>
+      {children}
+    </View>
+  );
 
   return (
     <View
       pointerEvents="box-none"
-      className="absolute inset-0 z-50 flex-1 items-center justify-center"
+      className="absolute inset-0 z-50 justify-end"
       style={{ elevation: 50 }}
     >
       <Pressable
         onPress={onClose}
-        className="absolute inset-0 bg-black/50"
+        className="absolute inset-0 bg-black/60"
         pointerEvents="auto"
       />
-      <View className="z-50 w-11/12 max-w-sm rounded-lg border border-white/45 bg-slate-50/95 p-5">
-        <View className="mb-4 flex-row items-center justify-between">
-          <Text className="text-2xl font-black text-slate-900">Settings</Text>
+      <View className="z-50 rounded-t-2xl bg-white" style={{ maxHeight: "85%" }}>
+        <View className="items-center pt-3 pb-1">
+          <View className="h-1 w-10 rounded-full bg-slate-300" />
+        </View>
+
+        <View className="flex-row items-center justify-between px-5 pb-3 pt-2">
+          <Text className="text-xl font-black text-slate-900">Filters & Settings</Text>
           <Pressable
             accessibilityLabel="Close settings"
             accessibilityRole="button"
             hitSlop={8}
             onPress={onClose}
-            className="h-8 w-8 items-center justify-center rounded-lg bg-slate-200"
+            className="h-8 w-8 items-center justify-center rounded-full bg-slate-100"
           >
-            <Text className="text-lg font-black leading-none text-slate-800">
-              ×
-            </Text>
+            <Ionicons name="close" size={18} color="#475569" />
           </Pressable>
         </View>
 
-        <View className="gap-4">
-          <View className="gap-2">
-            <Text className="text-sm font-bold text-slate-700">Language</Text>
-            <Pressable className="rounded-lg border border-slate-300 bg-white px-3 py-2">
-              <Text className="text-base text-slate-900">English</Text>
-            </Pressable>
-          </View>
+        <ScrollView className="px-5" contentContainerStyle={{ gap: 24, paddingBottom: 40 }} showsVerticalScrollIndicator={false}>
 
-          <View className="gap-2">
-            <Text className="text-sm font-bold text-slate-700">
-              Level
-            </Text>
-            <View className="rounded-lg border border-slate-300 bg-white px-3 py-2">
-              <View className="flex-row flex-wrap gap-2">
-                {LEVELS.map((l) => (
-                  <Pressable
-                    key={l}
-                    onPress={() => setLevel(l)}
-                    className={`rounded px-3 py-2 ${
-                      level === l
-                        ? "bg-emerald-400"
-                        : "bg-slate-200"
-                    }`}
-                  >
-                    <Text
-                      className={`font-semibold ${
-                        level === l
-                          ? "text-white"
-                          : "text-slate-900"
-                      }`}
-                    >
-                      {l}
-                    </Text>
-                  </Pressable>
-                ))}
-              </View>
-            </View>
-          </View>
+          <Section title="Language">
+            <ChipRow
+              items={LANGUAGES}
+              selected={selectedLanguages}
+              onToggle={(item) => toggleItem(item, selectedLanguages, setSelectedLanguages)}
+            />
+          </Section>
 
-          <View className="gap-2">
-            <Text className="text-sm font-bold text-slate-700">
-              Video Playback Speed
-            </Text>
-            <Pressable className="rounded-lg border border-slate-300 bg-white px-3 py-2">
-              <Text className="text-base text-slate-900">1.0x</Text>
-            </Pressable>
-          </View>
+          <Section title="Level">
+            <ChipRow
+              items={LEVELS}
+              selected={selectedLevels}
+              onToggle={(item) => toggleItem(item, selectedLevels, setSelectedLevels)}
+            />
+          </Section>
 
-          <View className="gap-2">
-            <Text className="text-sm font-bold text-slate-700">
-              Subtitle Size
-            </Text>
-            <Pressable className="rounded-lg border border-slate-300 bg-white px-3 py-2">
-              <Text className="text-base text-slate-900">Medium</Text>
-            </Pressable>
-          </View>
+          <Section title="Content Type">
+            <ChipRow
+              items={CONTENT_TYPES}
+              selected={selectedTypes}
+              onToggle={(item) => toggleItem(item, selectedTypes, setSelectedTypes)}
+            />
+          </Section>
 
-          <View className="gap-2">
-            <Text className="text-sm font-bold text-slate-700">Version</Text>
-              <Text className="text-base text-slate-900">
-                Slingo v0.1.0
-              </Text>
-          </View>
-        </View>
+          <Section title="Playback Speed">
+            <ChipRow
+              items={SPEEDS}
+              selected={[speed]}
+              onToggle={setSpeed}
+              single
+            />
+          </Section>
+
+          <Section title="Subtitle Size">
+            <ChipRow
+              items={SUBTITLE_SIZES}
+              selected={[subtitleSize]}
+              onToggle={setSubtitleSize}
+              single
+            />
+          </Section>
+
+          <Text className="text-xs text-slate-400 text-center">Slingo v0.1.0</Text>
+
+        </ScrollView>
       </View>
     </View>
   );
