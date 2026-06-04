@@ -8,7 +8,7 @@ import {
   type ViewToken,
 } from "react-native";
 import LessonClipCard from "./LessonClipCard";
-import SettingsPanel from "./SetttingsPanel";
+import SettingsPanel from "./SettingsPanel";
 
 const createFeedClips = (clips: LessonClip[]) =>
   Array.from({ length: FEED_REPEAT_COUNT }, (_, batchIndex) =>

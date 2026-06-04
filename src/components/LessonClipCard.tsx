@@ -8,6 +8,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Share, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import ClipActions from "./ClipActions";
+import ClipInfo from "./ClipInfo";
 import LessonVideo from "./LessonVideo";
 import SubtitleLine from "./SubtitleLine";
 import WordInsightPanel from "./WordInsightPanel";
@@ -130,30 +131,7 @@ export default function LessonClipCard({
           </View>
         )}
 
-        <View
-          pointerEvents="none"
-          className="z-10 mt-auto pb-8 pr-16"
-          style={{ elevation: 2 }}
-        >
-          <Text className="mb-2 text-base font-extrabold text-white">
-            {clip.creator}
-          </Text>
-          <Text className="mb-1 text-3xl font-black text-white">
-            {clip.topic}
-          </Text>
-          <Text className="mb-3.5 text-base leading-relaxed text-white/85">
-            {clip.caption}
-          </Text>
-          <View className="mt-3 flex-row items-center gap-2">
-            <Text className="text-sm font-bold text-white/75">
-              {clip.language}
-            </Text>
-            <Text className="text-base font-black text-emerald-400">/</Text>
-            <Text className="text-sm font-bold text-white/75">
-              Tap any subtitle word
-            </Text>
-          </View>
-        </View>
+        <ClipInfo clip={clip} />
       </SafeAreaView>
     </View>
   );
