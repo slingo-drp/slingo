@@ -1,0 +1,45 @@
+import type {
+  LessonClip,
+  SubtitleWord
+} from "@/lib/lessons";
+import {
+  Pressable,
+  Text,
+  View
+} from "react-native";
+
+interface SubtitleLineProps {
+  displayedClip: LessonClip;
+  onWordPress: (word: SubtitleWord, clip: LessonClip) => void;
+}
+
+function SubtitleLine({
+  displayedClip,
+  onWordPress,
+}: SubtitleLineProps) {
+  return (
+    <View className="w-full max-w-sm self-center rounded-lg border border-white/15 bg-slate-950/35 p-3">
+      <View className="flex-row flex-wrap items-center justify-center gap-1.5">
+        {displayedClip.words.map((word, i) => (
+          <Pressable
+            accessibilityLabel={`${word.text}, ${word.role}. Tap for definition and sentence translation.`}
+            accessibilityRole="button"
+            hitSlop={8}
+            key={`${displayedClip.id}-${i}`}
+            onPress={() => onWordPress(word, displayedClip)}
+            className="min-h-10 rounded-lg border border-white/20 bg-white/20 px-2 py-1.5 active:scale-95 active:bg-emerald-400/30"
+          >
+            <Text className="text-lg font-extrabold leading-normal text-white">
+              {word.text}
+            </Text>
+          </Pressable>
+        ))}
+        <Text className="text-xl font-extrabold text-white">
+          {displayedClip.sentence.endsWith(".") ? "." : ""}
+        </Text>
+      </View>
+    </View>
+  );
+}
+
+export default SubtitleLine;
