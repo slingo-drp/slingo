@@ -158,24 +158,19 @@ function SubtitleLine({
 
 type WordInsightPanelProps = {
   selected: SelectedWord | null;
-  bottom: number;
   onDismiss: () => void;
 };
 
 function WordInsightPanel({
   selected,
-  bottom,
   onDismiss,
 }: WordInsightPanelProps) {
   if (!selected) return null;
 
   return (
-    <View
-      pointerEvents="box-none"
-      className="absolute inset-x-0 z-40 items-center px-3"
-      style={{ bottom, elevation: 32 }}
-    >
-      <View className="w-full max-w-sm rounded-lg border border-white/45 bg-slate-50/95 p-3">
+    /* Removed position logic here so it stays in flow with subtitles container */
+    <View className="w-full max-w-sm items-center px-3">
+      <View className="w-full rounded-lg border border-white/45 bg-slate-50/95 p-3">
         <View className="mb-2 flex-row items-center justify-between gap-2.5">
           <Text className="shrink text-2xl font-black text-slate-900">
             {selected.word.text}
@@ -661,23 +656,21 @@ function LessonClipCard({
         />
 
         {subtitlesVisible && displayedClip && (
-          <>
+          /* Wrapped dynamic layout together so flow engine aligns them */
+          <View
+            pointerEvents="box-none"
+            className="absolute inset-x-0 z-30 items-center justify-center px-3"
+            style={{ bottom: subtitleBottom, elevation: 30 }}
+          >
             <WordInsightPanel
-              bottom={subtitleBottom + SUBTITLE_LINE_HEIGHT}
               onDismiss={onDismissWord}
               selected={activeInsight}
             />
-            <View
-              pointerEvents="box-none"
-              className="absolute inset-x-0 z-30 items-center justify-center px-3"
-              style={{ bottom: subtitleBottom, elevation: 30 }}
-            >
-              <SubtitleLine
+            <SubtitleLine
                 displayedClip={displayedClip}
                 onWordPress={onWordPress}
               />
-            </View>
-          </>
+          </View>
         )}
 
         <View
