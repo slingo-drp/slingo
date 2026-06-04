@@ -38,45 +38,6 @@ class StubSentence:
     end_ms: int
     tokens: tuple[StubToken, ...]
 
-
-STUB_SENTENCES: tuple[StubSentence, ...] = (
-    StubSentence(
-        sentence_text="Hola, bienvenido a Slingo.",
-        translation="Hello, welcome to Slingo.",
-        start_ms=0,
-        end_ms=2500,
-        tokens=(
-            StubToken("Hola", "hola", "other", "A common greeting.", "hello"),
-            StubToken(
-                "bienvenido",
-                "bienvenido",
-                "adjective",
-                "Used to welcome someone.",
-                "welcome",
-            ),
-            StubToken("Slingo", "slingo", "noun", "The app name.", "Slingo"),
-        ),
-    ),
-    StubSentence(
-        sentence_text="Este video esta listo para procesarse.",
-        translation="This video is ready to be processed.",
-        start_ms=2500,
-        end_ms=5500,
-        tokens=(
-            StubToken("Este", "este", "other", "Refers to something nearby.", "this"),
-            StubToken("video", "video", "noun", "A recording with moving images.", "video"),
-            StubToken(
-                "listo",
-                "listo",
-                "adjective",
-                "Prepared or ready.",
-                "ready",
-            ),
-        ),
-    ),
-)
-
-
 class VideoIngestionService:
     def __init__(self, supabase: SupabaseClient) -> None:
         self.supabase = supabase
@@ -104,31 +65,6 @@ class VideoIngestionService:
 
         sentence_ids: list[int] = []
         token_ids: list[int] = []
-
-        for stub_sentence in STUB_SENTENCES:
-            sentence = self._insert_one(
-                "sentences",
-                {
-                    "video_id": video["id"],
-                    "sentence_text": stub_sentence.sentence_text,
-                    "translation": stub_sentence.translation,
-                    "start_ms": stub_sentence.start_ms,
-                    "end_ms": stub_sentence.end_ms,
-                },
-            )
-            sentence_ids.append(sentence["id"])
-
-            for stub_token in stub_sentence.tokens:
-                sense_id = self._ensure_word_sense(stub_token, language)
-                token = self._insert_one(
-                    "transcript_tokens",
-                    {
-                        "sentence_id": sentence["id"],
-                        "surface_form": stub_token.surface_form,
-                        "sense_id": sense_id,
-                    },
-                )
-                token_ids.append(token["id"])
 
         return IngestedVideo(
             video_id=video["id"],

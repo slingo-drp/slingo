@@ -61,4 +61,8 @@ def create_video(
         language=payload.language,
         level=payload.level,
     )
-    return AdminVideoCreateResponse.model_validate(ingested)
+    return AdminVideoCreateResponse(
+        video_id=ingested.video_id,
+        sentence_ids=ingested.sentence_ids,
+        token_ids=ingested.token_ids,
+    )
