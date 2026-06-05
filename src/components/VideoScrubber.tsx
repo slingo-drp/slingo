@@ -3,8 +3,10 @@ import { useEventListener } from "expo";
 import type { VideoPlayer } from "expo-video";
 import { useEffect, useRef, useState } from "react";
 import { GestureResponderEvent, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function VideoScrubber({ player }: { player: VideoPlayer }) {
+  const insets = useSafeAreaInsets();
   const [containerWidth, setContainerWidth] = useState(0);
   const [progress, setProgress] = useState(0);
   const isScrubbing = useRef(false);
@@ -39,7 +41,8 @@ export default function VideoScrubber({ player }: { player: VideoPlayer }) {
 
   return (
     <View
-      className="absolute bottom-0 w-full pb-2 pt-6"
+      className="absolute bottom-0 w-full pt-6"
+      style={{ paddingBottom: insets.bottom + 8 }}
       onLayout={(e) => setContainerWidth(e.nativeEvent.layout.width)}
       onStartShouldSetResponder={() => true}
       onMoveShouldSetResponder={() => true}
