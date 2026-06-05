@@ -18,12 +18,14 @@ import {
   Text,
   View,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const { height: SCREEN_HEIGHT } = Dimensions.get("window");
 
 type Props = { isOpen: boolean; onClose: () => void };
 
 export default function SettingsPanel({ isOpen, onClose }: Props) {
+  const insets = useSafeAreaInsets();
   const {
     language,
     level,
@@ -63,7 +65,11 @@ export default function SettingsPanel({ isOpen, onClose }: Props) {
       {/* Body */}
       <ScrollView
         className="px-4"
-        contentContainerStyle={{ gap: 16, paddingTop: 16, paddingBottom: 36 }}
+        contentContainerStyle={{
+          gap: 16,
+          paddingTop: 16,
+          paddingBottom: insets.bottom + 36,
+        }}
         showsVerticalScrollIndicator={false}
       >
         <Section title="Language">

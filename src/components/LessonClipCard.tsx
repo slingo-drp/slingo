@@ -6,7 +6,7 @@ import type {
 } from "@/lib/lessons";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Share, Text, View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import ClipActions from "./ClipActions";
 import ClipInfo from "./ClipInfo";
 import LessonVideo from "./LessonVideo";
@@ -65,6 +65,7 @@ export default function LessonClipCard({
   onDismissWord,
   settingsToggle,
 }: LessonClipCardProps) {
+  const insets = useSafeAreaInsets();
   const [currentTimeSeconds, setCurrentTimeSeconds] = useState(0);
   const activeSentenceIdRef = useRef<number | null>(null);
 
@@ -132,51 +133,53 @@ export default function LessonClipCard({
         isActive={isActive}
         onPlaybackTimeChange={handlePlaybackTimeChange}
       />
-
+      {/* 
       <SafeAreaView
         pointerEvents="box-none"
         className="flex-1 justify-between px-4"
+      > */}
+      {/* Header */}
+      <View className="flex-row items-center justify-between pt-2">
+        <Text className="text-2xl font-extrabold text-white">Slingo</Text>
+
+        <View className="min-w-12 items-center rounded-lg border border-white/25 bg-gray-500/50 px-2.5 py-1.5">
+          <Text className="text-sm font-extrabold text-white">
+            {clip.level}
+          </Text>
+        </View>
+      </View>
+
+      <ClipActions
+        subtitlesVisible={subtitlesVisible}
+        onToggleSubtitles={onToggleSubtitles}
+        onShare={handleShare}
+        settingsToggle={settingsToggle}
+      />
+
+      <View
+        pointerEvents="box-none"
+        className="absolute inset-x-0 bottom-0 gap-3 pl-4 pr-20"
+        style={{ paddingBottom: insets.bottom + 24 }}
       >
-        {/* Header */}
-        <View className="flex-row items-center justify-between pt-2">
-          <Text className="text-2xl font-extrabold text-white">Slingo</Text>
-
-          <View className="min-w-12 items-center rounded-lg border border-white/25 bg-gray-500/50 px-2.5 py-1.5">
-            <Text className="text-sm font-extrabold text-white">
-              {clip.level}
-            </Text>
+        {showSubtitleOverlay && (
+          <View pointerEvents="box-none" className="space-y-2">
+            <WordInsightPanel
+              key={activeInsight?.clip.id}
+              onDismiss={onDismissWord}
+              selected={activeInsight}
+              toggleBookmark={toggleBookmark}
+              bookmarkedWords={bookmarkedWords}
+              
+            />
+            <SubtitleLine
+              displayedClip={displayedClip}
+              onWordPress={onWordPress}
+            />
           </View>
-        </View>
-
-        <ClipActions
-          subtitlesVisible={subtitlesVisible}
-          onToggleSubtitles={onToggleSubtitles}
-          onShare={handleShare}
-          settingsToggle={settingsToggle}
-        />
-
-        <View
-          pointerEvents="box-none"
-          className="absolute inset-x-0 bottom-0 gap-3 pb-6 pl-4 pr-20"
-        >
-          {showSubtitleOverlay && (
-            <View pointerEvents="box-none" className="space-y-2">
-              <WordInsightPanel
-                key={activeInsight?.clip.id}
-                onDismiss={onDismissWord}
-                selected={activeInsight}
-                bookmarkedWords={bookmarkedWords}
-                toggleBookmark={toggleBookmark}
-              />
-              <SubtitleLine
-                displayedClip={displayedClip}
-                onWordPress={onWordPress}
-              />
-            </View>
-          )}
-          <ClipInfo clip={clip} />
-        </View>
-      </SafeAreaView>
+        )}
+        <ClipInfo clip={clip} />
+      </View>
+      {/* </SafeAreaView> */}
     </View>
   );
 }
