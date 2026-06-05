@@ -65,7 +65,6 @@ export default function LessonClipCard({
   onDismissWord,
   settingsToggle,
 }: LessonClipCardProps) {
-  const [liked, setLiked] = useState(false);
   const [currentTimeSeconds, setCurrentTimeSeconds] = useState(0);
   const activeSentenceIdRef = useRef<number | null>(null);
 
@@ -107,8 +106,6 @@ export default function LessonClipCard({
     });
   }, [clip, displayedClip]);
 
-  const handleLikeToggle = useCallback(() => setLiked((prev) => !prev), []);
-
   const showSubtitleOverlay = subtitlesVisible && displayedClip != null;
 
   return (
@@ -139,8 +136,6 @@ export default function LessonClipCard({
           onToggleSubtitles={onToggleSubtitles}
           onShare={handleShare}
           settingsToggle={settingsToggle}
-          liked={liked}
-          onLike={handleLikeToggle}
         />
 
         <View

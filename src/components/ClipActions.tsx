@@ -1,13 +1,24 @@
-import { Ionicons } from "@expo/vector-icons";
+import { Ionicons, MaterialIcons } from "@expo/vector-icons";
+import { useState } from "react";
 import { Pressable, Text, View } from "react-native";
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withSpring,
+} from "react-native-reanimated";
 
 type ClipActionsProps = {
   subtitlesVisible: boolean;
   onToggleSubtitles: () => void;
   onShare: () => void;
   settingsToggle: () => void;
-  liked: boolean;
-  onLike: () => void;
+};
+
+// Boosted shadow for high contrast on light backgrounds
+export const iconDropShadow = {
+  textShadowColor: "rgba(0,0,0,0.8)",
+  textShadowOffset: { width: 0, height: 1 },
+  textShadowRadius: 6,
 };
 
 export default function ClipActions({
@@ -15,100 +26,92 @@ export default function ClipActions({
   onToggleSubtitles,
   onShare,
   settingsToggle,
-  liked,
-  onLike,
 }: ClipActionsProps) {
-  const iconStyle = {
-    textShadowColor: "rgba(0,0,0,0.6)",
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 4,
-  };
-
+  const [liked, setLiked] = useState(false);
   return (
-    <View
-      className="absolute right-3 top-[35%] z-20 items-center gap-6"
-      style={{ elevation: 16 }}
-    >
+    <View className="absolute bottom-32 right-3 z-20 items-center gap-4">
       <ClipActionButton
-        accessibilityLabel={liked ? "Unlike this clip" : "Like this clip"}
+        label="Like"
+        onPress={() => setLiked((prev) => !prev)}
+        accessibilityLabel={liked ? "Like" : "Unlike"}
         icon={
           <Ionicons
-            name={liked ? "heart" : "heart-outline"}
+            name="heart"
             size={32}
             color={liked ? "#34d399" : "white"}
-            style={iconStyle}
+            style={iconDropShadow}
           />
         }
-        label={liked ? "Liked" : "Like"}
-        onPress={onLike}
       />
+
       <ClipActionButton
+        label="Comment"
         accessibilityLabel="Comments"
         icon={
           <Ionicons
-            name="chatbubble-outline"
+            name="chatbubble"
             size={32}
             color="white"
-            style={iconStyle}
+            style={iconDropShadow}
           />
         }
-        label="Comment"
       />
+
       <ClipActionButton
+        label="Save"
         accessibilityLabel="Save this clip"
         icon={
           <Ionicons
-            name="bookmark-outline"
+            name="bookmark"
             size={32}
             color="white"
-            style={iconStyle}
+            style={iconDropShadow}
           />
         }
-        label="Save"
       />
+
       <ClipActionButton
-        accessibilityLabel={
-          subtitlesVisible ? "Hide AI subtitles" : "Show AI subtitles"
-        }
-        icon={
-          <View
-            className={`items-center justify-center rounded border-2 px-1 py-0.5 ${subtitlesVisible ? "border-emerald-400" : "border-white"}`}
-          >
-            <Text
-              className={`text-xs font-black leading-none ${subtitlesVisible ? "text-emerald-400" : "text-white"}`}
-            >
-              CC
-            </Text>
-          </View>
-        }
         label="Subs"
         onPress={onToggleSubtitles}
-      />
-      <ClipActionButton
-        accessibilityLabel="Share this clip"
+        accessibilityLabel={
+          subtitlesVisible ? "Hide subtitles" : "Show subtitles"
+        }
         icon={
-          <Ionicons
-            name="paper-plane-outline"
+          <MaterialIcons
+            name={subtitlesVisible ? "subtitles" : "subtitles-off"}
             size={32}
-            color="white"
-            style={iconStyle}
+            color={subtitlesVisible ? "#34d399" : "white"}
+            style={iconDropShadow}
           />
         }
+      />
+
+      <ClipActionButton
         label="Share"
+        accessibilityLabel="Share this clip"
         onPress={onShare}
-      />
-      <ClipActionButton
-        accessibilityLabel="Open settings"
         icon={
           <Ionicons
-            name="settings-outline"
+            name="arrow-redo"
             size={32}
             color="white"
-            style={iconStyle}
+            style={iconDropShadow}
           />
         }
+      />
+
+      <ClipActionButton
         label="Settings"
+        accessibilityLabel="Open settings"
         onPress={settingsToggle}
+        icon={
+          <Ionicons
+            name="settings"
+            size={32}
+            color="white"
+            style={iconDropShadow}
+          />
+        }
       />
     </View>
   );
@@ -127,22 +130,31 @@ function ClipActionButton({
   onPress,
   accessibilityLabel,
 }: ClipActionButtonProps) {
+  const scale = useSharedValue(1);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.get() }],
+  }));
+
+  const handlePressIn = () => {
+    scale.set(withSpring(0.85, { damping: 16, stiffness: 200 }));
+  };
+
+  const handlePressOut = () => {
+    scale.set(withSpring(1, { damping: 16, stiffness: 200 }));
+  };
+
   return (
     <Pressable
       accessibilityLabel={accessibilityLabel}
       accessibilityRole="button"
       onPress={onPress}
-      className="items-center gap-1 active:opacity-70"
+      onPressIn={handlePressIn}
+      onPressOut={handlePressOut}
+      className="items-center"
     >
-      {icon}
-      <Text
-        className="text-xs font-bold text-white"
-        style={{
-          textShadowColor: "rgba(0,0,0,0.6)",
-          textShadowOffset: { width: 0, height: 1 },
-          textShadowRadius: 3,
-        }}
-      >
+      <Animated.View style={animatedStyle}>{icon}</Animated.View>
+      <Text className="text-xs font-bold text-white" style={iconDropShadow}>
         {label}
       </Text>
     </Pressable>
