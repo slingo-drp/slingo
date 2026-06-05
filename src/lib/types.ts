@@ -7,4 +7,5 @@ export type WordSenseRow = Database["public"]["Tables"]["word_senses"]["Row"];
 
 export type Language = Database["public"]["Enums"]["language"];
 export type Level = Database["public"]["Enums"]["level"];
+export type Domain = Database["public"]["Enums"]["domain"];
 export type Pos = Database["public"]["Enums"]["pos"];

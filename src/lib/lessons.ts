@@ -30,7 +30,8 @@ export type LessonClip = {
   words: SubtitleWord[];
   creator: string;
   topic: string;
-  caption: string;
+  title: string;
+  description: string;
 };
 
 export type SelectedWord = {
@@ -40,9 +41,10 @@ export type SelectedWord = {
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
-const UNKNOWN_CREATOR = "@slingo";
-const FALLBACK_TOPIC = "other";
-const UNTITLED_CAPTION = "Untitled lesson";
+const UNKNOWN_CREATOR = "slingo";
+const FALLBACK_TOPIC = "topic";
+const UNTITLED_DESCRIPTION = "This video does not have a description.";
+const UNTITLED_TITLE = "Untitled Lesson";
 
 // ─── Query ────────────────────────────────────────────────────────────────────
 
@@ -137,7 +139,8 @@ function toClip(video: VideoResult): LessonClip {
     topic: dominantDomain(
       video.sentences.flatMap((sentence) => sentence.transcript_tokens),
     ),
-    caption: video.title || video.description || UNTITLED_CAPTION,
+    title: video.title ?? UNTITLED_TITLE,
+    description: video.description || UNTITLED_DESCRIPTION,
   };
 }
 
