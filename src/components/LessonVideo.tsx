@@ -4,6 +4,7 @@ import { useEventListener } from "expo";
 import { useVideoPlayer, VideoView } from "expo-video";
 import { useEffect, useRef } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
+import VideoScrubber from "./VideoScrubber"; // <-- Import your new component
 
 const PLAYBACK_UPDATE_INTERVAL_SECONDS = 0.1;
 
@@ -63,7 +64,10 @@ export default function LessonVideo({
         player={player}
         style={StyleSheet.absoluteFill}
       />
+
       <Pressable onPress={onPress} style={StyleSheet.absoluteFill} />
+
+      <VideoScrubber player={player} />
     </View>
   );
 }

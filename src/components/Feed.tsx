@@ -1,4 +1,5 @@
 import type { LessonClip, SelectedWord } from "@/lib/lessons";
+import { useScrubStore } from "@/lib/useScrubStore";
 import { StatusBar } from "expo-status-bar";
 import { useCallback, useMemo, useState } from "react";
 import {
@@ -19,6 +20,7 @@ const FEED_REPEAT_COUNT = 120;
 const VIEWABILITY_CONFIG = { itemVisiblePercentThreshold: 70 } as const;
 
 export default function Feed({ clips }: { clips: LessonClip[] }) {
+  const scrollEnabled = useScrubStore((s) => s.scrollEnabled);
   const [height, setHeight] = useState(0);
   const [settingsOpen, setSettingsOpen] = useState(false);
 
@@ -78,6 +80,7 @@ export default function Feed({ clips }: { clips: LessonClip[] }) {
     >
       <StatusBar style="light" />
       <FlatList
+        scrollEnabled={scrollEnabled}
         alwaysBounceVertical={false}
         bounces={false}
         data={feedClips}
