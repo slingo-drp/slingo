@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import type { Domain, Language, Level } from "./types";
+import type { Domain, Language, Level } from "../lib/types";
 
 export const LANGUAGES: readonly Language[] = ["es", "fr", "de", "it", "pt"];
 

@@ -1,5 +1,5 @@
 import type { LessonClip, SelectedWord } from "@/lib/lessons";
-import { useScrubStore } from "@/lib/useScrubStore";
+import { useScrubStore } from "@/store/useScrubStore";
 import { StatusBar } from "expo-status-bar";
 import { useCallback, useMemo, useState } from "react";
 import {

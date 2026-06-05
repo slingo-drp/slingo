@@ -1,5 +1,5 @@
 import type { LessonClip, SubtitleWord } from "@/lib/lessons";
-import { useSettingsStore } from "@/lib/useSettingsStore";
+import { useSettingsStore } from "@/store/useSettingsStore";
 import { Pressable, Text, View } from "react-native";
 
 const WORD_SIZE_CLASSES = {

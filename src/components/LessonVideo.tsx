@@ -1,5 +1,5 @@
 import type { LessonClip } from "@/lib/lessons";
-import { useSettingsStore } from "@/lib/useSettingsStore";
+import { useSettingsStore } from "@/store/useSettingsStore";
 import { useEventListener } from "expo";
 import { useVideoPlayer, VideoView } from "expo-video";
 import { useEffect, useRef } from "react";

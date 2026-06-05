@@ -6,7 +6,7 @@ import {
   SPEEDS,
   SUBTITLE_SIZES,
   useSettingsStore,
-} from "@/lib/useSettingsStore";
+} from "@/store/useSettingsStore";
 import { Ionicons } from "@expo/vector-icons";
 import { useEffect, useState } from "react";
 import {

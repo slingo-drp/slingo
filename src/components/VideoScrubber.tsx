@@ -1,4 +1,4 @@
-import { useScrubStore } from "@/lib/useScrubStore";
+import { useScrubStore } from "@/store/useScrubStore";
 import { useEventListener } from "expo";
 import type { VideoPlayer } from "expo-video";
 import { useEffect, useRef, useState } from "react";
