@@ -6,9 +6,11 @@ import { Animated, Easing, Pressable, Text, View } from "react-native";
 type Props = {
   selected: SelectedWord | null;
   onDismiss: () => void;
+  bookmarkedWords: Set<string>;
+  toggleBookmark: (word: SelectedWord) => void;
 };
 
-export default function WordInsightPanel({ selected, onDismiss }: Props) {
+export default function WordInsightPanel({ selected, onDismiss, bookmarkedWords, toggleBookmark }: Props) {
   const [showTranslation, setShowTranslation] = useState(false);
 
   // We cache the selected word so that when `selected` becomes null,
@@ -19,6 +21,9 @@ export default function WordInsightPanel({ selected, onDismiss }: Props) {
     setActiveData(selected);
   }
 
+  const isBookmarked = bookmarkedWords.has(activeData?.word.text || "");
+
+
   return (
     <FadeInSlideUp visible={!!selected}>
       {activeData && (
@@ -26,6 +31,20 @@ export default function WordInsightPanel({ selected, onDismiss }: Props) {
           <View className="w-full overflow-hidden rounded-xl border border-slate-200/60 bg-slate-50 shadow shadow-slate-900/10">
             <View className="flex-row items-center justify-between border-b border-slate-200/70 bg-white px-3 py-2">
               <View className="flex-row items-center justify-between gap-2">
+                <Pressable
+                  accessibilityLabel={
+                    isBookmarked ? "Bookmarked word" : "Bookmark word"
+                  }
+                  accessibilityRole="button"
+                  hitSlop={8}
+                  onPress={() => toggleBookmark(activeData)}
+                  className="h-8 w-8 items-center justify-center rounded-lg bg-slate-100"
+                >
+                  <Ionicons
+                    name={isBookmarked ? "bookmark" : "bookmark-outline"}
+                    size={20}
+                  />
+                </Pressable>
                 <Text className="text-lg font-black tracking-tight text-slate-900">
                   {activeData.word.text}
                 </Text>

@@ -68,6 +68,10 @@ export default function LessonClipCard({
   const [currentTimeSeconds, setCurrentTimeSeconds] = useState(0);
   const activeSentenceIdRef = useRef<number | null>(null);
 
+  const [bookmarkedWords, setBookmarkedWords] = useState<Set<string>>(
+    new Set(),
+  );
+
   const activeSentence = useMemo(
     () => getActiveSentence(clip.transcript, currentTimeSeconds),
     [clip.transcript, currentTimeSeconds],
@@ -105,6 +109,19 @@ export default function LessonClipCard({
       title: topic,
     });
   }, [clip, displayedClip]);
+
+  
+  const toggleBookmark = (word: SelectedWord) => {
+    setBookmarkedWords((prev) => {
+      const updated = new Set(prev);
+      if (!updated.has(word.word.text)) {
+        // TODO: Implement actual save functionality (e.g., persist to DB)
+        updated.add(word.word.text);
+      }
+      console.log("Bookmarked words:", Array.from(updated));
+      return updated;
+    });
+  };
 
   const showSubtitleOverlay = subtitlesVisible && displayedClip != null;
 
@@ -148,6 +165,8 @@ export default function LessonClipCard({
                 key={activeInsight?.clip.id}
                 onDismiss={onDismissWord}
                 selected={activeInsight}
+                bookmarkedWords={bookmarkedWords}
+                toggleBookmark={toggleBookmark}
               />
               <SubtitleLine
                 displayedClip={displayedClip}
