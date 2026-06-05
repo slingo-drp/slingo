@@ -13,8 +13,32 @@ import LessonVideo from "./LessonVideo";
 import SubtitleLine from "./SubtitleLine";
 import WordInsightPanel from "./WordInsightPanel";
 
-const getSubtitleBottomOffset = (height: number) =>
-  Math.max(188, Math.min(236, height * 0.25));
+// ─── Helpers ────────────────────────────────────────────────────────────────
+
+const getActiveSentence = (
+  transcript: LessonSentence[],
+  currentTimeSeconds: number,
+): LessonSentence | null => {
+  const currentTimeMs = currentTimeSeconds * 1000;
+  return (
+    transcript.find(
+      ({ startMs, endMs }) => startMs <= currentTimeMs && currentTimeMs < endMs,
+    ) ?? null
+  );
+};
+
+const withDisplayedSentence = (
+  clip: LessonClip,
+  { id, sentence, translation, words }: LessonSentence,
+): LessonClip => ({
+  ...clip,
+  id: `${clip.id}-${id}`,
+  sentence,
+  translation,
+  words,
+});
+
+// ─── Types ───────────────────────────────────────────────────────────────────
 
 type LessonClipCardProps = {
   clip: LessonClip;
@@ -28,6 +52,8 @@ type LessonClipCardProps = {
   settingsToggle: () => void;
 };
 
+// ─── Component ───────────────────────────────────────────────────────────────
+
 export default function LessonClipCard({
   clip,
   height,
@@ -39,7 +65,6 @@ export default function LessonClipCard({
   onDismissWord,
   settingsToggle,
 }: LessonClipCardProps) {
-  const subtitleBottom = getSubtitleBottomOffset(height);
   const [liked, setLiked] = useState(false);
   const [currentTimeSeconds, setCurrentTimeSeconds] = useState(0);
   const activeSentenceIdRef = useRef<number | null>(null);
@@ -49,38 +74,42 @@ export default function LessonClipCard({
     [clip.transcript, currentTimeSeconds],
   );
 
+  const displayedClip = useMemo(
+    () => (activeSentence ? withDisplayedSentence(clip, activeSentence) : null),
+    [clip, activeSentence],
+  );
+
+  // Reset tracked sentence when the clip changes
   useEffect(() => {
     activeSentenceIdRef.current = null;
   }, [clip.id]);
 
-  const displayedClip = useMemo(
-    () => (activeSentence ? withDisplayedSentence(clip, activeSentence) : null),
-    [activeSentence, clip],
-  );
-
   const handlePlaybackTimeChange = useCallback(
-    (currentTimeSeconds: number) => {
-      const nextSentence = getActiveSentence(
-        clip.transcript,
-        currentTimeSeconds,
-      );
-      if (activeSentenceIdRef.current !== nextSentence?.id) {
+    (time: number) => {
+      const nextSentence = getActiveSentence(clip.transcript, time);
+
+      if (activeSentenceIdRef.current !== (nextSentence?.id ?? null)) {
         activeSentenceIdRef.current = nextSentence?.id ?? null;
         onDismissWord();
       }
-      setCurrentTimeSeconds(currentTimeSeconds);
+
+      setCurrentTimeSeconds(time);
     },
     [clip.transcript, onDismissWord],
   );
 
-  const handleShare = async () => {
-    const shareClip = displayedClip ?? clip;
+  const handleShare = useCallback(async () => {
+    const { sentence, translation, language, topic } = displayedClip ?? clip;
 
     await Share.share({
-      message: `"${shareClip.sentence}" — ${shareClip.translation ?? ""}\n\nLearn ${shareClip.language} with Slingo!`,
-      title: shareClip.topic,
+      message: `"${sentence}" — ${translation ?? ""}\n\nLearn ${language} with Slingo!`,
+      title: topic,
     });
-  };
+  }, [clip, displayedClip]);
+
+  const handleLikeToggle = useCallback(() => setLiked((prev) => !prev), []);
+
+  const showSubtitleOverlay = subtitlesVisible && displayedClip != null;
 
   return (
     <View className="w-full overflow-hidden bg-slate-900" style={{ height }}>
@@ -89,15 +118,16 @@ export default function LessonClipCard({
         isActive={isActive}
         onPlaybackTimeChange={handlePlaybackTimeChange}
       />
-      <View pointerEvents="none" className="absolute inset-0 bg-black/20" />
 
       <SafeAreaView
         pointerEvents="box-none"
         className="flex-1 justify-between px-4"
       >
+        {/* Header */}
         <View className="flex-row items-center justify-between pt-2">
-          <Text className="text-2xl font-extrabold text-white">Slingo!!</Text>
-          <View className="min-w-12 items-center rounded-lg border border-white/25 bg-white/20 px-2.5 py-1.5">
+          <Text className="text-2xl font-extrabold text-white">Slingo</Text>
+
+          <View className="min-w-12 items-center rounded-lg border border-white/25 bg-gray-500/50 px-2.5 py-1.5">
             <Text className="text-sm font-extrabold text-white">
               {clip.level}
             </Text>
@@ -110,53 +140,29 @@ export default function LessonClipCard({
           onShare={handleShare}
           settingsToggle={settingsToggle}
           liked={liked}
-          onLike={() => setLiked((v) => !v)}
+          onLike={handleLikeToggle}
         />
 
-        {subtitlesVisible && displayedClip && (
-          /* Wrapped dynamic layout together so flow engine aligns them */
-          <View
-            pointerEvents="box-none"
-            className="absolute inset-x-0 z-30 items-center justify-center px-3"
-            style={{ bottom: subtitleBottom, elevation: 30 }}
-          >
-            <WordInsightPanel
-              onDismiss={onDismissWord}
-              selected={activeInsight}
-            />
-            <SubtitleLine
-              displayedClip={displayedClip}
-              onWordPress={onWordPress}
-            />
-          </View>
-        )}
-
-        <ClipInfo clip={clip} />
+        <View
+          pointerEvents="box-none"
+          className="absolute inset-x-0 bottom-0 gap-3 pb-6 pl-4 pr-20"
+        >
+          {showSubtitleOverlay && (
+            <View pointerEvents="box-none" className="space-y-2">
+              <WordInsightPanel
+                key={activeInsight?.clip.id}
+                onDismiss={onDismissWord}
+                selected={activeInsight}
+              />
+              <SubtitleLine
+                displayedClip={displayedClip}
+                onWordPress={onWordPress}
+              />
+            </View>
+          )}
+          <ClipInfo clip={clip} />
+        </View>
       </SafeAreaView>
     </View>
   );
 }
-
-const getActiveSentence = (
-  transcript: LessonSentence[],
-  currentTimeSeconds: number,
-) => {
-  const currentTimeMs = currentTimeSeconds * 1000;
-  return (
-    transcript.find(
-      (sentence) =>
-        sentence.startMs <= currentTimeMs && currentTimeMs < sentence.endMs,
-    ) ?? null
-  );
-};
-
-const withDisplayedSentence = (
-  clip: LessonClip,
-  sentence: LessonSentence,
-): LessonClip => ({
-  ...clip,
-  id: `${clip.id}-${sentence.id}`,
-  sentence: sentence.sentence,
-  translation: sentence.translation,
-  words: sentence.words,
-});

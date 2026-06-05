@@ -1,6 +1,6 @@
 import type { LessonClip, SelectedWord } from "@/lib/lessons";
 import { StatusBar } from "expo-status-bar";
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import {
   FlatList,
   View,
@@ -21,8 +21,6 @@ const VIEWABILITY_CONFIG = { itemVisiblePercentThreshold: 70 } as const;
 export default function Feed({ clips }: { clips: LessonClip[] }) {
   const [height, setHeight] = useState(0);
   const [settingsOpen, setSettingsOpen] = useState(false);
-
-  const feedRef = useRef<FlatList<LessonClip>>(null);
 
   const feedClips = useMemo(() => createFeedClips(clips), [clips]);
   const [activeClipId, setActiveClipId] = useState<string | null>(
@@ -80,7 +78,6 @@ export default function Feed({ clips }: { clips: LessonClip[] }) {
     >
       <StatusBar style="light" />
       <FlatList
-        ref={feedRef}
         alwaysBounceVertical={false}
         bounces={false}
         data={feedClips}
