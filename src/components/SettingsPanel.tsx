@@ -1,3 +1,12 @@
+import {
+  DOMAINS,
+  LANGUAGES,
+  LANGUAGE_NAMES, // <-- Add this import
+  LEVELS,
+  SPEEDS,
+  SUBTITLE_SIZES,
+  useSettingsStore,
+} from "@/lib/useSettingsStore";
 import { Ionicons } from "@expo/vector-icons";
 import { useEffect, useState } from "react";
 import {
@@ -10,44 +19,23 @@ import {
   View,
 } from "react-native";
 
-// ─── Constants ────────────────────────────────────────────────────────────────
-
-const LANGUAGES = [
-  "Spanish",
-  "French",
-  "Portuguese",
-  "Japanese",
-  "German",
-  "Italian",
-  "Mandarin",
-  "Korean",
-];
-const LEVELS = ["A1", "A2", "B1", "B2", "C1", "C2"];
-const CONTENT_TYPES = [
-  "Conversation",
-  "News",
-  "Comedy",
-  "Education",
-  "Travel",
-  "Food & Culture",
-  "Music",
-  "Sports",
-  "Documentary",
-  "Lifestyle",
-];
-const SPEEDS = ["0.75x", "1.0x", "1.25x", "1.5x"];
-const SUBTITLE_SIZES = ["Small", "Medium", "Large"];
-
 const { height: SCREEN_HEIGHT } = Dimensions.get("window");
 
 type Props = { isOpen: boolean; onClose: () => void };
 
 export default function SettingsPanel({ isOpen, onClose }: Props) {
-  const [languages, setLanguages] = useState("Spanish");
-  const [levels, setLevels] = useState("A2");
-  const [types, setTypes] = useState<string[]>([]);
-  const [speed, setSpeed] = useState("1.0x");
-  const [subtitleSize, setSubtitleSize] = useState("Medium");
+  const {
+    language,
+    level,
+    domains,
+    speed,
+    subtitleSize,
+    setLanguage,
+    setLevel,
+    toggleDomain,
+    setSpeed,
+    setSubtitleSize,
+  } = useSettingsStore();
 
   return (
     <SlideInSheet isOpen={isOpen} onClose={onClose}>
@@ -82,9 +70,9 @@ export default function SettingsPanel({ isOpen, onClose }: Props) {
           {LANGUAGES.map((l) => (
             <Chip
               key={l}
-              label={l}
-              active={languages === l}
-              onPress={() => setLanguages(l)}
+              label={LANGUAGE_NAMES[l]} // <-- Translates 'es' to 'Spanish' for the UI
+              active={language === l}
+              onPress={() => setLanguage(l)} // <-- Still passes 'es' back to state/DB
             />
           ))}
         </Section>
@@ -96,8 +84,8 @@ export default function SettingsPanel({ isOpen, onClose }: Props) {
             <Chip
               key={l}
               label={l}
-              active={levels === l}
-              onPress={() => setLevels(l)}
+              active={level === l}
+              onPress={() => setLevel(l)}
             />
           ))}
         </Section>
@@ -105,12 +93,12 @@ export default function SettingsPanel({ isOpen, onClose }: Props) {
         <Divider />
 
         <Section title="Content Type">
-          {CONTENT_TYPES.map((t) => (
+          {DOMAINS.map((d) => (
             <Chip
-              key={t}
-              label={t}
-              active={types.includes(t)}
-              onPress={() => setTypes(toggle(t, types))}
+              key={d}
+              label={d.charAt(0).toUpperCase() + d.slice(1)}
+              active={domains.includes(d)}
+              onPress={() => toggleDomain(d)}
             />
           ))}
         </Section>
@@ -121,7 +109,7 @@ export default function SettingsPanel({ isOpen, onClose }: Props) {
           {SPEEDS.map((s) => (
             <Chip
               key={s}
-              label={s}
+              label={`${s}x`}
               active={speed === s}
               onPress={() => setSpeed(s)}
             />
@@ -191,11 +179,11 @@ function Section({
   );
 }
 
+// ─── Animation Wrapper (SlideInSheet Component remains unchanged below) ────────
+
 function Divider() {
   return <View className="h-px bg-slate-200/80" />;
 }
-
-// ─── Animation Wrapper ────────────────────────────────────────────────────────
 
 function SlideInSheet({
   isOpen,
@@ -265,10 +253,4 @@ function SlideInSheet({
       </Animated.View>
     </View>
   );
-}
-
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
-function toggle(item: string, list: string[]): string[] {
-  return list.includes(item) ? list.filter((i) => i !== item) : [...list, item];
 }
