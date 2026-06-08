@@ -1,7 +1,53 @@
 import "../../global.css";
 
+import { SplashScreenController } from "@/components/splash-screen-controller";
+import { useAuthContext } from "@/hooks/use-auth-context";
+import { createSessionFromUrl } from "@/lib/auth";
+import AuthProvider from "@/providers/auth-provider";
+import { PortalHost } from "@rn-primitives/portal";
+import * as Linking from "expo-linking";
 import { Stack } from "expo-router";
+import { useEffect } from "react";
+import {
+  initialWindowMetrics,
+  SafeAreaProvider,
+} from "react-native-safe-area-context";
+
+function RootNavigator() {
+  const { isLoggedIn, isLoading } = useAuthContext();
+
+  const url = Linking.useLinkingURL();
+
+  useEffect(() => {
+    if (!url) return;
+
+    createSessionFromUrl(url!).catch((err) =>
+      console.error("createSessionFromUrl error:", err),
+    );
+  }, [url]);
+
+  if (isLoading) return null;
+
+  return (
+    <Stack screenOptions={{ headerShown: false, animation: "fade" }}>
+      <Stack.Protected guard={isLoggedIn}>
+        <Stack.Screen name="index" />
+      </Stack.Protected>
+      <Stack.Protected guard={!isLoggedIn}>
+        <Stack.Screen name="(auth)" />
+      </Stack.Protected>
+    </Stack>
+  );
+}
 
 export default function RootLayout() {
-  return <Stack screenOptions={{ headerShown: false }} />;
+  return (
+    <SafeAreaProvider initialMetrics={initialWindowMetrics}>
+      <AuthProvider>
+        <SplashScreenController />
+        <RootNavigator />
+        <PortalHost />
+      </AuthProvider>
+    </SafeAreaProvider>
+  );
 }
