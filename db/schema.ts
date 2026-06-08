@@ -20,7 +20,14 @@ export const posEnum = pgEnum("pos", [
   "other",
 ]);
 
-export const languageEnum = pgEnum("language", ["es", "fr", "de", "it", "pt"]);
+export const languageEnum = pgEnum("language", [
+  "es",
+  "fr",
+  "de",
+  "it",
+  "pt",
+  "ja",
+]);
 
 export const levelEnum = pgEnum("level", ["A1", "A2", "B1", "B2", "C1", "C2"]);
 
