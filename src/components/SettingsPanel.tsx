@@ -7,6 +7,7 @@ import {
   SUBTITLE_SIZES,
   useSettingsStore,
 } from "@/store/useSettingsStore";
+import { supabase } from "@/lib/supabase";
 import { Ionicons } from "@expo/vector-icons";
 import { useEffect, useState } from "react";
 import {
@@ -134,6 +135,16 @@ export default function SettingsPanel({ isOpen, onClose }: Props) {
             />
           ))}
         </Section>
+
+        <Divider />
+
+        {/* Sign Out */}
+        <Pressable
+          onPress={() => supabase.auth.signOut()}
+          className="mt-2 items-center rounded-xl border border-red-200 bg-red-50 py-3 active:bg-red-100"
+        >
+          <Text className="text-sm font-bold text-red-500">Sign Out</Text>
+        </Pressable>
       </ScrollView>
     </SlideInSheet>
   );
