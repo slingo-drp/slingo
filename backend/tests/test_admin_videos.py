@@ -13,7 +13,7 @@ class FakeVideoIngestionService:
     def __init__(self) -> None:
         self.calls: list[dict[str, Any]] = []
 
-    def ingest_stub_video(self, **kwargs: Any) -> IngestedVideo:
+    def ingest_video(self, **kwargs: Any) -> IngestedVideo:
         self.calls.append(kwargs)
         return IngestedVideo(video_id=123, sentence_ids=[10, 11], token_ids=[20, 21])
 
@@ -66,7 +66,7 @@ def test_admin_video_requires_admin_key(client: TestClient) -> None:
 
 def test_admin_video_validates_payload(client: TestClient) -> None:
     payload = valid_payload()
-    payload["language"] = "ja"
+    payload["language"] = "xx" # type: ignore
 
     response = client.post(
         "/admin/videos",
@@ -77,7 +77,7 @@ def test_admin_video_validates_payload(client: TestClient) -> None:
     assert response.status_code == 422
 
 
-def test_admin_video_creates_stub_ingestion(
+def test_admin_video_creates_ingestion(
     client: TestClient,
     fake_service: FakeVideoIngestionService,
 ) -> None:

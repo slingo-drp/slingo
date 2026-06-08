@@ -54,7 +54,7 @@ class SupabaseRestQuery:
         else:
             params = {"select": self.selected_columns}
             for column, value in self.filters:
-                params[column] = f"eq.{quote(str(value), safe='')}"
+                params[column] = f"eq.{str(value)}"
             response = httpx.get(url, headers=self.headers, params=params, timeout=30)
 
         try:

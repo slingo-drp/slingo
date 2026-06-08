@@ -9,7 +9,7 @@ from app.supabase_client import get_supabase_client
 
 router = APIRouter(prefix="/admin", tags=["admin"])
 
-Language = Literal["es", "fr", "de", "it", "pt"]
+Language = Literal["en", "es", "fr", "de", "it", "pt", "nl", "ja"]
 Level = Literal["A1", "A2", "B1", "B2", "C1", "C2"]
 
 
@@ -53,7 +53,7 @@ def create_video(
     payload: AdminVideoCreate,
     service: Annotated[VideoIngestionService, Depends(get_video_ingestion_service)],
 ) -> AdminVideoCreateResponse:
-    ingested = service.ingest_stub_video(
+    ingested = service.ingest_video(
         storage_path=payload.storage_path,
         video_url=str(payload.video_url),
         title=payload.title,
