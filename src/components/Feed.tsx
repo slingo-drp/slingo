@@ -11,9 +11,16 @@ import {
 import LessonClipCard from "./LessonClipCard";
 import SettingsPanel from "./SettingsPanel";
 
-const createFeedClips = (clips: LessonClip[]) =>
+type FeedClip = LessonClip & {
+  feedId: string;
+};
+
+const createFeedClips = (clips: LessonClip[]): FeedClip[] =>
   Array.from({ length: FEED_REPEAT_COUNT }, (_, batchIndex) =>
-    clips.map((clip) => ({ ...clip, id: `${clip.id}-${batchIndex}` })),
+    clips.map((clip) => ({
+      ...clip,
+      feedId: `${clip.id}-${batchIndex}`,
+    })),
   ).flat();
 
 const FEED_REPEAT_COUNT = 120;
@@ -23,11 +30,9 @@ export default function Feed({ clips }: { clips: LessonClip[] }) {
   const scrollEnabled = useScrubStore((s) => s.scrollEnabled);
   const [height, setHeight] = useState(0);
   const [settingsOpen, setSettingsOpen] = useState(false);
-
   const feedClips = useMemo(() => createFeedClips(clips), [clips]);
-  const [activeClipId, setActiveClipId] = useState<string | null>(
-    clips.length > 0 ? `${clips[0].id}-0` : null,
-  );
+  const [activeFeedId, setActiveFeedId] = useState<string | null>(null);
+
   const [selectedWord, setSelectedWord] = useState<SelectedWord | null>(null);
   const [subtitlesVisible, setSubtitlesVisible] = useState(true);
   const dismissWord = useCallback(() => setSelectedWord(null), []);
@@ -44,22 +49,20 @@ export default function Feed({ clips }: { clips: LessonClip[] }) {
   );
 
   const onViewableItemsChanged = useCallback(
-    ({ viewableItems }: { viewableItems: ViewToken<LessonClip>[] }) => {
+    ({ viewableItems }: { viewableItems: ViewToken<FeedClip>[] }) => {
       const visibleClip = viewableItems.find((item) => item.isViewable)?.item;
-      if (visibleClip) setActiveClipId(visibleClip.id);
+      if (visibleClip) setActiveFeedId(visibleClip.feedId);
     },
     [],
   );
 
   const renderItem = useCallback(
-    ({ item }: ListRenderItemInfo<LessonClip>) => (
+    ({ item }: ListRenderItemInfo<FeedClip>) => (
       <LessonClipCard
-        activeInsight={
-          selectedWord?.clip.id.startsWith(`${item.id}-`) ? selectedWord : null
-        }
+        activeInsight={selectedWord?.clip.id === item.id ? selectedWord : null}
         clip={item}
         height={height}
-        isActive={item.id === activeClipId}
+        isActive={item.feedId === activeFeedId}
         onDismissWord={dismissWord}
         onToggleSubtitles={() => {
           setSelectedWord(null);
@@ -70,7 +73,7 @@ export default function Feed({ clips }: { clips: LessonClip[] }) {
         settingsToggle={toggleSettings}
       />
     ),
-    [activeClipId, dismissWord, height, selectedWord, subtitlesVisible],
+    [activeFeedId, dismissWord, height, selectedWord, subtitlesVisible],
   );
 
   return (
@@ -88,7 +91,7 @@ export default function Feed({ clips }: { clips: LessonClip[] }) {
         disableIntervalMomentum
         getItemLayout={getItemLayout}
         initialNumToRender={3}
-        keyExtractor={(item) => item.id}
+        keyExtractor={(item) => item.feedId}
         maxToRenderPerBatch={4}
         onViewableItemsChanged={onViewableItemsChanged}
         overScrollMode="never"

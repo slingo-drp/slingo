@@ -166,3 +166,18 @@ export async function fetchLessonClip(
   const clip = videos[0] ? toClip(videos[0]) : null;
   return clip?.transcript.length ? clip : null;
 }
+
+export async function fetchSharedLessonFeed(
+  videoId: number,
+): Promise<LessonClip[]> {
+  const [sharedClip, allClips] = await Promise.all([
+    fetchLessonClip(videoId),
+    fetchLessonClips(),
+  ]);
+
+  if (!sharedClip) {
+    throw new Error("That shared lesson could not be found.");
+  }
+
+  return [sharedClip, ...allClips.filter((clip) => clip.id !== sharedClip.id)];
+}

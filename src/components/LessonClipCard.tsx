@@ -4,6 +4,7 @@ import type {
   SelectedWord,
   SubtitleWord,
 } from "@/lib/lessons";
+import { languageToFlag } from "@/lib/utils";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Share, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -99,10 +100,20 @@ export default function LessonClipCard({
   );
 
   const handleShare = useCallback(async () => {
-    const { sentence, translation, language, topic } = displayedClip ?? clip;
+    const { title, language, topic } = displayedClip ?? clip;
+    const deepLink = `https://www.doc.ic.ac.uk/~ae924/${clip.id}`;
+
+    const lines = [
+      `🎬 ${title}`,
+      `${languageToFlag(language)} Learn languages through real content on Slingo`,
+      `Watch here: ${deepLink}`,
+    ];
 
     await Share.share({
-      message: `"${sentence}" — ${translation ?? ""}\n\nLearn ${language} with Slingo!`,
+      // Android usually extracts URLs from the message string
+      message: `${lines.join("\n\n")}`,
+      // iOS uses the URL property to make it a distinct, clickable entity
+      url: deepLink,
       title: topic,
     });
   }, [clip, displayedClip]);
