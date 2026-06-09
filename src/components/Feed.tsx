@@ -31,7 +31,9 @@ export default function Feed({ clips }: { clips: LessonClip[] }) {
   const [height, setHeight] = useState(0);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const feedClips = useMemo(() => createFeedClips(clips), [clips]);
-  const [activeFeedId, setActiveFeedId] = useState<string | null>(null);
+  const [activeFeedId, setActiveFeedId] = useState<string | null>(
+    feedClips[0]?.feedId ?? null,
+  );
 
   const [selectedWord, setSelectedWord] = useState<SelectedWord | null>(null);
   const [subtitlesVisible, setSubtitlesVisible] = useState(true);
@@ -90,9 +92,9 @@ export default function Feed({ clips }: { clips: LessonClip[] }) {
         decelerationRate="fast"
         disableIntervalMomentum
         getItemLayout={getItemLayout}
-        initialNumToRender={3}
+        initialNumToRender={1}
         keyExtractor={(item) => item.feedId}
-        maxToRenderPerBatch={4}
+        maxToRenderPerBatch={2}
         onViewableItemsChanged={onViewableItemsChanged}
         overScrollMode="never"
         removeClippedSubviews
@@ -100,7 +102,7 @@ export default function Feed({ clips }: { clips: LessonClip[] }) {
         showsVerticalScrollIndicator={false}
         snapToInterval={height}
         viewabilityConfig={VIEWABILITY_CONFIG}
-        windowSize={4}
+        windowSize={3}
       />
       <SettingsPanel
         isOpen={settingsOpen}
