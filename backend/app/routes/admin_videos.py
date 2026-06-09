@@ -14,7 +14,6 @@ Level = Literal["A1", "A2", "B1", "B2", "C1", "C2"]
 
 
 class AdminVideoCreate(BaseModel):
-    storage_path: str = Field(min_length=1)
     video_url: HttpUrl
     title: str = Field(min_length=1, max_length=160)
     description: str | None = Field(default=None, max_length=500)
@@ -54,7 +53,6 @@ def create_video(
     service: Annotated[VideoIngestionService, Depends(get_video_ingestion_service)],
 ) -> AdminVideoCreateResponse:
     ingested = service.ingest_video(
-        storage_path=payload.storage_path,
         video_url=str(payload.video_url),
         title=payload.title,
         description=payload.description,

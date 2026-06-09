@@ -41,7 +41,6 @@ class VideoIngestionService:
     def ingest_video(
         self,
         *,
-        storage_path: str,
         video_url: str,
         title: str,
         description: str | None,
@@ -55,7 +54,7 @@ class VideoIngestionService:
                 "language": language,
                 "level": level,
                 "title": title,
-                "description": self._with_storage_path(description, storage_path),
+                "description": description
             },
         )
 
@@ -325,8 +324,3 @@ class VideoIngestionService:
         if not data:
             raise RuntimeError(f"Failed to insert row into {table_name}.")
         return data[0]
-
-    @staticmethod
-    def _with_storage_path(description: str | None, storage_path: str) -> str:
-        prefix = f"Storage path: {storage_path}"
-        return f"{description}\n\n{prefix}" if description else prefix
