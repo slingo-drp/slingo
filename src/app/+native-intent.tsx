@@ -18,7 +18,7 @@ function normalizeClipPath(path: string): string | null {
   const url = new URL(trimmedPath);
   const isSupportedHost =
     url.protocol === "slingo:" ||
-    url.hostname === process.env.WEB_SERVER_HOST ||
+    url.hostname === process.env.EXPO_PUBLIC_WEB_SERVER_HOST ||
     url.hostname === "slingo.app";
 
   if (!isSupportedHost || url.search || url.hash) return null;

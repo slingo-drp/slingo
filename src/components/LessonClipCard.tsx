@@ -101,7 +101,7 @@ export default function LessonClipCard({
 
   const handleShare = useCallback(async () => {
     const { title, language, topic } = displayedClip ?? clip;
-    const deepLink = `https://www.doc.ic.ac.uk/~ae924/${clip.id}`;
+    const deepLink = `${process.env.EXPO_PUBLIC_WEB_SERVER_URL}/${clip.id}`;
 
     const lines = [
       `🎬 ${title}`,
