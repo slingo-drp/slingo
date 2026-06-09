@@ -32,6 +32,7 @@ function RootNavigator() {
     <Stack screenOptions={{ headerShown: false, animation: "fade" }}>
       <Stack.Protected guard={isLoggedIn}>
         <Stack.Screen name="index" />
+        <Stack.Screen name="[id]" />
       </Stack.Protected>
       <Stack.Protected guard={!isLoggedIn}>
         <Stack.Screen name="(auth)" />
