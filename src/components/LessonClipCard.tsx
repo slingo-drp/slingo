@@ -127,13 +127,11 @@ export default function LessonClipCard({
         isActive={isActive}
         onPlaybackTimeChange={handlePlaybackTimeChange}
       />
-      {/* 
-      <SafeAreaView
+      <View
         pointerEvents="box-none"
-        className="flex-1 justify-between px-4"
-      > */}
-      {/* Header */}
-      <View className="flex-row items-center justify-between pt-2">
+        className="absolute inset-x-0 top-0 flex-row items-center justify-between px-4"
+        style={{ paddingTop: insets.top + 8 }}
+      >
         <Text className="text-2xl font-extrabold text-white">Slingo</Text>
 
         <View className="min-w-12 items-center rounded-lg border border-white/25 bg-gray-500/50 px-2.5 py-1.5">
