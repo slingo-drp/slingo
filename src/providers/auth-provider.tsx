@@ -1,22 +1,50 @@
 import { AuthContext } from "@/hooks/use-auth-context";
 import { supabase } from "@/lib/supabase";
+import type { Session } from "@supabase/supabase-js";
 import { PropsWithChildren, useEffect, useState } from "react";
 
 export default function AuthProvider({ children }: PropsWithChildren) {
-  const [claims, setClaims] = useState<
-    Record<string, any> | undefined | null
-  >();
+  const [session, setSession] = useState<Session | null | undefined>(undefined);
+  const [claims, setClaims] = useState<Record<string, any> | null>();
   const [profile, setProfile] = useState<any>();
   const [isLoading, setIsLoading] = useState(true);
+  const [isProfileLoading, setIsProfileLoading] = useState(true);
 
-  // Subscribe to auth changes — INITIAL_SESSION fires on setup
-  // to handle session restoration from storage.
   useEffect(() => {
+    let isCancelled = false;
+
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      if (session) {
-        const { data, error } = await supabase.auth.getClaims();
+    } = supabase.auth.onAuthStateChange((_event, nextSession) => {
+      if (isCancelled) return;
+
+      setSession(nextSession);
+      if (!nextSession) {
+        setClaims(null);
+        setProfile(null);
+        setIsProfileLoading(false);
+      } else {
+        setIsProfileLoading(true);
+      }
+      setIsLoading(false);
+    });
+
+    return () => {
+      isCancelled = true;
+      subscription.unsubscribe();
+    };
+  }, []);
+
+  useEffect(() => {
+    let isCancelled = false;
+
+    if (!session) return;
+
+    supabase.auth
+      .getClaims()
+      .then(async ({ data, error }) => {
+        if (isCancelled) return;
+
         if (error) {
           console.error("Error fetching claims:", error);
           if (
@@ -25,41 +53,48 @@ export default function AuthProvider({ children }: PropsWithChildren) {
             await supabase.auth.signOut();
           }
           setClaims(null);
-        } else {
-          setClaims(data?.claims ?? null);
+          setProfile(null);
+          return;
         }
-      } else {
-        setClaims(null);
-      }
-      setIsLoading(false);
-    });
 
-    return () => subscription.unsubscribe();
-  }, []);
+        const nextClaims = data?.claims ?? null;
+        setClaims(nextClaims);
 
-  // Fetch profile whenever claims change
-  useEffect(() => {
-    const fetchProfile = async () => {
-      setIsLoading(true);
-      if (claims) {
-        const { data } = await supabase
+        if (!nextClaims?.sub) {
+          setProfile(null);
+          return;
+        }
+
+        const { data: nextProfile } = await supabase
           .from("profiles")
           .select("*")
-          .eq("id", claims.sub)
+          .eq("id", nextClaims.sub)
           .single();
-        setProfile(data);
-      } else {
-        setProfile(null);
-      }
-      setIsLoading(false);
-    };
 
-    fetchProfile();
-  }, [claims]);
+        if (!isCancelled) {
+          setProfile(nextProfile ?? null);
+        }
+      })
+      .finally(() => {
+        if (!isCancelled) {
+          setIsProfileLoading(false);
+        }
+      });
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [session]);
 
   return (
     <AuthContext.Provider
-      value={{ claims, isLoading, profile, isLoggedIn: !!claims }}
+      value={{
+        claims,
+        isLoading,
+        isLoggedIn: !!session,
+        isProfileLoading,
+        profile,
+      }}
     >
       {children}
     </AuthContext.Provider>
