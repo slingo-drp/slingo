@@ -13,6 +13,7 @@ from app.services.ai_pipeline import (
     transcribe_audio,
 )
 
+WHISPER_MODEL = "large-v3"
 
 class SupabaseTable(Protocol):
     def select(self, columns: str) -> "SupabaseTable": ...
@@ -63,7 +64,7 @@ class VideoIngestionService:
             extract_audio_to_wav(video_url, tmp_wav.name)
             
             print("Transcribing audio...")
-            transcript = transcribe_audio(tmp_wav.name, model_name="small")
+            transcript = transcribe_audio(tmp_wav.name, model_name=WHISPER_MODEL)
 
         print("Loading NLP models...")
         nlp, _ = load_spacy_pipeline(language)
