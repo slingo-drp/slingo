@@ -28,6 +28,7 @@ export const LANGUAGE_NAMES: Record<Language, string> = {
   de: "German",
   it: "Italian",
   pt: "Portuguese",
+  ja: "Japanese",
 };
 
 export const SPEEDS = [0.75, 1.0, 1.25, 1.5] as const;

@@ -62,6 +62,30 @@ export type Database = {
         };
         Relationships: [];
       };
+      profiles: {
+        Row: {
+          avatar_url: string | null;
+          full_name: string | null;
+          id: string;
+          updated_at: string | null;
+          username: string | null;
+        };
+        Insert: {
+          avatar_url?: string | null;
+          full_name?: string | null;
+          id: string;
+          updated_at?: string | null;
+          username?: string | null;
+        };
+        Update: {
+          avatar_url?: string | null;
+          full_name?: string | null;
+          id?: string;
+          updated_at?: string | null;
+          username?: string | null;
+        };
+        Relationships: [];
+      };
       sentences: {
         Row: {
           end_ms: number;
@@ -239,7 +263,7 @@ export type Database = {
         | "entertainment"
         | "everyday"
         | "other";
-      language: "es" | "fr" | "de" | "it" | "pt";
+      language: "es" | "fr" | "de" | "it" | "pt" | "ja";
       level: "A1" | "A2" | "B1" | "B2" | "C1" | "C2";
       pos: "noun" | "verb" | "adjective" | "adverb" | "other";
     };
@@ -388,7 +412,7 @@ export const Constants = {
         "everyday",
         "other",
       ],
-      language: ["es", "fr", "de", "it", "pt"],
+      language: ["es", "fr", "de", "it", "pt", "ja"],
       level: ["A1", "A2", "B1", "B2", "C1", "C2"],
       pos: ["noun", "verb", "adjective", "adverb", "other"],
     },
