@@ -35,7 +35,6 @@ curl -X POST "http://127.0.0.1:8000/admin/videos" \
   -H "Content-Type: application/json" \
   -H "X-Admin-Key: abc123" \
   -d '{
-    "storage_path": "lesson-videos/example.mp4",
     "video_url": "https://example.com/example.mp4",
     "title": "Example lesson",
     "description": "A short admin upload.",
