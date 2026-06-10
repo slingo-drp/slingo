@@ -227,6 +227,18 @@ export async function removeBookmark(wordId: number) {
   }
 }
 
+export async function clearBookmarks() {
+  const userId = await getAuthenticatedUserId();
+  const { error } = await supabase
+    .from("word_bookmarks")
+    .delete()
+    .eq("user_id", userId);
+
+  if (error) {
+    throw new Error(`Failed to clear bookmarks: ${error.message}`);
+  }
+}
+
 export function isWordBookmarked(
   bookmarks: Bookmark[],
   word: LessonSentence["words"][number],

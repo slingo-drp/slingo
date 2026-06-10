@@ -4,6 +4,8 @@ import type { SelectedWord } from "@/lib/lessons";
 
 export type BookmarksContextValue = {
   bookmarks: Bookmark[];
+  clearBookmarks: () => Promise<void>;
+  isClearing: boolean;
   isLoading: boolean;
   saveBookmark: (selectedWord: SelectedWord) => Promise<void>;
   removeBookmark: (wordId: number) => Promise<void>;

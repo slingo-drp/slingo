@@ -1,5 +1,6 @@
 import { BookmarksContext } from "@/hooks/use-bookmarks";
 import {
+  clearBookmarks as deleteAllBookmarks,
   createOptimisticBookmark,
   fetchBookmarks,
   removeBookmark as deleteBookmark,
@@ -19,6 +20,7 @@ import {
 export default function BookmarksProvider({ children }: PropsWithChildren) {
   const { isLoggedIn } = useAuthContext();
   const [bookmarks, setBookmarks] = useState<Bookmark[]>([]);
+  const [isClearing, setIsClearing] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [pendingWordIds, setPendingWordIds] = useState<number[]>([]);
 
@@ -116,9 +118,31 @@ export default function BookmarksProvider({ children }: PropsWithChildren) {
     [trackPendingWord],
   );
 
+  const clearBookmarks = useCallback(async () => {
+    let previousBookmarks: Bookmark[] = [];
+
+    setIsClearing(true);
+    try {
+      setBookmarks((current) => {
+        previousBookmarks = current;
+        return [];
+      });
+
+      await deleteAllBookmarks();
+      setBookmarks([]);
+    } catch (error) {
+      setBookmarks(previousBookmarks);
+      throw error;
+    } finally {
+      setIsClearing(false);
+    }
+  }, []);
+
   const value = useMemo(
     () => ({
       bookmarks,
+      clearBookmarks,
+      isClearing,
       isLoading,
       refresh,
       saveBookmark,
@@ -135,6 +159,8 @@ export default function BookmarksProvider({ children }: PropsWithChildren) {
     }),
     [
       bookmarks,
+      clearBookmarks,
+      isClearing,
       isLoading,
       pendingWordIds,
       refresh,
