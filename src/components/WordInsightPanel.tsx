@@ -54,17 +54,21 @@ export default function WordInsightPanel({ selected, onDismiss }: Props) {
         ? "Update bookmark"
         : "Save bookmark";
 
-  const handleBookmarkPress = async (): Promise<BookmarkFeedback | null> => {
+  const handleBookmarkPress = (): BookmarkFeedback | null => {
     if (!activeData?.word.wordId || bookmarkDisabled || bookmarkPending) {
       return null;
     }
 
     if (isSameBookmarkContext) {
-      await removeBookmark(activeData.word.wordId);
+      removeBookmark(activeData.word.wordId).catch((error) => {
+        console.error("Failed to remove bookmark:", error);
+      });
       return "Removed";
     }
 
-    await saveBookmark(activeData);
+    saveBookmark(activeData).catch((error) => {
+      console.error("Failed to save bookmark:", error);
+    });
     return "Saved";
   };
 
@@ -121,7 +125,7 @@ function Header({
   bookmarkResetKey: string;
   bookmarkSaved: boolean;
   bookmarkUnavailable: boolean;
-  onBookmarkPress: () => Promise<BookmarkFeedback | null>;
+  onBookmarkPress: () => BookmarkFeedback | null;
   onDismiss: () => void;
   role: SelectedWord["word"]["role"];
   word: string;

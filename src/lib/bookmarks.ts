@@ -165,6 +165,33 @@ export function buildLessonLink(videoId: number) {
   return `${process.env.EXPO_PUBLIC_WEB_SERVER_URL}/${videoId}`;
 }
 
+export function createOptimisticBookmark(
+  selectedWord: SelectedWord,
+  existingBookmark?: Bookmark | null,
+): Bookmark {
+  const now = new Date().toISOString();
+
+  return {
+    id: existingBookmark?.id ?? -Date.now(),
+    wordId: selectedWord.word.wordId!,
+    senseId: selectedWord.word.senseId,
+    surfaceForm: selectedWord.word.text,
+    lemma: selectedWord.word.lemma ?? selectedWord.word.text,
+    definition: selectedWord.word.definition,
+    role: selectedWord.word.role,
+    sentenceId: selectedWord.sentence.id,
+    sentence: selectedWord.sentence.sentence,
+    sentenceTranslation: selectedWord.sentence.translation,
+    startMs: selectedWord.sentence.startMs,
+    endMs: selectedWord.sentence.endMs,
+    videoId: selectedWord.clip.videoId,
+    videoTitle: selectedWord.clip.title,
+    videoUrl: selectedWord.clip.videoUrl,
+    createdAt: existingBookmark?.createdAt ?? now,
+    updatedAt: now,
+  };
+}
+
 export async function fetchBookmarks(): Promise<Bookmark[]> {
   const rows = await queryBookmarks();
   return rows.map(mapBookmark);

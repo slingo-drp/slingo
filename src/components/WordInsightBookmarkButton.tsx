@@ -10,7 +10,7 @@ type WordInsightBookmarkButtonProps = {
   disabled: boolean;
   isSaved: boolean;
   unavailable: boolean;
-  onPress: () => Promise<BookmarkFeedback | null>;
+  onPress: () => BookmarkFeedback | null;
 };
 
 const FEEDBACK_STYLES: Record<
@@ -91,15 +91,11 @@ export default function WordInsightBookmarkButton({
   };
 
   const handlePress = () => {
-    onPress()
-      .then((nextFeedback) => {
-        if (nextFeedback) {
-          showFeedback(nextFeedback);
-        }
-      })
-      .catch((error) => {
-        console.error("Failed to update bookmark:", error);
-      });
+    const nextFeedback = onPress();
+
+    if (nextFeedback) {
+      showFeedback(nextFeedback);
+    }
   };
 
   useEffect(() => {

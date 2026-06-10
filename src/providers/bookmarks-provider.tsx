@@ -1,5 +1,6 @@
 import { BookmarksContext } from "@/hooks/use-bookmarks";
 import {
+  createOptimisticBookmark,
   fetchBookmarks,
   removeBookmark as deleteBookmark,
   saveBookmark as persistBookmark,
@@ -63,10 +64,29 @@ export default function BookmarksProvider({ children }: PropsWithChildren) {
       const wordId = selectedWord.word.wordId;
       if (!wordId) return;
 
+      let previousBookmarks: Bookmark[] = [];
       trackPendingWord(wordId, true);
       try {
+        setBookmarks((current) => {
+          previousBookmarks = current;
+          const existingBookmark =
+            current.find((bookmark) => bookmark.wordId === wordId) ?? null;
+          const optimisticBookmark = createOptimisticBookmark(
+            selectedWord,
+            existingBookmark,
+          );
+
+          return [
+            optimisticBookmark,
+            ...current.filter((bookmark) => bookmark.wordId !== wordId),
+          ];
+        });
+
         await persistBookmark(selectedWord);
         setBookmarks(await fetchBookmarks());
+      } catch (error) {
+        setBookmarks(previousBookmarks);
+        throw error;
       } finally {
         trackPendingWord(wordId, false);
       }
@@ -76,10 +96,19 @@ export default function BookmarksProvider({ children }: PropsWithChildren) {
 
   const removeBookmark = useCallback(
     async (wordId: number) => {
+      let previousBookmarks: Bookmark[] = [];
       trackPendingWord(wordId, true);
       try {
+        setBookmarks((current) => {
+          previousBookmarks = current;
+          return current.filter((bookmark) => bookmark.wordId !== wordId);
+        });
+
         await deleteBookmark(wordId);
         setBookmarks(await fetchBookmarks());
+      } catch (error) {
+        setBookmarks(previousBookmarks);
+        throw error;
       } finally {
         trackPendingWord(wordId, false);
       }
