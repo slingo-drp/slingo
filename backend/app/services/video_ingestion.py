@@ -3,7 +3,7 @@ import tempfile
 from dataclasses import dataclass
 from typing import Any, Protocol
 
-from app.services.ai_pipeline import (
+from backend.app.services.ai_pipeline_utils import (
     chat_json,
     clean_gloss,
     extract_audio_to_wav,
