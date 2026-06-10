@@ -1,12 +1,12 @@
 import LessonFeedScreen from "@/components/LessonFeedScreen";
 import { fetchSharedLessonFeed } from "@/lib/lessons";
 import { useLocalSearchParams } from "expo-router";
-import { useCallback, useMemo } from "react";
 import { StatusBar } from "expo-status-bar";
+import { useCallback, useMemo } from "react";
 import { Text, View } from "react-native";
 
-function normalizeRouteParam(id: string | string[] | undefined) {
-  return Array.isArray(id) ? id[0] : id;
+function normalizeRouteParam(value: string | string[] | undefined) {
+  return Array.isArray(value) ? value[0] : value;
 }
 
 function InvalidLessonState({ message }: { message: string }) {
@@ -21,7 +21,7 @@ function InvalidLessonState({ message }: { message: string }) {
   );
 }
 
-export default function ClipRoute() {
+export default function LessonInTabsRoute() {
   const params = useLocalSearchParams<{
     id?: string | string[];
     t?: string | string[];
@@ -32,6 +32,7 @@ export default function ClipRoute() {
   const numericClipId = useMemo(() => {
     return clipId && /^\d+$/.test(clipId) ? Number.parseInt(clipId, 10) : null;
   }, [clipId]);
+
   const initialStartMs = useMemo(() => {
     return startMsParam && /^\d+$/.test(startMsParam)
       ? Number.parseInt(startMsParam, 10)
@@ -52,7 +53,7 @@ export default function ClipRoute() {
 
   return (
     <LessonFeedScreen
-      key={`${numericClipId}-${initialStartMs ?? "none"}`}
+      key={`${numericClipId}-${initialStartMs ?? "none"}-tabs`}
       errorTitle="Failed to load lesson"
       initialStartMs={initialStartMs}
       initialVideoId={numericClipId}

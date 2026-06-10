@@ -157,6 +157,62 @@ export const transcriptTokens = pgTable(
   ],
 ).enableRLS();
 
+export const wordBookmarks = pgTable(
+  "word_bookmarks",
+  {
+    id: serial("id").primaryKey(),
+    userId: uuid("user_id").notNull(),
+    wordId: integer("word_id")
+      .notNull()
+      .references(() => words.id),
+    senseId: integer("sense_id").references(() => wordSenses.id),
+    sentenceId: integer("sentence_id")
+      .notNull()
+      .references(() => sentences.id),
+    surfaceForm: text("surface_form").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    foreignKey({
+      columns: [table.userId],
+      foreignColumns: [authUsers.id],
+      name: "word_bookmarks_user_id_auth_users_id_fk",
+    }).onDelete("cascade"),
+
+    unique("word_bookmarks_user_word_unique").on(table.userId, table.wordId),
+
+    pgPolicy("Users can read their own word bookmarks.", {
+      for: "select",
+      to: authenticatedRole,
+      using: sql`${authUid} = ${table.userId}`,
+    }),
+
+    pgPolicy("Users can insert their own word bookmarks.", {
+      for: "insert",
+      to: authenticatedRole,
+      withCheck: sql`${authUid} = ${table.userId}`,
+    }),
+
+    pgPolicy("Users can update their own word bookmarks.", {
+      for: "update",
+      to: authenticatedRole,
+      using: sql`${authUid} = ${table.userId}`,
+      withCheck: sql`${authUid} = ${table.userId}`,
+    }),
+
+    pgPolicy("Users can delete their own word bookmarks.", {
+      for: "delete",
+      to: authenticatedRole,
+      using: sql`${authUid} = ${table.userId}`,
+    }),
+  ],
+).enableRLS();
+
 export const profiles = pgTable(
   "profiles",
   {
