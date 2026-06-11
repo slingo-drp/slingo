@@ -15,9 +15,6 @@ from app.services.ai_pipeline_utils import (
 
 import re
 
-_DUPLICATE_ID_RE = re.compile(r"Key \(id\)=\((\d+)\) already exists\.")
-
-
 WHISPER_MODEL = "large-v2"
 
 class SupabaseTable(Protocol):
@@ -308,19 +305,12 @@ class VideoIngestionService:
             query = query.eq(column, value)
         data = query.execute().data
         return data[0] if data else None
-
+    
     def _insert_one(self, table_name: str, payload: dict[str, Any]) -> dict[str, Any]:
-        try:
-            data = self.supabase.table(table_name).insert(payload).execute().data
-            if not data:
-                raise RuntimeError(f"Failed to insert row into {table_name}.")
-            return data[0]
-        except RuntimeError as exc:
-            message = str(exc)
-            match = _DUPLICATE_ID_RE.search(message)
-            if match:
-                conflict_id = int(match.group(1))
-                existing = self._find_one(table_name, "*", {"id": conflict_id})
-                if existing is not None:
-                    return existing
-            raise
+        data = self.supabase.table(table_name).insert(payload).execute().data
+        if not data:
+            raise RuntimeError(
+                f"Insert into '{table_name}' returned no data. "
+                "Check RLS policies and that the client sends Prefer: return=representation."
+            )
+        return data[0]
