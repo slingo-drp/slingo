@@ -68,11 +68,11 @@ export default function SlideUpSheet({
   if (!shouldRender) return null;
 
   return (
-    <View className="absolute inset-0 justify-end">
+    <View className="absolute inset-0 z-50 justify-end">
       <Pressable className="absolute inset-0 bg-black/55" onPress={onClose} />
       <Animated.View
         className={cn(
-          "rounded-t-[28px] border border-slate-800 bg-slate-950 px-5 pt-4",
+          "z-10 rounded-t-[28px] border border-slate-800 bg-slate-950 px-5 pt-4",
           contentClassName,
         )}
         style={[{ opacity, transform: [{ translateY }] }, contentStyle]}
