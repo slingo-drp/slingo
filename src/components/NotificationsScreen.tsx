@@ -50,6 +50,7 @@ export default function NotificationsScreen() {
   );
   const [pendingProfileIds, setPendingProfileIds] = useState<string[]>([]);
   const hasUsername = !!profile?.username;
+  const trimmedSearchQuery = searchQuery.trim();
   const activeIncomingFriendshipIds = new Set(
     socialState.incomingRequests.map((entry) => entry.friendshipId),
   );
@@ -59,11 +60,15 @@ export default function NotificationsScreen() {
       return;
     }
 
+    if (!trimmedSearchQuery) {
+      return;
+    }
+
     let isCancelled = false;
 
     const timeoutId = setTimeout(() => {
       setIsSearching(true);
-      searchSocialProfiles(searchQuery)
+      searchSocialProfiles(trimmedSearchQuery)
         .then((results) => {
           if (!isCancelled) {
             setSearchResults(results);
@@ -86,7 +91,7 @@ export default function NotificationsScreen() {
       isCancelled = true;
       clearTimeout(timeoutId);
     };
-  }, [activeTab, hasUsername, searchQuery]);
+  }, [activeTab, hasUsername, trimmedSearchQuery]);
 
   async function handleNotificationPress(notification: InboxNotification) {
     if (!notification.isRead) {
@@ -446,6 +451,34 @@ function FriendsTab({
   searchResults: SocialSearchResult[];
   setSearchQuery: (value: string) => void;
 }) {
+  const [connectionsView, setConnectionsView] = useState<
+    "incoming" | "pending" | "friends"
+  >("incoming");
+  const trimmedSearchQuery = searchQuery.trim();
+  const visibleSearchResults = trimmedSearchQuery
+    ? searchResults.filter((entry) => entry.relationshipState !== "friends")
+    : [];
+  const activeConnections =
+    connectionsView === "incoming"
+      ? incomingRequests
+      : connectionsView === "pending"
+        ? outgoingRequests
+        : acceptedFriends;
+  const connectionsActionLabel =
+    connectionsView === "incoming"
+      ? "Accept"
+      : connectionsView === "friends"
+        ? "Remove"
+        : undefined;
+  const connectionsActionVariant =
+    connectionsView === "friends" ? "destructive" : "default";
+  const connectionsEmptyDescription =
+    connectionsView === "incoming"
+      ? "Incoming friend requests will appear here."
+      : connectionsView === "pending"
+        ? "People you add will show up here until they accept."
+        : "Accepted friends appear here and can receive shared lessons.";
+
   return (
     <View className="gap-4">
       {!hasUsername ? (
@@ -493,9 +526,9 @@ function FriendsTab({
             <View className="items-center py-4">
               <ActivityIndicator color="#cbd5e1" />
             </View>
-          ) : searchResults.length > 0 ? (
+          ) : visibleSearchResults.length > 0 ? (
             <View className="gap-2">
-              {searchResults.map((result) => {
+              {visibleSearchResults.map((result) => {
                 const isPending =
                   pendingProfileIds.includes(result.id) ||
                   (result.friendshipId != null &&
@@ -518,39 +551,70 @@ function FriendsTab({
                 );
               })}
             </View>
-          ) : searchQuery.trim() ? (
-            <Text className="text-sm font-semibold text-slate-400">
-              No usernames matched that search.
-            </Text>
-          ) : null}
+          ) : (
+            trimmedSearchQuery && (
+              <Text className="text-sm font-semibold text-slate-400">
+                No new friends matched that search.
+              </Text>
+            )
+          )}
         </View>
       )}
 
-      <ConnectionsSection
-        actionLabel="Accept"
-        entries={incomingRequests}
-        emptyDescription="Incoming friend requests will appear here."
-        onAction={onAcceptIncoming}
-        pendingFriendshipIds={pendingFriendshipIds}
-        title="Incoming requests"
-      />
-      <ConnectionsSection
-        entries={outgoingRequests}
-        emptyDescription="People you add will show up here until they accept."
-        title="Pending"
-      />
-      <ConnectionsSection
-        actionLabel="Remove"
-        actionVariant="destructive"
-        entries={acceptedFriends}
-        emptyDescription="Accepted friends appear here and can receive shared lessons."
-        onAction={(friendshipId, username) => {
-          onRemoveFriend(friendshipId, username);
-          return Promise.resolve();
-        }}
-        pendingFriendshipIds={pendingFriendshipIds}
-        title="Friends"
-      />
+      <View className="gap-3 rounded-3xl border border-slate-800 bg-slate-900 px-4 py-4">
+        <View className="gap-1">
+          <Text className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-500">
+            Connections
+          </Text>
+          <Text className="text-sm font-semibold leading-6 text-slate-300">
+            Switch between incoming requests, pending requests, and accepted
+            friends from one place.
+          </Text>
+        </View>
+
+        <View className="flex-row rounded-2xl border border-slate-800 bg-slate-950 p-1">
+          <SegmentButton
+            active={connectionsView === "incoming"}
+            label={`Incoming${incomingRequests.length ? ` (${incomingRequests.length})` : ""}`}
+            onPress={() => setConnectionsView("incoming")}
+          />
+          <SegmentButton
+            active={connectionsView === "pending"}
+            label={`Pending${outgoingRequests.length ? ` (${outgoingRequests.length})` : ""}`}
+            onPress={() => setConnectionsView("pending")}
+          />
+          <SegmentButton
+            active={connectionsView === "friends"}
+            label={`Friends${acceptedFriends.length ? ` (${acceptedFriends.length})` : ""}`}
+            onPress={() => setConnectionsView("friends")}
+          />
+        </View>
+
+        <ConnectionsSection
+          actionLabel={connectionsActionLabel}
+          actionVariant={connectionsActionVariant}
+          entries={activeConnections}
+          emptyDescription={connectionsEmptyDescription}
+          onAction={
+            connectionsView === "incoming"
+              ? onAcceptIncoming
+              : connectionsView === "friends"
+                ? (friendshipId, username) => {
+                    onRemoveFriend(friendshipId, username);
+                    return Promise.resolve();
+                  }
+                : undefined
+          }
+          pendingFriendshipIds={pendingFriendshipIds}
+          title={
+            connectionsView === "incoming"
+              ? "Incoming requests"
+              : connectionsView === "pending"
+                ? "Pending"
+                : "Friends"
+          }
+        />
+      </View>
 
       {isLoading ? (
         <View className="items-center py-3">
@@ -619,7 +683,7 @@ function ConnectionsSection({
   title: string;
 }) {
   return (
-    <View className="gap-3 rounded-3xl border border-slate-800 bg-slate-900 px-4 py-4">
+    <View className="gap-3">
       <View className="gap-1">
         <Text className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-500">
           {title}
