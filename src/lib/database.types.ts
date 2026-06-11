@@ -14,54 +14,6 @@ export type Database = {
   };
   public: {
     Tables: {
-      lesson_clips: {
-        Row: {
-          attribution: string | null;
-          caption: string;
-          created_at: string;
-          creator: string;
-          generated_by: string | null;
-          id: string;
-          language: string;
-          level: string;
-          sentence: string;
-          topic: string;
-          translation: string;
-          video_url: string;
-          words: Json;
-        };
-        Insert: {
-          attribution?: string | null;
-          caption: string;
-          created_at?: string;
-          creator: string;
-          generated_by?: string | null;
-          id: string;
-          language: string;
-          level: string;
-          sentence: string;
-          topic: string;
-          translation: string;
-          video_url: string;
-          words?: Json;
-        };
-        Update: {
-          attribution?: string | null;
-          caption?: string;
-          created_at?: string;
-          creator?: string;
-          generated_by?: string | null;
-          id?: string;
-          language?: string;
-          level?: string;
-          sentence?: string;
-          topic?: string;
-          translation?: string;
-          video_url?: string;
-          words?: Json;
-        };
-        Relationships: [];
-      };
       profiles: {
         Row: {
           avatar_url: string | null;
@@ -73,7 +25,7 @@ export type Database = {
         Insert: {
           avatar_url?: string | null;
           full_name?: string | null;
-          id: string;
+          id?: string;
           updated_at?: string | null;
           username?: string | null;
         };
@@ -186,6 +138,61 @@ export type Database = {
           video_url?: string;
         };
         Relationships: [];
+      };
+      word_bookmarks: {
+        Row: {
+          created_at: string;
+          id: number;
+          sense_id: number | null;
+          sentence_id: number;
+          surface_form: string;
+          updated_at: string;
+          user_id: string;
+          word_id: number;
+        };
+        Insert: {
+          created_at?: string;
+          id?: number;
+          sense_id?: number | null;
+          sentence_id: number;
+          surface_form: string;
+          updated_at?: string;
+          user_id: string;
+          word_id: number;
+        };
+        Update: {
+          created_at?: string;
+          id?: number;
+          sense_id?: number | null;
+          sentence_id?: number;
+          surface_form?: string;
+          updated_at?: string;
+          user_id?: string;
+          word_id?: number;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "word_bookmarks_sense_id_word_senses_id_fk";
+            columns: ["sense_id"];
+            isOneToOne: false;
+            referencedRelation: "word_senses";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "word_bookmarks_sentence_id_sentences_id_fk";
+            columns: ["sentence_id"];
+            isOneToOne: false;
+            referencedRelation: "sentences";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "word_bookmarks_word_id_words_id_fk";
+            columns: ["word_id"];
+            isOneToOne: false;
+            referencedRelation: "words";
+            referencedColumns: ["id"];
+          },
+        ];
       };
       word_senses: {
         Row: {

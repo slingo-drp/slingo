@@ -10,10 +10,12 @@ const PLAYBACK_UPDATE_INTERVAL_SECONDS = 0.1;
 
 export default function LessonVideo({
   clip,
+  initialSeekMs,
   isActive,
   onPlaybackTimeChange,
 }: {
   clip: LessonClip;
+  initialSeekMs: number | null;
   isActive: boolean;
   onPlaybackTimeChange: (currentTimeSeconds: number) => void;
 }) {
@@ -27,10 +29,15 @@ export default function LessonVideo({
   });
 
   const playerRef = useRef(player);
+  const hasAppliedInitialSeekRef = useRef(false);
 
   useEffect(() => {
     playerRef.current = player;
   }, [player]);
+
+  useEffect(() => {
+    hasAppliedInitialSeekRef.current = false;
+  }, [clip.videoId, initialSeekMs]);
 
   useEffect(() => {
     playerRef.current.playbackRate = speed;
@@ -48,12 +55,17 @@ export default function LessonVideo({
   });
 
   useEventListener(player, "sourceLoad", () => {
-    onPlaybackTimeChange(player.currentTime);
+    if (initialSeekMs != null && !hasAppliedInitialSeekRef.current) {
+      playerRef.current.currentTime = initialSeekMs / 1000;
+      hasAppliedInitialSeekRef.current = true;
+    }
+
+    onPlaybackTimeChange(playerRef.current.currentTime);
   });
 
   const onPress = () => {
-    if (player.playing) player.pause();
-    else player.play();
+    if (playerRef.current.playing) playerRef.current.pause();
+    else playerRef.current.play();
   };
 
   return (

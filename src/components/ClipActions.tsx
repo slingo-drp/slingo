@@ -1,4 +1,5 @@
 import { Ionicons, MaterialIcons } from "@expo/vector-icons";
+import type { ReactNode } from "react";
 import { useState } from "react";
 import { Pressable, Text, View } from "react-native";
 import Animated, {
@@ -11,7 +12,6 @@ type ClipActionsProps = {
   subtitlesVisible: boolean;
   onToggleSubtitles: () => void;
   onShare: () => void;
-  settingsToggle: () => void;
 };
 
 // Boosted shadow for high contrast on light backgrounds
@@ -25,7 +25,6 @@ export default function ClipActions({
   subtitlesVisible,
   onToggleSubtitles,
   onShare,
-  settingsToggle,
 }: ClipActionsProps) {
   const [liked, setLiked] = useState(false);
   return (
@@ -99,26 +98,12 @@ export default function ClipActions({
           />
         }
       />
-
-      <ClipActionButton
-        label="Settings"
-        accessibilityLabel="Open settings"
-        onPress={settingsToggle}
-        icon={
-          <Ionicons
-            name="settings"
-            size={32}
-            color="white"
-            style={iconDropShadow}
-          />
-        }
-      />
     </View>
   );
 }
 
 type ClipActionButtonProps = {
-  icon: React.ReactNode;
+  icon: ReactNode;
   label: string;
   onPress?: () => void;
   accessibilityLabel?: string;

@@ -8,6 +8,8 @@ type LessonFeedScreenProps = {
   loadClips: () => Promise<LessonClip[]>;
   loadingMessage: string;
   errorTitle: string;
+  initialStartMs?: number | null;
+  initialVideoId?: number | null;
 };
 
 type LoadState =
@@ -19,6 +21,8 @@ export default function LessonFeedScreen({
   loadClips,
   loadingMessage,
   errorTitle,
+  initialStartMs = null,
+  initialVideoId = null,
 }: LessonFeedScreenProps) {
   const [loadState, setLoadState] = useState<LoadState>({ status: "loading" });
 
@@ -66,7 +70,13 @@ export default function LessonFeedScreen({
     );
   }
 
-  return <Feed clips={loadState.clips} />;
+  return (
+    <Feed
+      clips={loadState.clips}
+      initialStartMs={initialStartMs}
+      initialVideoId={initialVideoId}
+    />
+  );
 }
 
 function CenteredState({
