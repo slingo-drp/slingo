@@ -1,5 +1,4 @@
 import { useScrubStore } from "@/store/useScrubStore";
-import { useSegments } from "expo-router";
 import { useEventListener } from "expo";
 import type { VideoPlayer } from "expo-video";
 import { useEffect, useRef, useState } from "react";
@@ -8,7 +7,6 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function VideoScrubber({ player }: { player: VideoPlayer }) {
   const insets = useSafeAreaInsets();
-  const segments = useSegments();
   const [containerWidth, setContainerWidth] = useState(0);
   const [progress, setProgress] = useState(0);
   const isScrubbing = useRef(false);
@@ -41,13 +39,10 @@ export default function VideoScrubber({ player }: { player: VideoPlayer }) {
     seekRef.current(percentage);
   };
 
-  const isTabbedRoute = segments[0] === "(tabs)";
-  const bottomOffset = isTabbedRoute ? 0 : insets.bottom + 8;
-
   return (
     <View
-      className="absolute inset-x-0 h-6 justify-end"
-      style={{ bottom: bottomOffset }}
+      className="absolute bottom-0 w-full pt-6"
+      style={{ paddingBottom: insets.bottom + 8 }}
       onLayout={(e) => setContainerWidth(e.nativeEvent.layout.width)}
       onStartShouldSetResponder={() => true}
       onMoveShouldSetResponder={() => true}

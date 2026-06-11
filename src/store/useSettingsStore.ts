@@ -1,14 +1,7 @@
 import { create } from "zustand";
 import type { Domain, Language, Level } from "../lib/types";
 
-export const LANGUAGES: readonly Language[] = [
-  "es",
-  "fr",
-  "de",
-  "it",
-  "pt",
-  "ja",
-];
+export const LANGUAGES: readonly Language[] = ["es", "fr", "de", "it", "pt", "ja"];
 
 export const LEVELS: readonly Level[] = ["A1", "A2", "B1", "B2", "C1", "C2"];
 

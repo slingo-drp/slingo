@@ -2,7 +2,7 @@ import LessonFeedScreen from "@/components/LessonFeedScreen";
 import { fetchLessonClips } from "@/lib/lessons";
 import { useCallback } from "react";
 
-export default function LessonsTab() {
+export default function App() {
   const loadClips = useCallback(() => fetchLessonClips(), []);
 
   return (

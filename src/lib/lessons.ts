@@ -8,9 +8,6 @@ export type SubtitleWord = {
   text: string;
   role: WordSenseRow["pos"] | null;
   definition: WordSenseRow["definition"] | null;
-  wordId: number | null;
-  senseId: number | null;
-  lemma: string | null;
 };
 
 export type LessonSentence = {
@@ -24,8 +21,6 @@ export type LessonSentence = {
 
 export type LessonClip = {
   id: string;
-  videoId: number;
-  videoUrl: string;
   source: VideoSource;
   language: VideoRow["language"];
   level: VideoRow["level"];
@@ -42,7 +37,6 @@ export type LessonClip = {
 export type SelectedWord = {
   word: SubtitleWord;
   clip: LessonClip;
-  sentence: LessonSentence;
 };
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -60,7 +54,7 @@ const CLIP_QUERY = `
     id, sentence_text, translation, start_ms, end_ms,
     transcript_tokens (
       id, surface_form,
-      word_senses ( id, pos, definition, domain, word_id, words ( lemma ) )
+      word_senses ( pos, definition, domain )
     )
   )
 ` as const;
@@ -95,15 +89,10 @@ function toSubtitleWord(token: TokenResult): SubtitleWord {
   const sense = Array.isArray(token.word_senses)
     ? token.word_senses[0]
     : token.word_senses;
-  const word = Array.isArray(sense?.words) ? sense.words[0] : sense?.words;
-
   return {
     text: token.surface_form,
     role: sense?.pos ?? null,
     definition: sense?.definition ?? null,
-    wordId: sense?.word_id ?? null,
-    senseId: sense?.id ?? null,
-    lemma: word?.lemma ?? null,
   };
 }
 
@@ -139,8 +128,6 @@ function toClip(video: VideoResult): LessonClip {
 
   return {
     id: `${video.id}`,
-    videoId: video.id,
-    videoUrl: video.video_url,
     source: { uri: video.video_url } as VideoSource,
     language: video.language,
     level: video.level,

@@ -1,6 +1,5 @@
 import type { LessonClip, SelectedWord } from "@/lib/lessons";
 import { useScrubStore } from "@/store/useScrubStore";
-import { useIsFocused } from "expo-router/react-navigation";
 import { StatusBar } from "expo-status-bar";
 import { useCallback, useMemo, useState } from "react";
 import {
@@ -27,29 +26,13 @@ const createFeedClips = (clips: LessonClip[]): FeedClip[] =>
 const FEED_REPEAT_COUNT = 120;
 const VIEWABILITY_CONFIG = { itemVisiblePercentThreshold: 70 } as const;
 
-export default function Feed({
-  clips,
-  initialVideoId = null,
-  initialStartMs = null,
-}: {
-  clips: LessonClip[];
-  initialVideoId?: number | null;
-  initialStartMs?: number | null;
-}) {
-  const isScreenFocused = useIsFocused();
+export default function Feed({ clips }: { clips: LessonClip[] }) {
   const scrollEnabled = useScrubStore((s) => s.scrollEnabled);
   const [height, setHeight] = useState(0);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const feedClips = useMemo(() => createFeedClips(clips), [clips]);
-  const initialFeedId = useMemo(
-    () =>
-      feedClips.find((clip) => clip.videoId === initialVideoId)?.feedId ??
-      feedClips[0]?.feedId ??
-      null,
-    [feedClips, initialVideoId],
-  );
   const [activeFeedId, setActiveFeedId] = useState<string | null>(
-    initialFeedId,
+    feedClips[0]?.feedId ?? null,
   );
 
   const [selectedWord, setSelectedWord] = useState<SelectedWord | null>(null);
@@ -78,35 +61,21 @@ export default function Feed({
   const renderItem = useCallback(
     ({ item }: ListRenderItemInfo<FeedClip>) => (
       <LessonClipCard
-        activeInsight={
-          selectedWord?.clip.videoId === item.videoId ? selectedWord : null
-        }
+        activeInsight={selectedWord?.clip.id === item.id ? selectedWord : null}
         clip={item}
         height={height}
-        initialSeekMs={item.feedId === initialFeedId ? initialStartMs : null}
-        isActive={isScreenFocused && item.feedId === activeFeedId}
+        isActive={item.feedId === activeFeedId}
         onDismissWord={dismissWord}
         onToggleSubtitles={() => {
           setSelectedWord(null);
           setSubtitlesVisible((v) => !v);
         }}
-        onWordPress={(word, clip, sentence) =>
-          setSelectedWord({ word, clip, sentence })
-        }
+        onWordPress={(word, clip) => setSelectedWord({ word, clip })}
         subtitlesVisible={subtitlesVisible}
         settingsToggle={toggleSettings}
       />
     ),
-    [
-      activeFeedId,
-      dismissWord,
-      height,
-      initialFeedId,
-      initialStartMs,
-      isScreenFocused,
-      selectedWord,
-      subtitlesVisible,
-    ],
+    [activeFeedId, dismissWord, height, selectedWord, subtitlesVisible],
   );
 
   return (

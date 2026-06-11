@@ -22,21 +22,12 @@ function InvalidLessonState({ message }: { message: string }) {
 }
 
 export default function ClipRoute() {
-  const params = useLocalSearchParams<{
-    id?: string | string[];
-    t?: string | string[];
-  }>();
+  const params = useLocalSearchParams<{ id?: string | string[] }>();
   const clipId = normalizeRouteParam(params.id);
-  const startMsParam = normalizeRouteParam(params.t);
 
   const numericClipId = useMemo(() => {
     return clipId && /^\d+$/.test(clipId) ? Number.parseInt(clipId, 10) : null;
   }, [clipId]);
-  const initialStartMs = useMemo(() => {
-    return startMsParam && /^\d+$/.test(startMsParam)
-      ? Number.parseInt(startMsParam, 10)
-      : null;
-  }, [startMsParam]);
 
   const loadClips = useCallback(() => {
     if (numericClipId === null) {
@@ -52,10 +43,8 @@ export default function ClipRoute() {
 
   return (
     <LessonFeedScreen
-      key={`${numericClipId}-${initialStartMs ?? "none"}`}
+      key={numericClipId}
       errorTitle="Failed to load lesson"
-      initialStartMs={initialStartMs}
-      initialVideoId={numericClipId}
       loadClips={loadClips}
       loadingMessage="Loading your lesson..."
     />

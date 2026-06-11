@@ -1,4 +1,4 @@
-import type { LessonClip, LessonSentence, SubtitleWord } from "@/lib/lessons";
+import type { LessonClip, SubtitleWord } from "@/lib/lessons";
 import { useSettingsStore } from "@/store/useSettingsStore";
 import { Pressable, Text, View } from "react-native";
 
@@ -8,28 +8,23 @@ const WORD_SIZE_CLASSES = {
   Large: "text-xl",
 };
 interface SubtitleLineProps {
-  clip: LessonClip;
-  sentence: LessonSentence;
-  onWordPress: (
-    word: SubtitleWord,
-    clip: LessonClip,
-    sentence: LessonSentence,
-  ) => void;
+  displayedClip: LessonClip;
+  onWordPress: (word: SubtitleWord, clip: LessonClip) => void;
 }
 
-function SubtitleLine({ clip, sentence, onWordPress }: SubtitleLineProps) {
+function SubtitleLine({ displayedClip, onWordPress }: SubtitleLineProps) {
   const subtitleSize = useSettingsStore((state) => state.subtitleSize);
 
   return (
     <View className="w-full max-w-sm self-center rounded-lg border border-white/15 bg-slate-950/40 p-3">
       <View className="flex-row flex-wrap items-center justify-center gap-1.5">
-        {sentence.words.map((word, i) => (
+        {displayedClip.words.map((word, i) => (
           <Pressable
             accessibilityLabel={`${word.text}, ${word.role}. Tap for definition and sentence translation.`}
             accessibilityRole="button"
             hitSlop={8}
-            key={`${clip.id}-${sentence.id}-${i}`}
-            onPress={() => onWordPress(word, clip, sentence)}
+            key={`${displayedClip.id}-${i}`}
+            onPress={() => onWordPress(word, displayedClip)}
             className="min-h-10 rounded-lg border border-white/20 bg-white/20 px-2 py-1.5 active:scale-95 active:bg-emerald-400/30"
           >
             <Text
