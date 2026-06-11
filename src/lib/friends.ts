@@ -1,4 +1,5 @@
 import { supabase } from "@/lib/supabase";
+import type { Language } from "@/lib/types";
 
 export type FriendshipStatus = "pending" | "accepted" | "declined";
 export type RelationshipState =
@@ -12,6 +13,7 @@ export type SocialSearchResult = {
   username: string;
   fullName: string | null;
   avatarUrl: string | null;
+  learningLanguage: Language | null;
   friendshipId: number | null;
   friendshipStatus: FriendshipStatus | null;
   relationshipState: RelationshipState;
@@ -23,6 +25,7 @@ export type SocialConnection = {
   username: string;
   fullName: string | null;
   avatarUrl: string | null;
+  learningLanguage: Language | null;
   status: FriendshipStatus;
   createdAt: string;
   updatedAt: string;
@@ -48,6 +51,7 @@ type SocialConnectionPayload = {
   username: string;
   full_name: string | null;
   avatar_url: string | null;
+  learning_language: Language | null;
   status: FriendshipStatus;
   created_at: string;
   updated_at: string;
@@ -60,6 +64,7 @@ type SearchSocialProfilesPayload = {
   username: string;
   full_name: string | null;
   avatar_url: string | null;
+  learning_language: Language | null;
   friendship_id: number | null;
   friendship_status: FriendshipStatus | null;
   relationship_state: RelationshipState;
@@ -75,15 +80,39 @@ export async function fetchSocialState(): Promise<SocialState> {
   }
 
   const payload = (data ?? {}) as SocialStatePayload;
+  const acceptedFriends = (payload.accepted_friends ?? []).map(
+    mapSocialConnection,
+  );
+  const incomingRequests = (payload.incoming_requests ?? []).map(
+    mapSocialConnection,
+  );
+  const outgoingRequests = (payload.outgoing_requests ?? []).map(
+    mapSocialConnection,
+  );
+  const learningLanguageMap = await fetchProfileLearningLanguages(
+    [
+      ...acceptedFriends.map((entry) => entry.userId),
+      ...incomingRequests.map((entry) => entry.userId),
+      ...outgoingRequests.map((entry) => entry.userId),
+    ].filter(Boolean),
+  );
 
   return {
-    acceptedFriends: (payload.accepted_friends ?? []).map(mapSocialConnection),
-    incomingRequests: (payload.incoming_requests ?? []).map(
-      mapSocialConnection,
-    ),
-    outgoingRequests: (payload.outgoing_requests ?? []).map(
-      mapSocialConnection,
-    ),
+    acceptedFriends: acceptedFriends.map((entry) => ({
+      ...entry,
+      learningLanguage:
+        learningLanguageMap.get(entry.userId) ?? entry.learningLanguage,
+    })),
+    incomingRequests: incomingRequests.map((entry) => ({
+      ...entry,
+      learningLanguage:
+        learningLanguageMap.get(entry.userId) ?? entry.learningLanguage,
+    })),
+    outgoingRequests: outgoingRequests.map((entry) => ({
+      ...entry,
+      learningLanguage:
+        learningLanguageMap.get(entry.userId) ?? entry.learningLanguage,
+    })),
   };
 }
 
@@ -97,14 +126,32 @@ export async function searchSocialProfiles(query: string, limit = 20) {
     throw error;
   }
 
-  return ((data ?? []) as SearchSocialProfilesPayload[]).map((entry) => ({
+  const results = ((data ?? []) as SearchSocialProfilesPayload[]).map(
+    (entry) => ({
+      id: entry.id,
+      username: entry.username,
+      fullName: entry.full_name,
+      avatarUrl: entry.avatar_url,
+      learningLanguage: entry.learning_language,
+      friendshipId: entry.friendship_id,
+      friendshipStatus: entry.friendship_status,
+      relationshipState: entry.relationship_state,
+    }),
+  );
+  const learningLanguageMap = await fetchProfileLearningLanguages(
+    results.map((entry) => entry.id),
+  );
+
+  return results.map((entry) => ({
     id: entry.id,
     username: entry.username,
-    fullName: entry.full_name,
-    avatarUrl: entry.avatar_url,
-    friendshipId: entry.friendship_id,
-    friendshipStatus: entry.friendship_status,
-    relationshipState: entry.relationship_state,
+    fullName: entry.fullName,
+    avatarUrl: entry.avatarUrl,
+    learningLanguage:
+      learningLanguageMap.get(entry.id) ?? entry.learningLanguage,
+    friendshipId: entry.friendshipId,
+    friendshipStatus: entry.friendshipStatus,
+    relationshipState: entry.relationshipState,
   }));
 }
 
@@ -198,10 +245,34 @@ function mapSocialConnection(entry: SocialConnectionPayload): SocialConnection {
     username: entry.username,
     fullName: entry.full_name,
     avatarUrl: entry.avatar_url,
+    learningLanguage: entry.learning_language,
     status: entry.status,
     createdAt: entry.created_at,
     updatedAt: entry.updated_at,
     respondedAt: entry.responded_at,
     direction: entry.direction,
   };
+}
+
+async function fetchProfileLearningLanguages(profileIds: string[]) {
+  const uniqueProfileIds = [...new Set(profileIds)];
+
+  if (uniqueProfileIds.length === 0) {
+    return new Map<string, Language | null>();
+  }
+
+  const { data, error } = await supabase
+    .from("profiles")
+    .select("id, learning_language")
+    .in("id", uniqueProfileIds);
+
+  if (error) {
+    throw error;
+  }
+
+  return new Map(
+    ((data ?? []) as { id: string; learning_language: Language | null }[]).map(
+      (entry) => [entry.id, entry.learning_language],
+    ),
+  );
 }

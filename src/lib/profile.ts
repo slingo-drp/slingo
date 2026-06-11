@@ -1,8 +1,13 @@
 import type { Database } from "@/lib/database.types";
+import type { Language } from "@/lib/types";
 import { supabase } from "@/lib/supabase";
 
-export type Profile = Database["public"]["Tables"]["profiles"]["Row"];
-type ProfileUpdate = Database["public"]["Tables"]["profiles"]["Update"];
+export type Profile = Database["public"]["Tables"]["profiles"]["Row"] & {
+  learning_language?: Language | null;
+};
+type ProfileUpdate = Database["public"]["Tables"]["profiles"]["Update"] & {
+  learning_language?: Language | null;
+};
 
 export const AVATAR_BUCKET = "avatars";
 const MICAH_AVATAR_BASE_URL = "https://api.dicebear.com/10.x/micah/svg";
@@ -53,6 +58,7 @@ export function createFallbackProfile(userId: string): Profile {
     avatar_url: buildMicahAvatarUrl(userId),
     full_name: null,
     id: userId,
+    learning_language: null,
     updated_at: null,
     username: null,
   };
@@ -119,7 +125,7 @@ export async function upsertProfile(
     throw error;
   }
 
-  return data;
+  return data as Profile | null;
 }
 
 export async function updateProfile(userId: string, updates: ProfileUpdate) {
@@ -137,7 +143,7 @@ export async function updateProfile(userId: string, updates: ProfileUpdate) {
     throw error;
   }
 
-  return data;
+  return data as Profile | null;
 }
 
 function extractAvatarPath(avatarValue: string) {

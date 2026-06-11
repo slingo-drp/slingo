@@ -1,4 +1,5 @@
 import { ProfileAvatar } from "@/components/ProfileAvatar";
+import { LearningLanguageBadge } from "@/components/LearningLanguageBadge";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -24,7 +25,8 @@ import {
   upsertProfile,
 } from "@/lib/profile";
 import { supabase } from "@/lib/supabase";
-import { cn } from "@/lib/utils";
+import type { Language } from "@/lib/types";
+import { cn, languageToFlag } from "@/lib/utils";
 import {
   DOMAINS,
   LANGUAGES,
@@ -69,6 +71,7 @@ export default function SettingsScreen() {
     setSubtitleSize,
   } = useSettingsStore();
   const [isAvatarUpdating, setIsAvatarUpdating] = useState(false);
+  const [isLanguageSaving, setIsLanguageSaving] = useState(false);
   const [isUsernameSaving, setIsUsernameSaving] = useState(false);
   const [hasEditedUsername, setHasEditedUsername] = useState(false);
   const [usernameDraft, setUsernameDraft] = useState(profile?.username ?? "");
@@ -79,7 +82,15 @@ export default function SettingsScreen() {
   const [optimisticAvatarUri, setOptimisticAvatarUri] = useState<string | null>(
     null,
   );
+  const [feedbackDialog, setFeedbackDialog] = useState<{
+    description: string;
+    title: string;
+  } | null>(null);
   const isMountedRef = useRef(false);
+  const languageSaveRequestIdRef = useRef(0);
+  const committedLanguageRef = useRef<Language | null>(
+    profile?.learning_language ?? null,
+  );
 
   const userId = claims?.sub ?? profile?.id ?? null;
   const userEmail = typeof claims?.email === "string" ? claims.email : null;
@@ -141,6 +152,14 @@ export default function SettingsScreen() {
     };
   }, [immediateAvatarUri, profile?.avatar_url]);
 
+  useEffect(() => {
+    if (!profile?.learning_language) {
+      return;
+    }
+
+    committedLanguageRef.current = profile.learning_language;
+  }, [profile?.learning_language]);
+
   async function saveAvatarUrl(avatarUrl: string) {
     if (!userId) {
       throw new Error("You need to be signed in to update your avatar.");
@@ -200,6 +219,67 @@ export default function SettingsScreen() {
       Alert.alert("Couldn't save username", getUsernameErrorMessage(error));
     } finally {
       setIsUsernameSaving(false);
+    }
+  }
+
+  async function handleSelectLanguage(nextLanguage: Language) {
+    if (nextLanguage === committedLanguageRef.current) {
+      return;
+    }
+
+    const previousLanguage = language;
+    const requestId = languageSaveRequestIdRef.current + 1;
+    languageSaveRequestIdRef.current = requestId;
+    setLanguage(nextLanguage);
+
+    if (!userId) {
+      return;
+    }
+
+    if (isMountedRef.current) {
+      setIsLanguageSaving(true);
+    }
+
+    try {
+      let nextProfile = await updateProfile(userId, {
+        learning_language: nextLanguage,
+      });
+
+      if (!nextProfile) {
+        nextProfile = await upsertProfile(userId, {
+          learning_language: nextLanguage,
+        });
+      }
+
+      if (!nextProfile) {
+        throw new Error(
+          "Your profile row couldn't be created in Supabase. Check that the profile trigger and insert policy were applied, then sign in again.",
+        );
+      }
+
+      if (requestId !== languageSaveRequestIdRef.current) {
+        return;
+      }
+
+      committedLanguageRef.current = nextLanguage;
+      refreshProfile().catch((error) => {
+        console.error("Failed to refresh profile after language save:", error);
+      });
+    } catch (error) {
+      if (requestId !== languageSaveRequestIdRef.current) {
+        return;
+      }
+
+      console.error("Failed to save learning language:", error);
+      setLanguage(committedLanguageRef.current ?? previousLanguage);
+      setFeedbackDialog({
+        description: getLanguageErrorMessage(error),
+        title: "Couldn't save language",
+      });
+    } finally {
+      if (isMountedRef.current) {
+        setIsLanguageSaving(false);
+      }
     }
   }
 
@@ -328,9 +408,16 @@ export default function SettingsScreen() {
             <View className="flex-row items-center gap-4">
               <ProfileAvatar name={profileLabel} size={84} uri={avatarUri} />
               <View className="flex-1 gap-1">
-                <Text className="text-lg font-black text-white">
-                  {profileLabel}
-                </Text>
+                <View className="flex-row items-center gap-2">
+                  <Text className="text-lg font-black text-white">
+                    {profileLabel}
+                  </Text>
+                  <LearningLanguageBadge
+                    className="text-lg"
+                    language={language}
+                    variant="flag"
+                  />
+                </View>
                 <Text className="text-sm font-medium text-slate-400">
                   {userEmail ?? "Signed in"}
                 </Text>
@@ -394,10 +481,24 @@ export default function SettingsScreen() {
             <Chip
               key={entry}
               active={language === entry}
-              label={LANGUAGE_NAMES[entry]}
-              onPress={() => setLanguage(entry)}
+              label={`${languageToFlag(entry)} ${LANGUAGE_NAMES[entry]}`}
+              onPress={() => {
+                handleSelectLanguage(entry).catch((error) => {
+                  console.error("Unexpected language save error:", error);
+                });
+              }}
             />
           ))}
+          <View className="w-full flex-row items-center justify-between gap-2 px-1 pt-1">
+            <Text className="flex-1 text-xs font-semibold leading-5 text-slate-400">
+              This language is visible to friends on your profile cards.
+            </Text>
+            {isLanguageSaving ? (
+              <Text className="text-[11px] font-bold uppercase tracking-[0.14em] text-emerald-300">
+                Saving...
+              </Text>
+            ) : null}
+          </View>
         </SettingsSection>
 
         <SettingsSection
@@ -525,6 +626,32 @@ export default function SettingsScreen() {
           <Text className="text-sm font-bold text-red-300">Sign Out</Text>
         </Pressable>
       </ScrollView>
+
+      <AlertDialog
+        open={feedbackDialog != null}
+        onOpenChange={(open) => {
+          if (!open) {
+            setFeedbackDialog(null);
+          }
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{feedbackDialog?.title}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {feedbackDialog?.description}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+
+          <AlertDialogFooter>
+            <AlertDialogAction onPress={() => setFeedbackDialog(null)}>
+              <UiText className="text-sm font-bold text-primary-foreground">
+                OK
+              </UiText>
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </View>
   );
 }
@@ -647,6 +774,23 @@ function getUsernameErrorMessage(error: unknown) {
     error.code === "23505"
   ) {
     return "That username is already taken.";
+  }
+
+  if (error instanceof Error) {
+    return error.message;
+  }
+
+  return "Please try again.";
+}
+
+function getLanguageErrorMessage(error: unknown) {
+  if (
+    typeof error === "object" &&
+    error !== null &&
+    "code" in error &&
+    error.code === "42501"
+  ) {
+    return "Language updates are blocked by your Supabase profiles policies. Make sure your profile update policy is applied.";
   }
 
   if (error instanceof Error) {

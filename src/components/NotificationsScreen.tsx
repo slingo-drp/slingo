@@ -1,3 +1,4 @@
+import { LearningLanguageBadge } from "@/components/LearningLanguageBadge";
 import { ProfileAvatar } from "@/components/ProfileAvatar";
 import {
   AlertDialog,
@@ -457,10 +458,19 @@ function InboxTab({
 
               <View className="flex-1 gap-2">
                 <View className="gap-1">
-                  <Text className="text-base font-black text-white">
-                    {notificationLabel(notification)}
-                  </Text>
-                  <Text className="text-sm font-semibold leading-6 text-slate-300">
+                  <View className="flex-row flex-wrap items-center gap-1.5">
+                    <Text className="text-base font-black text-white">
+                      {notificationActorLabel(notification)}
+                    </Text>
+                    <LearningLanguageBadge
+                      language={notification.actor.learningLanguage}
+                      variant="flag"
+                    />
+                    <Text className="flex-1 text-sm font-black text-white">
+                      {notificationActionLabel(notification)}
+                    </Text>
+                  </View>
+                  <Text className="text-xs font-semibold leading-6 text-slate-300">
                     {notificationDescription(notification)}
                   </Text>
                   {notification.type === "video_share" && notification.note ? (
@@ -743,9 +753,15 @@ function FriendSearchRow({
         uri={result.avatarUrl}
       />
       <View className="flex-1 gap-0.5">
-        <Text className="text-base font-black text-white">
-          @{result.username}
-        </Text>
+        <View className="flex-row items-center gap-2">
+          <Text className="text-base font-black text-white">
+            @{result.username}
+          </Text>
+          <LearningLanguageBadge
+            language={result.learningLanguage}
+            variant="flag"
+          />
+        </View>
         <Text className="text-sm font-semibold text-slate-400">
           {result.fullName ?? "Slingo learner"}
         </Text>
@@ -805,9 +821,15 @@ function ConnectionsSection({
             uri={entry.avatarUrl}
           />
           <View className="flex-1 gap-0.5">
-            <Text className="text-base font-black text-white">
-              @{entry.username}
-            </Text>
+            <View className="flex-row items-center gap-2">
+              <Text className="text-base font-black text-white">
+                @{entry.username}
+              </Text>
+              <LearningLanguageBadge
+                language={entry.learningLanguage}
+                variant="flag"
+              />
+            </View>
             <Text className="text-sm font-semibold text-slate-400">
               {entry.fullName ?? "Slingo learner"}
             </Text>
@@ -900,7 +922,7 @@ function SegmentButton({
     >
       <Text
         className={cn(
-          "text-center text-sm font-black",
+          "text-center text-xs font-black",
           active ? "text-emerald-300" : "text-slate-400",
         )}
       >
@@ -934,20 +956,22 @@ function EmptyCard({
   );
 }
 
-function notificationLabel(notification: InboxNotification) {
-  const actorHandle = notification.actor.username
+function notificationActorLabel(notification: InboxNotification) {
+  return notification.actor.username
     ? `@${notification.actor.username}`
     : (notification.actor.fullName ?? "A friend");
+}
 
+function notificationActionLabel(notification: InboxNotification) {
   if (notification.type === "friend_request") {
-    return `${actorHandle} sent you a friend request`;
+    return "sent you a friend request";
   }
 
   if (notification.type === "friend_accept") {
-    return `${actorHandle} accepted your request`;
+    return "accepted your request";
   }
 
-  return `${actorHandle} shared a lesson with you`;
+  return "shared a lesson with you";
 }
 
 function notificationDescription(notification: InboxNotification) {

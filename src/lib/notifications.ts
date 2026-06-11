@@ -1,10 +1,12 @@
 import { supabase } from "@/lib/supabase";
+import type { Language } from "@/lib/types";
 
 export type NotificationActor = {
   id: string;
   username: string | null;
   fullName: string | null;
   avatarUrl: string | null;
+  learningLanguage: Language | null;
 };
 
 export type SharedVideoSummary = {
@@ -89,6 +91,7 @@ type ProfileRowData = {
   username: string | null;
   full_name: string | null;
   avatar_url: string | null;
+  learning_language: Language | null;
 };
 
 const socialSupabase = supabase as any;
@@ -258,7 +261,7 @@ async function fetchProfiles(profileIds: string[]) {
 
   const { data, error } = await supabase
     .from("profiles")
-    .select("id, username, full_name, avatar_url")
+    .select("id, username, full_name, avatar_url, learning_language")
     .in("id", profileIds);
 
   if (error) {
@@ -276,6 +279,7 @@ function toNotificationActor(
     avatarUrl: profile?.avatar_url ?? null,
     fullName: profile?.full_name ?? null,
     id: fallbackId,
+    learningLanguage: profile?.learning_language ?? null,
     username: profile?.username ?? null,
   };
 }

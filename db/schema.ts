@@ -237,6 +237,7 @@ export const profiles = pgTable(
       mode: "date",
     }),
 
+    learningLanguage: languageEnum("learning_language"),
     username: text("username"),
     fullName: text("full_name"),
     avatarUrl: text("avatar_url"),
