@@ -1,5 +1,7 @@
+import { Skeleton } from "@/components/ui/skeleton";
 import { Image } from "expo-image";
-import { Text, View } from "react-native";
+import { useState } from "react";
+import { ActivityIndicator, View } from "react-native";
 
 type ProfileAvatarProps = {
   name?: string | null;
@@ -8,28 +10,59 @@ type ProfileAvatarProps = {
 };
 
 export function ProfileAvatar({ name, size = 80, uri }: ProfileAvatarProps) {
-  const fallbackLabel = (name?.trim().charAt(0) ?? "?").toUpperCase();
-
   return (
     <View
       className="overflow-hidden rounded-full border border-slate-700 bg-slate-800"
       style={{ height: size, width: size }}
     >
       {uri ? (
-        <Image
+        <AvatarImage
+          key={uri}
           accessibilityLabel={name ? `${name} avatar` : "Profile avatar"}
-          contentFit="cover"
-          source={uri}
-          style={{ height: "100%", width: "100%" }}
-          transition={150}
+          size={size}
+          uri={uri}
         />
       ) : (
-        <View className="flex-1 items-center justify-center bg-emerald-500/20">
-          <Text className="text-xl font-black text-emerald-200">
-            {fallbackLabel}
-          </Text>
-        </View>
+        <Skeleton className="h-full w-full rounded-full" />
       )}
+    </View>
+  );
+}
+
+function AvatarImage({
+  accessibilityLabel,
+  size,
+  uri,
+}: {
+  accessibilityLabel: string;
+  size: number;
+  uri: string;
+}) {
+  const [isLoaded, setIsLoaded] = useState(false);
+
+  return (
+    <View className="flex-1">
+      {!isLoaded ? (
+        <View className="absolute inset-0 items-center justify-center">
+          <Skeleton className="absolute inset-0 rounded-full" />
+          <ActivityIndicator color="#cbd5e1" size="small" />
+        </View>
+      ) : null}
+
+      <Image
+        accessibilityLabel={accessibilityLabel}
+        cachePolicy="memory-disk"
+        contentFit="cover"
+        onError={() => {
+          setIsLoaded(false);
+        }}
+        onLoadEnd={() => {
+          setIsLoaded(true);
+        }}
+        source={uri}
+        style={{ height: size, width: size }}
+        transition={150}
+      />
     </View>
   );
 }
