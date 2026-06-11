@@ -1,4 +1,5 @@
 import FadeInSlideUp from "@/components/animated/FadeInSlideUp";
+import PronunciationButton from "@/components/PronunciationButton";
 import WordInsightBookmarkButton from "@/components/WordInsightBookmarkButton";
 import { useBookmarks } from "@/hooks/use-bookmarks";
 import type { SelectedWord } from "@/lib/lessons";
@@ -85,6 +86,9 @@ export default function WordInsightPanel({ selected, onDismiss }: Props) {
               bookmarkSaved={bookmarkSaved}
               onBookmarkPress={handleBookmarkPress}
               onDismiss={onDismiss}
+              pronunciationFallbackText={activeData.word.text}
+              pronunciationLanguage={activeData.clip.language}
+              pronunciationText={activeData.word.lemma ?? activeData.word.text}
               role={activeData.word.role}
               word={activeData.word.text}
             />
@@ -117,6 +121,9 @@ function Header({
   bookmarkUnavailable,
   onBookmarkPress,
   onDismiss,
+  pronunciationFallbackText,
+  pronunciationLanguage,
+  pronunciationText,
   role,
   word,
 }: {
@@ -127,6 +134,9 @@ function Header({
   bookmarkUnavailable: boolean;
   onBookmarkPress: () => BookmarkFeedback | null;
   onDismiss: () => void;
+  pronunciationFallbackText: string;
+  pronunciationLanguage: SelectedWord["clip"]["language"];
+  pronunciationText: string;
   role: SelectedWord["word"]["role"];
   word: string;
 }) {
@@ -146,6 +156,12 @@ function Header({
       </View>
 
       <View className="flex-row items-center gap-2">
+        <PronunciationButton
+          key={`${pronunciationLanguage}-${pronunciationText}`}
+          fallbackText={pronunciationFallbackText}
+          language={pronunciationLanguage}
+          text={pronunciationText}
+        />
         <WordInsightBookmarkButton
           key={bookmarkResetKey}
           accessibilityLabel={bookmarkLabel}

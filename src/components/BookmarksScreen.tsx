@@ -1,4 +1,5 @@
 import SlideUpSheet from "@/components/animated/SlideUpSheet";
+import PronunciationButton from "@/components/PronunciationButton";
 import { useBookmarks } from "@/hooks/use-bookmarks";
 import type { Bookmark } from "@/lib/bookmarks";
 import { Ionicons } from "@expo/vector-icons";
@@ -183,6 +184,13 @@ function BookmarkDetailSheet({
           <Text className="text-sm font-semibold leading-6 text-slate-300">
             {bookmark.definition ?? "Definition unavailable."}
           </Text>
+          <PronunciationButton
+            key={`${bookmark.language}-${bookmark.lemma}`}
+            fallbackText={bookmark.surfaceForm}
+            language={bookmark.language}
+            text={bookmark.lemma}
+            variant="pill"
+          />
         </View>
 
         <Pressable

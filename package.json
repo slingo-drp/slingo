@@ -20,6 +20,7 @@
     "dotenv": "^17.4.2",
     "drizzle-orm": "^0.45.2",
     "expo": "~56.0.5",
+    "expo-audio": "~56.0.12",
     "expo-auth-session": "~56.0.13",
     "expo-constants": "~56.0.16",
     "expo-dev-client": "~56.0.16",
