@@ -13,7 +13,13 @@ import {
 import { Text as UiText } from "@/components/ui/text";
 import { useAuthContext } from "@/hooks/use-auth-context";
 import { useBookmarks } from "@/hooks/use-bookmarks";
-import { resolveAvatarUrl, updateProfile, upsertProfile } from "@/lib/profile";
+import {
+  AVATAR_BUCKET,
+  getAvatarStoragePath,
+  resolveAvatarUrl,
+  updateProfile,
+  upsertProfile,
+} from "@/lib/profile";
 import { supabase } from "@/lib/supabase";
 import { cn } from "@/lib/utils";
 import {
@@ -25,8 +31,8 @@ import {
   SUBTITLE_SIZES,
   useSettingsStore,
 } from "@/store/useSettingsStore";
-import type { ImagePickerAsset } from "expo-image-picker";
 import * as ImagePicker from "expo-image-picker";
+import { ImageManipulator, SaveFormat } from "expo-image-manipulator";
 import { StatusBar } from "expo-status-bar";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import {
@@ -38,6 +44,9 @@ import {
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+
+const AVATAR_UPLOAD_SIZE = 512;
+const AVATAR_UPLOAD_QUALITY = 0.72;
 
 export default function SettingsScreen() {
   const insets = useSafeAreaInsets();
@@ -168,7 +177,6 @@ export default function SettingsScreen() {
       const result = await ImagePicker.launchImageLibraryAsync({
         allowsEditing: true,
         aspect: [1, 1],
-        base64: Platform.OS !== "web",
         mediaTypes: ["images"],
         quality: 0.8,
         selectionLimit: 1,
@@ -179,24 +187,22 @@ export default function SettingsScreen() {
       }
 
       const asset = result.assets[0];
+      const previousAvatarPath = getAvatarStoragePath(profile?.avatar_url);
+      const processedAvatar = await prepareAvatarAsset(asset.uri);
+
       if (isMountedRef.current) {
-        setOptimisticAvatarUri(asset.uri);
+        setOptimisticAvatarUri(processedAvatar.uri);
       }
-      const contentType = asset.file?.type ?? "image/jpeg";
-      const avatarPath = `${userId}/${Date.now()}.${getFileExtension(
-        asset,
-        contentType,
-        Boolean(asset.file),
-      )}`;
-      const fileBody = asset.file
-        ? asset.file
-        : decodeBase64Image(asset.base64);
+      const avatarPath = `${userId}/current.jpg`;
+      const fileBody = await fetch(processedAvatar.uri).then((response) =>
+        response.arrayBuffer(),
+      );
 
       const { error: uploadError } = await supabase.storage
-        .from("avatars")
+        .from(AVATAR_BUCKET)
         .upload(avatarPath, fileBody, {
-          contentType,
-          upsert: false,
+          contentType: "image/jpeg",
+          upsert: true,
         });
 
       if (uploadError) {
@@ -207,6 +213,23 @@ export default function SettingsScreen() {
       const nextAvatarUri = await resolveAvatarUrl(
         nextProfile.avatar_url ?? avatarPath,
       );
+
+      if (previousAvatarPath && previousAvatarPath !== avatarPath) {
+        const { error: removePreviousError } = await supabase.storage
+          .from(AVATAR_BUCKET)
+          .remove([previousAvatarPath]);
+
+        if (removePreviousError) {
+          console.error(
+            "Failed to remove previous avatar object:",
+            removePreviousError,
+          );
+        }
+      }
+
+      cleanupStaleAvatarObjects(userId, avatarPath).catch((cleanupError) => {
+        console.error("Failed to clean up stale avatar objects:", cleanupError);
+      });
 
       if (isMountedRef.current) {
         setResolvedAvatar({
@@ -513,42 +536,6 @@ function SettingsSection({
   );
 }
 
-function getFileExtension(
-  asset: ImagePickerAsset,
-  contentType: string,
-  preferFileName: boolean,
-) {
-  const fileNameParts = preferFileName ? asset.fileName?.split(".") : undefined;
-  const fileNameExtension = fileNameParts?.[fileNameParts.length - 1];
-
-  if (fileNameExtension) {
-    return fileNameExtension.toLowerCase();
-  }
-
-  const mimeTypeExtension = contentType.split("/")[1];
-
-  if (!mimeTypeExtension) {
-    return "jpg";
-  }
-
-  return mimeTypeExtension === "jpeg" ? "jpg" : mimeTypeExtension.toLowerCase();
-}
-
-function decodeBase64Image(base64?: string | null) {
-  if (!base64) {
-    throw new Error("The selected image could not be prepared for upload.");
-  }
-
-  const binary = atob(base64);
-  const bytes = new Uint8Array(binary.length);
-
-  for (let index = 0; index < binary.length; index += 1) {
-    bytes[index] = binary.charCodeAt(index);
-  }
-
-  return bytes.buffer;
-}
-
 function getErrorMessage(error: unknown) {
   if (
     typeof error === "object" &&
@@ -568,4 +555,47 @@ function getErrorMessage(error: unknown) {
   }
 
   return "Please try again.";
+}
+
+async function prepareAvatarAsset(sourceUri: string) {
+  const context = ImageManipulator.manipulate(sourceUri);
+  context.resize({ height: AVATAR_UPLOAD_SIZE, width: AVATAR_UPLOAD_SIZE });
+
+  const renderedImage = await context.renderAsync();
+
+  return await renderedImage.saveAsync({
+    compress: AVATAR_UPLOAD_QUALITY,
+    format: SaveFormat.JPEG,
+  });
+}
+
+async function cleanupStaleAvatarObjects(
+  userId: string,
+  currentAvatarPath: string,
+) {
+  const { data: avatarObjects, error } = await supabase.storage
+    .from(AVATAR_BUCKET)
+    .list(userId, {
+      limit: 100,
+    });
+
+  if (error) {
+    throw error;
+  }
+
+  const staleAvatarPaths = (avatarObjects ?? [])
+    .map((entry) => `${userId}/${entry.name}`)
+    .filter((path) => path !== currentAvatarPath);
+
+  if (staleAvatarPaths.length === 0) {
+    return;
+  }
+
+  const { error: removeError } = await supabase.storage
+    .from(AVATAR_BUCKET)
+    .remove(staleAvatarPaths);
+
+  if (removeError) {
+    throw removeError;
+  }
 }
