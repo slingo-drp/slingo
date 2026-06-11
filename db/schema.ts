@@ -1,5 +1,7 @@
 import { sql } from "drizzle-orm";
 import {
+  check,
+  foreignKey,
   integer,
   pgEnum,
   pgPolicy,
@@ -8,9 +10,15 @@ import {
   text,
   timestamp,
   unique,
+  uuid,
 } from "drizzle-orm/pg-core";
 
-import { anonRole, authenticatedRole } from "drizzle-orm/supabase";
+import {
+  anonRole,
+  authenticatedRole,
+  authUid,
+  authUsers,
+} from "drizzle-orm/supabase";
 
 export const posEnum = pgEnum("pos", [
   "noun",
@@ -145,6 +153,108 @@ export const transcriptTokens = pgTable(
       for: "select",
       to: [anonRole, authenticatedRole],
       using: sql`true`,
+    }),
+  ],
+).enableRLS();
+
+export const wordBookmarks = pgTable(
+  "word_bookmarks",
+  {
+    id: serial("id").primaryKey(),
+    userId: uuid("user_id").notNull(),
+    wordId: integer("word_id")
+      .notNull()
+      .references(() => words.id),
+    senseId: integer("sense_id").references(() => wordSenses.id),
+    sentenceId: integer("sentence_id")
+      .notNull()
+      .references(() => sentences.id),
+    surfaceForm: text("surface_form").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    foreignKey({
+      columns: [table.userId],
+      foreignColumns: [authUsers.id],
+      name: "word_bookmarks_user_id_auth_users_id_fk",
+    }).onDelete("cascade"),
+
+    unique("word_bookmarks_user_word_unique").on(table.userId, table.wordId),
+
+    pgPolicy("Users can read their own word bookmarks.", {
+      for: "select",
+      to: authenticatedRole,
+      using: sql`${authUid} = ${table.userId}`,
+    }),
+
+    pgPolicy("Users can insert their own word bookmarks.", {
+      for: "insert",
+      to: authenticatedRole,
+      withCheck: sql`${authUid} = ${table.userId}`,
+    }),
+
+    pgPolicy("Users can update their own word bookmarks.", {
+      for: "update",
+      to: authenticatedRole,
+      using: sql`${authUid} = ${table.userId}`,
+      withCheck: sql`${authUid} = ${table.userId}`,
+    }),
+
+    pgPolicy("Users can delete their own word bookmarks.", {
+      for: "delete",
+      to: authenticatedRole,
+      using: sql`${authUid} = ${table.userId}`,
+    }),
+  ],
+).enableRLS();
+
+export const profiles = pgTable(
+  "profiles",
+  {
+    id: uuid("id").primaryKey().notNull(),
+
+    updatedAt: timestamp("updated_at", {
+      withTimezone: true,
+      mode: "date",
+    }),
+
+    username: text("username"),
+    fullName: text("full_name"),
+    avatarUrl: text("avatar_url"),
+  },
+  (table) => [
+    foreignKey({
+      columns: [table.id],
+      foreignColumns: [authUsers.id],
+      name: "profiles_id_auth_users_id_fk",
+    }).onDelete("cascade"),
+
+    unique("profiles_username_unique").on(table.username),
+
+    check("username_length", sql`char_length(${table.username}) >= 3`),
+
+    pgPolicy("Public profiles are viewable by everyone.", {
+      for: "select",
+      to: "public",
+      using: sql`true`,
+    }),
+
+    pgPolicy("Users can insert their own profile.", {
+      for: "insert",
+      to: authenticatedRole,
+      withCheck: sql`${authUid} = ${table.id}`,
+    }),
+
+    pgPolicy("Users can update own profile.", {
+      for: "update",
+      to: authenticatedRole,
+      using: sql`${authUid} = ${table.id}`,
+      withCheck: sql`${authUid} = ${table.id}`,
     }),
   ],
 ).enableRLS();

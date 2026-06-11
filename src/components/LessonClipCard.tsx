@@ -5,6 +5,7 @@ import type {
   SubtitleWord,
 } from "@/lib/lessons";
 import { languageToFlag } from "@/lib/utils";
+import { useSegments } from "expo-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Share, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -28,25 +29,19 @@ const getActiveSentence = (
   );
 };
 
-const withDisplayedSentence = (
-  clip: LessonClip,
-  { id, sentence, translation, words }: LessonSentence,
-): LessonClip => ({
-  ...clip,
-  id: `${clip.id}-${id}`,
-  sentence,
-  translation,
-  words,
-});
-
 // ─── Types ───────────────────────────────────────────────────────────────────
 
 type LessonClipCardProps = {
   clip: LessonClip;
   height: number;
+  initialSeekMs: number | null;
   isActive: boolean;
   activeInsight: SelectedWord | null;
-  onWordPress: (word: SubtitleWord, clip: LessonClip) => void;
+  onWordPress: (
+    word: SubtitleWord,
+    clip: LessonClip,
+    sentence: LessonSentence,
+  ) => void;
   subtitlesVisible: boolean;
   onToggleSubtitles: () => void;
   onDismissWord: () => void;
@@ -58,6 +53,7 @@ type LessonClipCardProps = {
 export default function LessonClipCard({
   clip,
   height,
+  initialSeekMs,
   isActive,
   activeInsight,
   onWordPress,
@@ -67,17 +63,15 @@ export default function LessonClipCard({
   settingsToggle,
 }: LessonClipCardProps) {
   const insets = useSafeAreaInsets();
+  const segments = useSegments();
   const [currentTimeSeconds, setCurrentTimeSeconds] = useState(0);
   const activeSentenceIdRef = useRef<number | null>(null);
+  const isTabbedRoute = segments[0] === "(tabs)";
+  const bottomOverlayOffset = isTabbedRoute ? 0 : insets.bottom + 8;
 
   const activeSentence = useMemo(
     () => getActiveSentence(clip.transcript, currentTimeSeconds),
     [clip.transcript, currentTimeSeconds],
-  );
-
-  const displayedClip = useMemo(
-    () => (activeSentence ? withDisplayedSentence(clip, activeSentence) : null),
-    [clip, activeSentence],
   );
 
   // Reset tracked sentence when the clip changes
@@ -100,7 +94,7 @@ export default function LessonClipCard({
   );
 
   const handleShare = useCallback(async () => {
-    const { title, language, topic } = displayedClip ?? clip;
+    const { title, language, topic } = clip;
     const deepLink = `${process.env.EXPO_PUBLIC_WEB_SERVER_URL}/${clip.id}`;
 
     const lines = [
@@ -116,14 +110,15 @@ export default function LessonClipCard({
       url: deepLink,
       title: topic,
     });
-  }, [clip, displayedClip]);
+  }, [clip]);
 
-  const showSubtitleOverlay = subtitlesVisible && displayedClip != null;
+  const showSubtitleOverlay = subtitlesVisible && activeSentence != null;
 
   return (
     <View className="w-full overflow-hidden bg-slate-900" style={{ height }}>
       <LessonVideo
         clip={clip}
+        initialSeekMs={initialSeekMs}
         isActive={isActive}
         onPlaybackTimeChange={handlePlaybackTimeChange}
       />
@@ -151,19 +146,22 @@ export default function LessonClipCard({
       <View
         pointerEvents="box-none"
         className="absolute inset-x-0 bottom-0 gap-3 pl-4 pr-20"
-        style={{ paddingBottom: insets.bottom + 24 }}
+        style={{ paddingBottom: bottomOverlayOffset }}
       >
         {showSubtitleOverlay && (
           <View pointerEvents="box-none" className="space-y-2">
             <WordInsightPanel
-              key={activeInsight?.clip.id}
+              key={activeInsight?.clip.videoId}
               onDismiss={onDismissWord}
               selected={activeInsight}
             />
-            <SubtitleLine
-              displayedClip={displayedClip}
-              onWordPress={onWordPress}
-            />
+            {activeSentence && (
+              <SubtitleLine
+                clip={clip}
+                sentence={activeSentence}
+                onWordPress={onWordPress}
+              />
+            )}
           </View>
         )}
         <ClipInfo clip={clip} />

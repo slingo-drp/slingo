@@ -1,4 +1,18 @@
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { Text as UiText } from "@/components/ui/text";
+import { useBookmarks } from "@/hooks/use-bookmarks";
+import { supabase } from "@/lib/supabase";
+import {
   DOMAINS,
   LANGUAGES,
   LANGUAGE_NAMES, // <-- Add this import
@@ -7,7 +21,6 @@ import {
   SUBTITLE_SIZES,
   useSettingsStore,
 } from "@/store/useSettingsStore";
-import { supabase } from "@/lib/supabase";
 import { Ionicons } from "@expo/vector-icons";
 import { useEffect, useState } from "react";
 import {
@@ -27,6 +40,7 @@ type Props = { isOpen: boolean; onClose: () => void };
 
 export default function SettingsPanel({ isOpen, onClose }: Props) {
   const insets = useSafeAreaInsets();
+  const { bookmarks, clearBookmarks, isClearing } = useBookmarks();
   const {
     language,
     level,
@@ -134,6 +148,63 @@ export default function SettingsPanel({ isOpen, onClose }: Props) {
               onPress={() => setSubtitleSize(s)}
             />
           ))}
+        </Section>
+
+        <Divider />
+
+        <Section title="Bookmarks">
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Pressable
+                accessibilityLabel="Clear all bookmarks"
+                accessibilityRole="button"
+                className={`items-center rounded-xl border py-3 ${
+                  bookmarks.length === 0
+                    ? "border-slate-200 bg-slate-100"
+                    : "border-red-200 bg-red-50 active:bg-red-100"
+                }`}
+                disabled={bookmarks.length === 0 || isClearing}
+              >
+                <Text
+                  className={`px-4 text-sm font-bold ${
+                    bookmarks.length === 0 ? "text-slate-400" : "text-red-500"
+                  }`}
+                >
+                  {isClearing ? "Clearing bookmarks..." : "Clear Bookmarks"}
+                </Text>
+              </Pressable>
+            </AlertDialogTrigger>
+
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Clear all bookmarks?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  This will remove every saved word from your account. This
+                  action cannot be undone.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+
+              <AlertDialogFooter>
+                <AlertDialogCancel>
+                  <UiText className="text-sm font-medium text-slate-300">
+                    Cancel
+                  </UiText>
+                </AlertDialogCancel>
+                <AlertDialogAction
+                  className="border-red-200 bg-red-50 active:bg-red-100"
+                  onPress={() => {
+                    clearBookmarks().catch((error) => {
+                      console.error("Failed to clear bookmarks:", error);
+                    });
+                  }}
+                >
+                  <UiText className="text-sm font-bold text-red-500">
+                    Clear Bookmarks
+                  </UiText>
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </Section>
 
         <Divider />

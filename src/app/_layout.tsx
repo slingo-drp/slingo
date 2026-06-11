@@ -1,5 +1,6 @@
 import "../../global.css";
 
+import BookmarksProvider from "@/providers/bookmarks-provider";
 import { SplashScreenController } from "@/components/splash-screen-controller";
 import { useAuthContext } from "@/hooks/use-auth-context";
 import { createSessionFromUrl } from "@/lib/auth";
@@ -31,7 +32,7 @@ function RootNavigator() {
   return (
     <Stack screenOptions={{ headerShown: false, animation: "fade" }}>
       <Stack.Protected guard={isLoggedIn}>
-        <Stack.Screen name="index" />
+        <Stack.Screen name="(tabs)" />
         <Stack.Screen name="[id]" />
       </Stack.Protected>
       <Stack.Protected guard={!isLoggedIn}>
@@ -45,9 +46,11 @@ export default function RootLayout() {
   return (
     <SafeAreaProvider initialMetrics={initialWindowMetrics}>
       <AuthProvider>
-        <SplashScreenController />
-        <RootNavigator />
-        <PortalHost />
+        <BookmarksProvider>
+          <SplashScreenController />
+          <RootNavigator />
+          <PortalHost />
+        </BookmarksProvider>
       </AuthProvider>
     </SafeAreaProvider>
   );
