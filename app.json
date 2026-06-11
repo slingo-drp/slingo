@@ -54,6 +54,14 @@
           }
         }
       ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Allow Slingo to access your photos so you can choose a profile avatar.",
+          "cameraPermission": false,
+          "microphonePermission": false
+        }
+      ],
       "expo-video",
       "expo-sqlite",
       "expo-secure-store",

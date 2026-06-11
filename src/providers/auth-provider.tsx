@@ -1,14 +1,29 @@
 import { AuthContext } from "@/hooks/use-auth-context";
+import { createFallbackProfile, getProfile, type Profile } from "@/lib/profile";
 import { supabase } from "@/lib/supabase";
 import type { Session } from "@supabase/supabase-js";
-import { PropsWithChildren, useEffect, useState } from "react";
+import { PropsWithChildren, useCallback, useEffect, useState } from "react";
 
 export default function AuthProvider({ children }: PropsWithChildren) {
   const [session, setSession] = useState<Session | null | undefined>(undefined);
   const [claims, setClaims] = useState<Record<string, any> | null>();
-  const [profile, setProfile] = useState<any>();
+  const [profile, setProfile] = useState<Profile | null>();
   const [isLoading, setIsLoading] = useState(true);
   const [isProfileLoading, setIsProfileLoading] = useState(true);
+
+  const refreshProfile = useCallback(async () => {
+    const userId = session?.user.id;
+
+    if (!userId) {
+      setProfile(null);
+      return null;
+    }
+
+    const nextProfile = await getProfile(userId);
+    const resolvedProfile = nextProfile ?? createFallbackProfile(userId);
+    setProfile(resolvedProfile);
+    return resolvedProfile;
+  }, [session?.user.id]);
 
   useEffect(() => {
     let isCancelled = false;
@@ -60,19 +75,26 @@ export default function AuthProvider({ children }: PropsWithChildren) {
         const nextClaims = data?.claims ?? null;
         setClaims(nextClaims);
 
-        if (!nextClaims?.sub) {
+        const userId = nextClaims?.sub ?? session.user.id;
+
+        if (!userId) {
           setProfile(null);
           return;
         }
 
-        const { data: nextProfile } = await supabase
-          .from("profiles")
-          .select("*")
-          .eq("id", nextClaims.sub)
-          .single();
+        try {
+          const nextProfile = await getProfile(userId);
+          const resolvedProfile = nextProfile ?? createFallbackProfile(userId);
 
-        if (!isCancelled) {
-          setProfile(nextProfile ?? null);
+          if (!isCancelled) {
+            setProfile(resolvedProfile);
+          }
+        } catch (profileError) {
+          console.error("Error loading profile:", profileError);
+
+          if (!isCancelled) {
+            setProfile(createFallbackProfile(userId));
+          }
         }
       })
       .finally(() => {
@@ -94,6 +116,7 @@ export default function AuthProvider({ children }: PropsWithChildren) {
         isLoggedIn: !!session,
         isProfileLoading,
         profile,
+        refreshProfile,
       }}
     >
       {children}
