@@ -100,6 +100,7 @@ export type Database = {
           avatar_url: string | null;
           full_name: string | null;
           id: string;
+          learning_language: Database["public"]["Enums"]["language"] | null;
           updated_at: string | null;
           username: string | null;
         };
@@ -107,6 +108,7 @@ export type Database = {
           avatar_url?: string | null;
           full_name?: string | null;
           id?: string;
+          learning_language?: Database["public"]["Enums"]["language"] | null;
           updated_at?: string | null;
           username?: string | null;
         };
@@ -114,6 +116,7 @@ export type Database = {
           avatar_url?: string | null;
           full_name?: string | null;
           id?: string;
+          learning_language?: Database["public"]["Enums"]["language"] | null;
           updated_at?: string | null;
           username?: string | null;
         };
@@ -389,6 +392,24 @@ export type Database = {
           isSetofReturn: false;
         };
       };
+      remove_friendship: {
+        Args: { friendship_id: number };
+        Returns: {
+          addressee_id: string;
+          created_at: string;
+          id: number;
+          requester_id: string;
+          responded_at: string | null;
+          status: Database["public"]["Enums"]["friendship_status"];
+          updated_at: string;
+        };
+        SetofOptions: {
+          from: "*";
+          to: "friendships";
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
       respond_to_friend_request: {
         Args: { accept: boolean; friendship_id: number };
         Returns: {
@@ -415,6 +436,7 @@ export type Database = {
           friendship_status: Database["public"]["Enums"]["friendship_status"];
           full_name: string;
           id: string;
+          learning_language: Database["public"]["Enums"]["language"];
           relationship_state: string;
           username: string;
         }[];

@@ -1,3 +1,4 @@
+import { LearningLanguageBadge } from "@/components/LearningLanguageBadge";
 import { ProfileAvatar } from "@/components/ProfileAvatar";
 import SlideUpSheet from "@/components/animated/SlideUpSheet";
 import { Button } from "@/components/ui/button";
@@ -206,7 +207,7 @@ export default function ShareClipSheet({
             </Text>
           </View>
 
-          <View className="gap-2">
+          <View className="mt-8 gap-2">
             <Text className="text-[11px] font-black uppercase tracking-[0.16em] text-slate-500">
               Friends
             </Text>
@@ -243,9 +244,15 @@ export default function ShareClipSheet({
                           uri={friend.avatarUrl}
                         />
                         <View className="flex-1 gap-0.5">
-                          <Text className="text-base font-black text-white">
-                            @{friend.username}
-                          </Text>
+                          <View className="flex-row items-center gap-2">
+                            <Text className="text-base font-black text-white">
+                              @{friend.username}
+                            </Text>
+                            <LearningLanguageBadge
+                              language={friend.learningLanguage}
+                              variant="flag"
+                            />
+                          </View>
                           <Text className="text-sm font-semibold text-slate-400">
                             {friend.fullName ?? "Slingo learner"}
                           </Text>

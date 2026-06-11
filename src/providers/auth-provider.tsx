@@ -1,6 +1,7 @@
 import { AuthContext } from "@/hooks/use-auth-context";
 import { createFallbackProfile, getProfile, type Profile } from "@/lib/profile";
 import { supabase } from "@/lib/supabase";
+import { useSettingsStore } from "@/store/useSettingsStore";
 import type { Session } from "@supabase/supabase-js";
 import { PropsWithChildren, useCallback, useEffect, useState } from "react";
 
@@ -49,6 +50,14 @@ export default function AuthProvider({ children }: PropsWithChildren) {
       subscription.unsubscribe();
     };
   }, []);
+
+  useEffect(() => {
+    if (!profile?.learning_language) {
+      return;
+    }
+
+    useSettingsStore.getState().setLanguage(profile.learning_language);
+  }, [profile?.learning_language]);
 
   useEffect(() => {
     let isCancelled = false;
