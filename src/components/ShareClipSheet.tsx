@@ -207,7 +207,7 @@ export default function ShareClipSheet({
             </Text>
           </View>
 
-          <View className="gap-2">
+          <View className="mt-8 gap-2">
             <Text className="text-[11px] font-black uppercase tracking-[0.16em] text-slate-500">
               Friends
             </Text>
