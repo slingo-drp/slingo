@@ -1,7 +1,9 @@
 import { sql } from "drizzle-orm";
 import {
+  boolean,
   check,
   foreignKey,
+  index,
   integer,
   pgEnum,
   pgPolicy,
@@ -54,6 +56,18 @@ export const domainEnum = pgEnum("domain", [
   "entertainment",
   "everyday",
   "other",
+]);
+
+export const friendshipStatusEnum = pgEnum("friendship_status", [
+  "pending",
+  "accepted",
+  "declined",
+]);
+
+export const notificationTypeEnum = pgEnum("notification_type", [
+  "friend_request",
+  "friend_accept",
+  "video_share",
 ]);
 
 export const words = pgTable(
@@ -236,7 +250,14 @@ export const profiles = pgTable(
 
     unique("profiles_username_unique").on(table.username),
 
-    check("username_length", sql`char_length(${table.username}) >= 3`),
+    check(
+      "username_length",
+      sql`${table.username} IS NULL OR char_length(${table.username}) BETWEEN 3 AND 24`,
+    ),
+    check(
+      "username_format",
+      sql`${table.username} IS NULL OR ${table.username} ~ '^[a-z0-9_]+$'`,
+    ),
 
     pgPolicy("Public profiles are viewable by everyone.", {
       for: "select",
@@ -255,6 +276,171 @@ export const profiles = pgTable(
       to: authenticatedRole,
       using: sql`${authUid} = ${table.id}`,
       withCheck: sql`${authUid} = ${table.id}`,
+    }),
+  ],
+).enableRLS();
+
+export const friendships = pgTable(
+  "friendships",
+  {
+    id: serial("id").primaryKey(),
+    requesterId: uuid("requester_id").notNull(),
+    addresseeId: uuid("addressee_id").notNull(),
+    status: friendshipStatusEnum("status").notNull().default("pending"),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    respondedAt: timestamp("responded_at", { withTimezone: true }),
+  },
+  (table) => [
+    foreignKey({
+      columns: [table.requesterId],
+      foreignColumns: [authUsers.id],
+      name: "friendships_requester_id_auth_users_id_fk",
+    }).onDelete("cascade"),
+
+    foreignKey({
+      columns: [table.addresseeId],
+      foreignColumns: [authUsers.id],
+      name: "friendships_addressee_id_auth_users_id_fk",
+    }).onDelete("cascade"),
+
+    check(
+      "friendships_requester_addressee_distinct",
+      sql`${table.requesterId} <> ${table.addresseeId}`,
+    ),
+
+    index("friendships_requester_status_idx").on(
+      table.requesterId,
+      table.status,
+    ),
+    index("friendships_addressee_status_idx").on(
+      table.addresseeId,
+      table.status,
+    ),
+
+    pgPolicy("Friendship participants can read rows.", {
+      for: "select",
+      to: authenticatedRole,
+      using: sql`${authUid} = ${table.requesterId} OR ${authUid} = ${table.addresseeId}`,
+    }),
+  ],
+).enableRLS();
+
+export const videoShares = pgTable(
+  "video_shares",
+  {
+    id: serial("id").primaryKey(),
+    senderId: uuid("sender_id").notNull(),
+    recipientId: uuid("recipient_id").notNull(),
+    videoId: integer("video_id")
+      .notNull()
+      .references(() => videos.id, {
+        onDelete: "cascade",
+      }),
+    note: text("note"),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    foreignKey({
+      columns: [table.senderId],
+      foreignColumns: [authUsers.id],
+      name: "video_shares_sender_id_auth_users_id_fk",
+    }).onDelete("cascade"),
+
+    foreignKey({
+      columns: [table.recipientId],
+      foreignColumns: [authUsers.id],
+      name: "video_shares_recipient_id_auth_users_id_fk",
+    }).onDelete("cascade"),
+
+    check(
+      "video_shares_sender_recipient_distinct",
+      sql`${table.senderId} <> ${table.recipientId}`,
+    ),
+    check(
+      "video_shares_note_length",
+      sql`${table.note} IS NULL OR char_length(${table.note}) <= 280`,
+    ),
+
+    index("video_shares_recipient_created_at_idx").on(
+      table.recipientId,
+      table.createdAt,
+    ),
+
+    pgPolicy("Video share participants can read rows.", {
+      for: "select",
+      to: authenticatedRole,
+      using: sql`${authUid} = ${table.senderId} OR ${authUid} = ${table.recipientId}`,
+    }),
+  ],
+).enableRLS();
+
+export const notifications = pgTable(
+  "notifications",
+  {
+    id: serial("id").primaryKey(),
+    recipientId: uuid("recipient_id").notNull(),
+    actorId: uuid("actor_id"),
+    type: notificationTypeEnum("type").notNull(),
+    friendshipId: integer("friendship_id").references(() => friendships.id, {
+      onDelete: "cascade",
+    }),
+    videoShareId: integer("video_share_id").references(() => videoShares.id, {
+      onDelete: "cascade",
+    }),
+    isRead: boolean("is_read").notNull().default(false),
+    readAt: timestamp("read_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    foreignKey({
+      columns: [table.recipientId],
+      foreignColumns: [authUsers.id],
+      name: "notifications_recipient_id_auth_users_id_fk",
+    }).onDelete("cascade"),
+
+    foreignKey({
+      columns: [table.actorId],
+      foreignColumns: [authUsers.id],
+      name: "notifications_actor_id_auth_users_id_fk",
+    }).onDelete("cascade"),
+
+    index("notifications_recipient_created_at_idx").on(
+      table.recipientId,
+      table.createdAt,
+    ),
+    check(
+      "notifications_reference_shape",
+      sql`(
+        ${table.type} IN ('friend_request', 'friend_accept')
+        AND ${table.friendshipId} IS NOT NULL
+        AND ${table.videoShareId} IS NULL
+      ) OR (
+        ${table.type} = 'video_share'
+        AND ${table.videoShareId} IS NOT NULL
+        AND ${table.friendshipId} IS NULL
+      )`,
+    ),
+
+    pgPolicy("Notification recipients can read rows.", {
+      for: "select",
+      to: authenticatedRole,
+      using: sql`${authUid} = ${table.recipientId}`,
+    }),
+
+    pgPolicy("Notification recipients can update rows.", {
+      for: "update",
+      to: authenticatedRole,
+      using: sql`${authUid} = ${table.recipientId}`,
+      withCheck: sql`${authUid} = ${table.recipientId}`,
     }),
   ],
 ).enableRLS();
