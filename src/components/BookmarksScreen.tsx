@@ -1,11 +1,12 @@
 import SlideUpSheet from "@/components/animated/SlideUpSheet";
 import PronunciationButton from "@/components/PronunciationButton";
+import { Input } from "@/components/ui/input";
 import { useBookmarks } from "@/hooks/use-bookmarks";
 import type { Bookmark } from "@/lib/bookmarks";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import { useMemo, useState } from "react";
+import { useDeferredValue, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   Pressable,
@@ -15,12 +16,27 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+function matchesBookmarkSearch(bookmark: Bookmark, query: string) {
+  const normalizedQuery = query.trim().toLocaleLowerCase();
+
+  if (!normalizedQuery) {
+    return true;
+  }
+
+  return [bookmark.lemma, bookmark.surfaceForm].some((value) =>
+    value.toLocaleLowerCase().includes(normalizedQuery),
+  );
+}
+
 export default function BookmarksScreen() {
   const insets = useSafeAreaInsets();
   const { bookmarks, isLoading, isPending, removeBookmark } = useBookmarks();
+  const [searchQuery, setSearchQuery] = useState("");
   const [selectedBookmark, setSelectedBookmark] = useState<Bookmark | null>(
     null,
   );
+  const deferredSearchQuery = useDeferredValue(searchQuery);
+  const trimmedSearchQuery = deferredSearchQuery.trim();
   const selectedBookmarkPending = selectedBookmark
     ? isPending(selectedBookmark.wordId)
     : false;
@@ -32,6 +48,13 @@ export default function BookmarksScreen() {
           new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime(),
       ),
     [bookmarks],
+  );
+  const filteredBookmarks = useMemo(
+    () =>
+      sortedBookmarks.filter((bookmark) =>
+        matchesBookmarkSearch(bookmark, trimmedSearchQuery),
+      ),
+    [sortedBookmarks, trimmedSearchQuery],
   );
 
   if (isLoading) {
@@ -69,6 +92,23 @@ export default function BookmarksScreen() {
           </Text>
         </View>
 
+        {sortedBookmarks.length > 0 ? (
+          <View className="gap-2 rounded-3xl border border-slate-800 bg-slate-900 px-4 py-4">
+            <View className="flex-row items-center gap-3 rounded-2xl border border-slate-700 bg-slate-950 px-3">
+              <Ionicons name="search" size={16} color="#94a3b8" />
+              <Input
+                autoCapitalize="none"
+                autoCorrect={false}
+                className="h-12 flex-1 border-0 bg-transparent px-0 py-0 text-sm font-semibold text-white shadow-none"
+                placeholder="Search saved words"
+                placeholderTextColor="#64748b"
+                value={searchQuery}
+                onChangeText={setSearchQuery}
+              />
+            </View>
+          </View>
+        ) : null}
+
         {sortedBookmarks.length === 0 ? (
           <View className="mt-6 rounded-3xl border border-slate-800 bg-slate-900 px-5 py-8">
             <Text className="text-lg font-black text-white">
@@ -78,8 +118,17 @@ export default function BookmarksScreen() {
               Open a lesson, tap a word, and save it from the insight panel.
             </Text>
           </View>
+        ) : filteredBookmarks.length === 0 ? (
+          <View className="mt-2 rounded-3xl border border-slate-800 bg-slate-900 px-5 py-8">
+            <Text className="text-lg font-black text-white">
+              No bookmarks matched your search
+            </Text>
+            <Text className="mt-2 text-sm leading-6 text-slate-400">
+              Try a different word or clear the search field.
+            </Text>
+          </View>
         ) : (
-          sortedBookmarks.map((bookmark) => (
+          filteredBookmarks.map((bookmark) => (
             <Pressable
               key={bookmark.id}
               accessibilityLabel={`Open bookmark for ${bookmark.lemma}`}
