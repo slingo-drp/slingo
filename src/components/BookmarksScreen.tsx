@@ -216,24 +216,28 @@ function BookmarkDetailSheet({
             value={bookmark.sentenceTranslation}
           />
         ) : null}
-        <InfoCard
-          icon="film-outline"
-          label="Lesson"
-          value={bookmark.videoTitle}
-        />
       </View>
 
       <View className="mt-6 gap-3">
         <Pressable
           accessibilityLabel="See this word in the video"
           accessibilityRole="button"
-          className="flex-row items-center justify-center gap-2 rounded-2xl bg-emerald-500 px-4 py-3 active:bg-emerald-400"
+          className="flex-row items-center gap-3 rounded-2xl bg-emerald-500 px-4 py-3 active:bg-emerald-400"
           onPress={onOpenLesson}
         >
           <Ionicons name="play" size={16} color="#022c22" />
-          <Text className="text-sm font-black text-emerald-950">
-            See It In The Video
-          </Text>
+          <View className="flex-1">
+            <Text className="text-sm font-black text-emerald-950">
+              See It In The Video
+            </Text>
+            <Text
+              className="text-xs font-bold leading-5 text-emerald-950/75"
+              numberOfLines={1}
+            >
+              {bookmark.videoTitle}
+            </Text>
+          </View>
+          <Ionicons name="chevron-forward" size={16} color="#14532d" />
         </Pressable>
 
         <Pressable
