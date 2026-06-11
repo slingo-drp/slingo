@@ -69,29 +69,131 @@ def extract_audio_to_wav(input_mp4: str, output_wav: str) -> None:
             f"ffmpeg failed while extracting audio:\n{result.stderr.strip()}"
         )
 
+def _align_translations(
+    source_segments: list[dict[str, Any]],
+    translation_segments: list[dict[str, Any]],
+    fallback_translation: str,
+) -> list[str]:
+    """
+    Align Whisper translation segments to source-language segments by
+    timestamp overlap.
+
+    Whisper's transcribe and translate passes segment the audio
+    independently, so segment counts and boundaries will often differ.
+    For every source segment we collect every translation segment whose
+    time range overlaps it (even partially) and join their text in order.
+    If no translation segment overlaps a source segment we fall back to
+    the full translated transcript so the field is never empty.
+
+    Args:
+        source_segments: Segments from the transcription pass, each
+            already containing ``start_ms`` and ``end_ms`` fields.
+        translation_segments: Raw segment dicts from the translation
+            pass (Whisper format: ``start``/``end`` in seconds).
+        fallback_translation: Full translated text used when no segment
+            overlap is found for a given source segment.
+
+    Returns:
+        A list of translation strings, one per source segment, in the
+        same order as ``source_segments``.
+    """
+    # Pre-convert translation segment timestamps once.
+    t_segs_ms = [
+        {
+            "start_ms": int(round(seg["start"] * 1000)),
+            "end_ms": int(round(seg["end"] * 1000)),
+            "text": seg["text"].strip(),
+        }
+        for seg in translation_segments
+    ]
+
+    aligned: list[str] = []
+    for src in source_segments:
+        s_start = src["start_ms"]
+        s_end = src["end_ms"]
+
+        overlapping_texts = [
+            t["text"]
+            for t in t_segs_ms
+            if min(s_end, t["end_ms"]) > max(s_start, t["start_ms"])
+        ]
+
+        aligned.append(
+            " ".join(overlapping_texts) if overlapping_texts else fallback_translation
+        )
+
+    return aligned
+
+
 def transcribe_audio(audio_path: str, model_name: str) -> dict[str, Any]:
+    """
+    Transcribe audio in its source language and produce English translations
+    using Whisper's built-in translation task.
+
+    The model is loaded once and used for two inference passes:
+      1. ``task="transcribe"`` — source-language text with timestamps.
+      2. ``task="translate"`` — English translation with timestamps.
+
+    Translation segments from pass 2 are aligned to source segments from
+    pass 1 by timestamp overlap so that every segment carries its own
+    ``translation`` field.  This removes the need for a separate LLM call
+    to translate sentences.
+
+    Returns a dict with keys:
+        language  – detected source language code
+        text      – full source-language transcript
+        translation – full English translation
+        segments  – list of dicts, each with:
+                      id, start_ms, end_ms, text, translation
+    """
     model = whisper.load_model(model_name)
 
-    result = model.transcribe(
+    # Pass 1: transcribe in the source language.
+    transcription = model.transcribe(
         audio_path,
         fp16=False,
         verbose=False,
+        task="transcribe",
     )
 
-    segments = []
-    for seg in result["segments"]:
-        segments.append(
-            {
-                "id": seg["id"],
-                "start_ms": int(round(seg["start"] * 1000)),
-                "end_ms": int(round(seg["end"] * 1000)),
-                "text": seg["text"].strip(),
-            }
-        )
+    # Pass 2: translate to English.
+    # Whisper always translates into English regardless of source language.
+    translation = model.transcribe(
+        audio_path,
+        fp16=False,
+        verbose=False,
+        task="translate",
+    )
+
+    # Build source segments (with ms timestamps) before alignment.
+    source_segments: list[dict[str, Any]] = [
+        {
+            "id": seg["id"],
+            "start_ms": int(round(seg["start"] * 1000)),
+            "end_ms": int(round(seg["end"] * 1000)),
+            "text": seg["text"].strip(),
+        }
+        for seg in transcription["segments"]
+    ]
+
+    full_translation = translation.get("text", "").strip()
+
+    # Attach a per-segment translation via timestamp-overlap alignment.
+    segment_translations = _align_translations(
+        source_segments,
+        translation["segments"],
+        fallback_translation=full_translation,
+    )
+
+    segments = [
+        {**seg, "translation": seg_translation}
+        for seg, seg_translation in zip(source_segments, segment_translations)
+    ]
 
     return {
-        "language": result.get("language"),
-        "text": result.get("text", "").strip(),
+        "language": transcription.get("language"),
+        "text": transcription.get("text", "").strip(),
+        "translation": full_translation,
         "segments": segments,
     }
 

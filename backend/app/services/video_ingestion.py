@@ -13,7 +13,9 @@ from app.services.ai_pipeline_utils import (
     transcribe_audio,
 )
 
-WHISPER_MODEL = "large-v3"
+import re
+
+WHISPER_MODEL = "large-v2"
 
 class SupabaseTable(Protocol):
     def select(self, columns: str) -> "SupabaseTable": ...
@@ -61,8 +63,11 @@ class VideoIngestionService:
         with tempfile.NamedTemporaryFile(suffix=".wav") as tmp_wav:
             print(f"Extracting audio from {video_url}...")
             extract_audio_to_wav(video_url, tmp_wav.name)
-            
-            print("Transcribing audio...")
+
+            print("Transcribing and translating audio...")
+            # transcribe_audio now runs both a transcription pass and a
+            # translation pass inside Whisper, so each segment already
+            # carries a "translation" field — no LLM call needed here.
             transcript = transcribe_audio(tmp_wav.name, model_name=WHISPER_MODEL)
 
         print("Loading NLP models...")
@@ -77,19 +82,24 @@ class VideoIngestionService:
             doc = nlp(segment["text"])
             sentence_spans = list(doc.sents) or [doc[:]]
 
+            # Whisper produces one translation per segment.  When spaCy
+            # splits a segment into multiple sentences we share the same
+            # segment-level translation across all of them — it covers the
+            # same audio window and is far cheaper than one LLM call per
+            # sentence.
+            segment_translation = segment["translation"]
+
             for sent in sentence_spans:
                 sentence_text = sent.text.strip()
                 if not sentence_text:
                     continue
-
-                translation = self._translate_sentence(sentence_text, tokenizer, model)
 
                 sentence_row = self._insert_one(
                     "sentences",
                     {
                         "video_id": video["id"],
                         "sentence_text": sentence_text,
-                        "translation": translation,
+                        "translation": segment_translation,
                         "start_ms": segment["start_ms"],
                         "end_ms": segment["end_ms"],
                     },
@@ -284,29 +294,6 @@ class VideoIngestionService:
         )
         return int(new_sense["id"])
 
-    def _translate_sentence(self, sentence_text: str, tokenizer, model) -> str:
-        system_prompt = (
-            "You are a precise translation engine. "
-            "Translate from the source language into natural English. "
-            "Return only valid JSON with exactly one key: translation."
-        )
-        user_prompt = (
-            f"Translate this sentence into English.\n\n"
-            f"Sentence:\n{sentence_text}\n\n"
-            f'Return JSON like: {{"translation":"..."}}'
-        )
-        data = chat_json(
-            tokenizer,
-            model,
-            system_prompt=system_prompt,
-            user_prompt=user_prompt,
-            max_new_tokens=128,
-        )
-        translation = data.get("translation")
-        if not isinstance(translation, str) or not translation.strip():
-            raise ValueError(f"Bad translation JSON: {data}")
-        return translation.strip()
-
     def _find_one(
         self,
         table_name: str,
@@ -318,9 +305,12 @@ class VideoIngestionService:
             query = query.eq(column, value)
         data = query.execute().data
         return data[0] if data else None
-
+    
     def _insert_one(self, table_name: str, payload: dict[str, Any]) -> dict[str, Any]:
         data = self.supabase.table(table_name).insert(payload).execute().data
         if not data:
-            raise RuntimeError(f"Failed to insert row into {table_name}.")
+            raise RuntimeError(
+                f"Insert into '{table_name}' returned no data. "
+                "Check RLS policies and that the client sends Prefer: return=representation."
+            )
         return data[0]
