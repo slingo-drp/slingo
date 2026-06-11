@@ -1,6 +1,7 @@
 import { Skeleton } from "@/components/ui/skeleton";
+import { resolveAvatarUrl } from "@/lib/profile";
 import { Image } from "expo-image";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ActivityIndicator, View } from "react-native";
 
 type ProfileAvatarProps = {
@@ -10,17 +11,52 @@ type ProfileAvatarProps = {
 };
 
 export function ProfileAvatar({ name, size = 80, uri }: ProfileAvatarProps) {
+  const [resolvedUri, setResolvedUri] = useState<string | null>(uri ?? null);
+
+  useEffect(() => {
+    let isCancelled = false;
+
+    const resolveUri = async () => {
+      if (!uri) {
+        return null;
+      }
+
+      if (uri.startsWith("http")) {
+        return uri;
+      }
+
+      return await resolveAvatarUrl(uri);
+    };
+
+    resolveUri()
+      .then((nextUri) => {
+        if (!isCancelled) {
+          setResolvedUri(nextUri);
+        }
+      })
+      .catch((error) => {
+        console.error("Failed to resolve profile avatar URL:", error);
+        if (!isCancelled) {
+          setResolvedUri(null);
+        }
+      });
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [uri]);
+
   return (
     <View
       className="overflow-hidden rounded-full border border-slate-700 bg-slate-800"
       style={{ height: size, width: size }}
     >
-      {uri ? (
+      {resolvedUri ? (
         <AvatarImage
-          key={uri}
+          key={resolvedUri}
           accessibilityLabel={name ? `${name} avatar` : "Profile avatar"}
           size={size}
-          uri={uri}
+          uri={resolvedUri}
         />
       ) : (
         <Skeleton className="h-full w-full rounded-full" />

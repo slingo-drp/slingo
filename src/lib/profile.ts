@@ -6,9 +6,32 @@ type ProfileUpdate = Database["public"]["Tables"]["profiles"]["Update"];
 
 export const AVATAR_BUCKET = "avatars";
 const MICAH_AVATAR_BASE_URL = "https://api.dicebear.com/10.x/micah/svg";
+const USERNAME_REGEX = /^[a-z0-9_]+$/;
 
 export function buildMicahAvatarUrl(seed: string) {
   return `${MICAH_AVATAR_BASE_URL}?seed=${encodeURIComponent(seed)}`;
+}
+
+export function normalizeUsernameInput(username: string) {
+  return username.trim().toLowerCase();
+}
+
+export function getUsernameValidationError(username: string) {
+  const normalizedUsername = normalizeUsernameInput(username);
+
+  if (!normalizedUsername) {
+    return "Choose a username to use friends and notifications.";
+  }
+
+  if (normalizedUsername.length < 3 || normalizedUsername.length > 24) {
+    return "Usernames must be 3 to 24 characters long.";
+  }
+
+  if (!USERNAME_REGEX.test(normalizedUsername)) {
+    return "Use only lowercase letters, numbers, and underscores.";
+  }
+
+  return null;
 }
 
 export async function getProfile(userId: string) {

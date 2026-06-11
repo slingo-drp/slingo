@@ -1,6 +1,7 @@
 import "../../global.css";
 
 import BookmarksProvider from "@/providers/bookmarks-provider";
+import NotificationsProvider from "@/providers/notifications-provider";
 import { SplashScreenController } from "@/components/splash-screen-controller";
 import { useAuthContext } from "@/hooks/use-auth-context";
 import { createSessionFromUrl } from "@/lib/auth";
@@ -46,11 +47,13 @@ export default function RootLayout() {
   return (
     <SafeAreaProvider initialMetrics={initialWindowMetrics}>
       <AuthProvider>
-        <BookmarksProvider>
-          <SplashScreenController />
-          <RootNavigator />
-          <PortalHost />
-        </BookmarksProvider>
+        <NotificationsProvider>
+          <BookmarksProvider>
+            <SplashScreenController />
+            <RootNavigator />
+            <PortalHost />
+          </BookmarksProvider>
+        </NotificationsProvider>
       </AuthProvider>
     </SafeAreaProvider>
   );

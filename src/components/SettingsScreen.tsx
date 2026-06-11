@@ -11,11 +11,14 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Text as UiText } from "@/components/ui/text";
+import { Input } from "@/components/ui/input";
 import { useAuthContext } from "@/hooks/use-auth-context";
 import { useBookmarks } from "@/hooks/use-bookmarks";
 import {
   AVATAR_BUCKET,
+  getUsernameValidationError,
   getAvatarStoragePath,
+  normalizeUsernameInput,
   resolveAvatarUrl,
   updateProfile,
   upsertProfile,
@@ -66,6 +69,9 @@ export default function SettingsScreen() {
     setSubtitleSize,
   } = useSettingsStore();
   const [isAvatarUpdating, setIsAvatarUpdating] = useState(false);
+  const [isUsernameSaving, setIsUsernameSaving] = useState(false);
+  const [hasEditedUsername, setHasEditedUsername] = useState(false);
+  const [usernameDraft, setUsernameDraft] = useState(profile?.username ?? "");
   const [resolvedAvatar, setResolvedAvatar] = useState<{
     input: string;
     uri: string | null;
@@ -90,6 +96,9 @@ export default function SettingsScreen() {
     (resolvedAvatar?.input === profile?.avatar_url
       ? (resolvedAvatar?.uri ?? null)
       : immediateAvatarUri);
+  const usernameValue = hasEditedUsername
+    ? usernameDraft
+    : (profile?.username ?? "");
 
   useEffect(() => {
     isMountedRef.current = true;
@@ -151,6 +160,47 @@ export default function SettingsScreen() {
 
     await refreshProfile();
     return nextProfile;
+  }
+
+  async function handleSaveUsername() {
+    if (!userId) {
+      Alert.alert(
+        "Sign in required",
+        "You need to be signed in to save a username.",
+      );
+      return;
+    }
+
+    const validationError = getUsernameValidationError(usernameValue);
+
+    if (validationError) {
+      Alert.alert("Invalid username", validationError);
+      return;
+    }
+
+    setIsUsernameSaving(true);
+
+    try {
+      const normalizedUsername = normalizeUsernameInput(usernameValue);
+      let nextProfile = await updateProfile(userId, {
+        username: normalizedUsername,
+      });
+
+      if (!nextProfile) {
+        nextProfile = await upsertProfile(userId, {
+          username: normalizedUsername,
+        });
+      }
+
+      await refreshProfile();
+      setUsernameDraft(nextProfile?.username ?? normalizedUsername);
+      setHasEditedUsername(false);
+    } catch (error) {
+      console.error("Failed to save username:", error);
+      Alert.alert("Couldn't save username", getUsernameErrorMessage(error));
+    } finally {
+      setIsUsernameSaving(false);
+    }
   }
 
   async function handleUploadAvatar() {
@@ -298,6 +348,38 @@ export default function SettingsScreen() {
               onPress={() => {
                 handleUploadAvatar().catch((error) => {
                   console.error("Unexpected avatar upload error:", error);
+                });
+              }}
+            />
+
+            <View className="gap-2">
+              <Text className="text-[11px] font-black uppercase tracking-[0.16em] text-slate-500">
+                Username
+              </Text>
+              <Input
+                autoCapitalize="none"
+                autoCorrect={false}
+                className="h-12 border-slate-700 bg-slate-950 text-white"
+                placeholder="@your_handle"
+                placeholderTextColor="#64748b"
+                value={usernameValue}
+                onChangeText={(value) => {
+                  setHasEditedUsername(true);
+                  setUsernameDraft(value);
+                }}
+              />
+              <Text className="text-xs font-semibold leading-5 text-slate-400">
+                Friends and in-app lesson sharing use this handle. Lowercase
+                letters, numbers, and underscores only.
+              </Text>
+            </View>
+
+            <ActionButton
+              disabled={!userId || isUsernameSaving}
+              label={isUsernameSaving ? "Saving..." : "Save Username"}
+              onPress={() => {
+                handleSaveUsername().catch((error) => {
+                  console.error("Unexpected username save error:", error);
                 });
               }}
             />
@@ -548,6 +630,23 @@ function getErrorMessage(error: unknown) {
 
   if (error instanceof Error && error.message.includes("Object not found")) {
     return "Avatar storage can upload the file, but your read policy does not currently allow signed avatar URLs. Apply the avatars signed-URL storage policy migration.";
+  }
+
+  if (error instanceof Error) {
+    return error.message;
+  }
+
+  return "Please try again.";
+}
+
+function getUsernameErrorMessage(error: unknown) {
+  if (
+    typeof error === "object" &&
+    error !== null &&
+    "code" in error &&
+    error.code === "23505"
+  ) {
+    return "That username is already taken.";
   }
 
   if (error instanceof Error) {

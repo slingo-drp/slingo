@@ -80,7 +80,7 @@
     "lint": "expo lint",
     "typecheck": "tsc --noEmit",
     "format": "prettier . --write",
-    "gen:types": "dotenv -e .env -- supabase gen types typescript --project-id $EXPO_PUBLIC_SUPABASE_URL > src/lib/database.types.ts",
+    "gen:types": "npx supabase gen types typescript --project-id atljvylfrzpjwldhvvow > src/lib/database.types.ts",
     "postinstall": "patch-package"
   },
   "private": true

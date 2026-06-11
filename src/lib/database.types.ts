@@ -14,6 +14,87 @@ export type Database = {
   };
   public: {
     Tables: {
+      friendships: {
+        Row: {
+          addressee_id: string;
+          created_at: string;
+          id: number;
+          requester_id: string;
+          responded_at: string | null;
+          status: Database["public"]["Enums"]["friendship_status"];
+          updated_at: string;
+        };
+        Insert: {
+          addressee_id: string;
+          created_at?: string;
+          id?: number;
+          requester_id: string;
+          responded_at?: string | null;
+          status?: Database["public"]["Enums"]["friendship_status"];
+          updated_at?: string;
+        };
+        Update: {
+          addressee_id?: string;
+          created_at?: string;
+          id?: number;
+          requester_id?: string;
+          responded_at?: string | null;
+          status?: Database["public"]["Enums"]["friendship_status"];
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      notifications: {
+        Row: {
+          actor_id: string | null;
+          created_at: string;
+          friendship_id: number | null;
+          id: number;
+          is_read: boolean;
+          read_at: string | null;
+          recipient_id: string;
+          type: Database["public"]["Enums"]["notification_type"];
+          video_share_id: number | null;
+        };
+        Insert: {
+          actor_id?: string | null;
+          created_at?: string;
+          friendship_id?: number | null;
+          id?: number;
+          is_read?: boolean;
+          read_at?: string | null;
+          recipient_id: string;
+          type: Database["public"]["Enums"]["notification_type"];
+          video_share_id?: number | null;
+        };
+        Update: {
+          actor_id?: string | null;
+          created_at?: string;
+          friendship_id?: number | null;
+          id?: number;
+          is_read?: boolean;
+          read_at?: string | null;
+          recipient_id?: string;
+          type?: Database["public"]["Enums"]["notification_type"];
+          video_share_id?: number | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "notifications_friendship_id_friendships_id_fk";
+            columns: ["friendship_id"];
+            isOneToOne: false;
+            referencedRelation: "friendships";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "notifications_video_share_id_video_shares_id_fk";
+            columns: ["video_share_id"];
+            isOneToOne: false;
+            referencedRelation: "video_shares";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       profiles: {
         Row: {
           avatar_url: string | null;
@@ -105,6 +186,41 @@ export type Database = {
             columns: ["sentence_id"];
             isOneToOne: false;
             referencedRelation: "sentences";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      video_shares: {
+        Row: {
+          created_at: string;
+          id: number;
+          note: string | null;
+          recipient_id: string;
+          sender_id: string;
+          video_id: number;
+        };
+        Insert: {
+          created_at?: string;
+          id?: number;
+          note?: string | null;
+          recipient_id: string;
+          sender_id: string;
+          video_id: number;
+        };
+        Update: {
+          created_at?: string;
+          id?: number;
+          note?: string | null;
+          recipient_id?: string;
+          sender_id?: string;
+          video_id?: number;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "video_shares_video_id_videos_id_fk";
+            columns: ["video_id"];
+            isOneToOne: false;
+            referencedRelation: "videos";
             referencedColumns: ["id"];
           },
         ];
@@ -252,7 +368,92 @@ export type Database = {
       [_ in never]: never;
     };
     Functions: {
-      [_ in never]: never;
+      list_social_state: { Args: never; Returns: Json };
+      mark_notification_read: {
+        Args: { notification_id: number };
+        Returns: {
+          actor_id: string | null;
+          created_at: string;
+          friendship_id: number | null;
+          id: number;
+          is_read: boolean;
+          read_at: string | null;
+          recipient_id: string;
+          type: Database["public"]["Enums"]["notification_type"];
+          video_share_id: number | null;
+        };
+        SetofOptions: {
+          from: "*";
+          to: "notifications";
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
+      respond_to_friend_request: {
+        Args: { accept: boolean; friendship_id: number };
+        Returns: {
+          addressee_id: string;
+          created_at: string;
+          id: number;
+          requester_id: string;
+          responded_at: string | null;
+          status: Database["public"]["Enums"]["friendship_status"];
+          updated_at: string;
+        };
+        SetofOptions: {
+          from: "*";
+          to: "friendships";
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
+      search_social_profiles: {
+        Args: { limit_count?: number; search_text: string };
+        Returns: {
+          avatar_url: string;
+          friendship_id: number;
+          friendship_status: Database["public"]["Enums"]["friendship_status"];
+          full_name: string;
+          id: string;
+          relationship_state: string;
+          username: string;
+        }[];
+      };
+      send_friend_request: {
+        Args: { target_profile_id: string };
+        Returns: {
+          addressee_id: string;
+          created_at: string;
+          id: number;
+          requester_id: string;
+          responded_at: string | null;
+          status: Database["public"]["Enums"]["friendship_status"];
+          updated_at: string;
+        };
+        SetofOptions: {
+          from: "*";
+          to: "friendships";
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
+      share_video_with_friend: {
+        Args: { note?: string; target_profile_id: string; video_id: number };
+        Returns: {
+          created_at: string;
+          id: number;
+          note: string | null;
+          recipient_id: string;
+          sender_id: string;
+          video_id: number;
+        };
+        SetofOptions: {
+          from: "*";
+          to: "video_shares";
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
     };
     Enums: {
       domain:
@@ -270,8 +471,10 @@ export type Database = {
         | "entertainment"
         | "everyday"
         | "other";
+      friendship_status: "pending" | "accepted" | "declined";
       language: "es" | "fr" | "de" | "it" | "pt" | "ja";
       level: "A1" | "A2" | "B1" | "B2" | "C1" | "C2";
+      notification_type: "friend_request" | "friend_accept" | "video_share";
       pos: "noun" | "verb" | "adjective" | "adverb" | "other";
     };
     CompositeTypes: {
@@ -419,8 +622,10 @@ export const Constants = {
         "everyday",
         "other",
       ],
+      friendship_status: ["pending", "accepted", "declined"],
       language: ["es", "fr", "de", "it", "pt", "ja"],
       level: ["A1", "A2", "B1", "B2", "C1", "C2"],
+      notification_type: ["friend_request", "friend_accept", "video_share"],
       pos: ["noun", "verb", "adjective", "adverb", "other"],
     },
   },

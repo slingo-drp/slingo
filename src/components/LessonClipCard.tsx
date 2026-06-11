@@ -12,6 +12,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import ClipActions from "./ClipActions";
 import ClipInfo from "./ClipInfo";
 import LessonVideo from "./LessonVideo";
+import ShareClipSheet from "./ShareClipSheet";
 import SubtitleLine from "./SubtitleLine";
 import WordInsightPanel from "./WordInsightPanel";
 
@@ -63,6 +64,7 @@ export default function LessonClipCard({
   const insets = useSafeAreaInsets();
   const segments = useSegments();
   const [currentTimeSeconds, setCurrentTimeSeconds] = useState(0);
+  const [isShareSheetOpen, setIsShareSheetOpen] = useState(false);
   const activeSentenceIdRef = useRef<number | null>(null);
   const isTabbedRoute = segments[0] === "(tabs)";
   const bottomOverlayOffset = isTabbedRoute ? 0 : insets.bottom + 8;
@@ -91,7 +93,7 @@ export default function LessonClipCard({
     [clip.transcript, onDismissWord],
   );
 
-  const handleShare = useCallback(async () => {
+  const handleShareLink = useCallback(async () => {
     const { title, language, topic } = clip;
     const deepLink = `${process.env.EXPO_PUBLIC_WEB_SERVER_URL}/${clip.id}`;
 
@@ -137,7 +139,7 @@ export default function LessonClipCard({
       <ClipActions
         subtitlesVisible={subtitlesVisible}
         onToggleSubtitles={onToggleSubtitles}
-        onShare={handleShare}
+        onShare={() => setIsShareSheetOpen(true)}
       />
 
       <View
@@ -163,6 +165,12 @@ export default function LessonClipCard({
         )}
         <ClipInfo clip={clip} />
       </View>
+      <ShareClipSheet
+        clip={clip}
+        isOpen={isShareSheetOpen}
+        onClose={() => setIsShareSheetOpen(false)}
+        onShareLink={handleShareLink}
+      />
       {/* </SafeAreaView> */}
     </View>
   );
