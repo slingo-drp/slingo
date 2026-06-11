@@ -210,7 +210,7 @@ class VideoIngestionService:
                 model,
                 system_prompt=system_prompt,
                 user_prompt=user_prompt,
-                max_new_tokens=192,
+                max_new_tokens=512,
             )
 
             if data.get("action") == "match":
@@ -261,7 +261,7 @@ class VideoIngestionService:
             model,
             system_prompt=system_prompt,
             user_prompt=user_prompt,
-            max_new_tokens=192,
+            max_new_tokens=512,
         )
 
         definition = str(data.get("definition", "")).strip()
@@ -300,7 +300,7 @@ class VideoIngestionService:
             model,
             system_prompt=system_prompt,
             user_prompt=user_prompt,
-            max_new_tokens=128,
+            max_new_tokens=512,
         )
         translation = data.get("translation")
         if not isinstance(translation, str) or not translation.strip():

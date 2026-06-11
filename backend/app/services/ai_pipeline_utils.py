@@ -3,6 +3,7 @@ import re
 import subprocess
 from pathlib import Path
 from typing import Any
+from json_repair import repair_json
 
 import spacy
 import torch
@@ -38,14 +39,30 @@ def strip_code_fences(text: str) -> str:
         text = re.sub(r"\n?```$", "", text)
     return text.strip()
 
+def _repair_truncated_json(text: str) -> str:
+    """Best-effort repair for JSON truncated mid-string."""
+    # Close any unterminated string
+    if text.count('"') % 2 != 0:
+        text += '"'
+    # Close any unclosed braces
+    open_braces = text.count('{') - text.count('}')
+    text += '}' * max(open_braces, 0)
+    return text
+
+
 def extract_json_object(text: str) -> dict[str, Any]:
     cleaned = strip_code_fences(text)
     try:
         return json.loads(cleaned)
     except json.JSONDecodeError:
         match = re.search(r"\{.*\}", cleaned, re.DOTALL)
-        if match:
-            return json.loads(match.group(0))
+        candidate = match.group(0) if match else cleaned
+        try:
+            repaired = repair_json(candidate, return_objects=True)
+            if isinstance(repaired, dict):
+                return repaired
+        except Exception:
+            pass
         raise ValueError(f"Model did not return valid JSON:\n{text}")
 
 def extract_audio_to_wav(input_mp4: str, output_wav: str) -> None:
@@ -140,7 +157,7 @@ def chat_json(
     model,
     system_prompt: str,
     user_prompt: str,
-    max_new_tokens: int = 256,
+    max_new_tokens: int = 512,
 ) -> dict[str, Any]:
 
     messages = [
