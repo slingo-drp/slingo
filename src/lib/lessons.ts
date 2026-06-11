@@ -159,9 +159,13 @@ function toClip(video: VideoResult): LessonClip {
 
 // ─── Public API ───────────────────────────────────────────────────────────────
 
-export async function fetchLessonClips(): Promise<LessonClip[]> {
+export async function fetchLessonClips(language?: string): Promise<LessonClip[]> {
   const videos = await queryClips();
-  const clips = videos.map(toClip).filter((clip) => clip.transcript.length > 0);
+  let clips = videos.map(toClip).filter((clip) => clip.transcript.length > 0);
+
+  if (language) {
+    clips = clips.filter((clip) => clip.language === language);
+  }
 
   if (clips.length === 0) {
     throw new Error(
@@ -182,10 +186,11 @@ export async function fetchLessonClip(
 
 export async function fetchSharedLessonFeed(
   videoId: number,
+  language?: string,
 ): Promise<LessonClip[]> {
   const [sharedClip, allClips] = await Promise.all([
     fetchLessonClip(videoId),
-    fetchLessonClips(),
+    fetchLessonClips(language),
   ]);
 
   if (!sharedClip) {

@@ -1,9 +1,11 @@
 import LessonFeedScreen from "@/components/LessonFeedScreen";
 import { fetchLessonClips } from "@/lib/lessons";
+import { useSettingsStore } from "@/store/useSettingsStore";
 import { useCallback } from "react";
 
 export default function LessonsTab() {
-  const loadClips = useCallback(() => fetchLessonClips(), []);
+  const language = useSettingsStore((s) => s.language);
+  const loadClips = useCallback(() => fetchLessonClips(language), [language]);
 
   return (
     <LessonFeedScreen
