@@ -9,6 +9,7 @@ export type Bookmark = {
   senseId: number | null;
   surfaceForm: string;
   lemma: string;
+  language: WordRow["language"];
   definition: WordSenseRow["definition"] | null;
   role: WordSenseRow["pos"] | null;
   sentenceId: number;
@@ -129,6 +130,7 @@ function mapBookmark(row: BookmarkQueryResult): Bookmark {
     senseId: row.sense_id,
     surfaceForm: row.surface_form,
     lemma: word.lemma,
+    language: word.language,
     definition: sense?.definition ?? null,
     role: sense?.pos ?? null,
     sentenceId: sentence.id,
@@ -177,6 +179,7 @@ export function createOptimisticBookmark(
     senseId: selectedWord.word.senseId,
     surfaceForm: selectedWord.word.text,
     lemma: selectedWord.word.lemma ?? selectedWord.word.text,
+    language: selectedWord.clip.language,
     definition: selectedWord.word.definition,
     role: selectedWord.word.role,
     sentenceId: selectedWord.sentence.id,
