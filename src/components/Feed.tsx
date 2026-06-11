@@ -10,7 +10,6 @@ import {
   type ViewToken,
 } from "react-native";
 import LessonClipCard from "./LessonClipCard";
-import SettingsPanel from "./SettingsPanel";
 
 type FeedClip = LessonClip & {
   feedId: string;
@@ -39,7 +38,6 @@ export default function Feed({
   const isScreenFocused = useIsFocused();
   const scrollEnabled = useScrubStore((s) => s.scrollEnabled);
   const [height, setHeight] = useState(0);
-  const [settingsOpen, setSettingsOpen] = useState(false);
   const feedClips = useMemo(() => createFeedClips(clips), [clips]);
   const initialFeedId = useMemo(
     () =>
@@ -55,8 +53,6 @@ export default function Feed({
   const [selectedWord, setSelectedWord] = useState<SelectedWord | null>(null);
   const [subtitlesVisible, setSubtitlesVisible] = useState(true);
   const dismissWord = useCallback(() => setSelectedWord(null), []);
-
-  const toggleSettings = () => setSettingsOpen((prev) => !prev);
 
   const getItemLayout = useCallback(
     (_: unknown, index: number) => ({
@@ -94,7 +90,6 @@ export default function Feed({
           setSelectedWord({ word, clip, sentence })
         }
         subtitlesVisible={subtitlesVisible}
-        settingsToggle={toggleSettings}
       />
     ),
     [
@@ -134,10 +129,6 @@ export default function Feed({
         snapToInterval={height}
         viewabilityConfig={VIEWABILITY_CONFIG}
         windowSize={3}
-      />
-      <SettingsPanel
-        isOpen={settingsOpen}
-        onClose={() => setSettingsOpen(false)}
       />
     </View>
   );

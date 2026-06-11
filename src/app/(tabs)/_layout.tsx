@@ -25,9 +25,9 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: "Lessons",
+          title: "Home",
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="play-circle" color={color} size={size} />
+            <Ionicons name="home-sharp" color={color} size={size} />
           ),
         }}
       />
@@ -37,6 +37,15 @@ export default function TabsLayout() {
           title: "Bookmarks",
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="bookmark" color={color} size={size} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="settings"
+        options={{
+          title: "Settings",
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="settings" color={color} size={size} />
           ),
         }}
       />

@@ -45,7 +45,6 @@ type LessonClipCardProps = {
   subtitlesVisible: boolean;
   onToggleSubtitles: () => void;
   onDismissWord: () => void;
-  settingsToggle: () => void;
 };
 
 // ─── Component ───────────────────────────────────────────────────────────────
@@ -60,7 +59,6 @@ export default function LessonClipCard({
   subtitlesVisible,
   onToggleSubtitles,
   onDismissWord,
-  settingsToggle,
 }: LessonClipCardProps) {
   const insets = useSafeAreaInsets();
   const segments = useSegments();
@@ -140,7 +138,6 @@ export default function LessonClipCard({
         subtitlesVisible={subtitlesVisible}
         onToggleSubtitles={onToggleSubtitles}
         onShare={handleShare}
-        settingsToggle={settingsToggle}
       />
 
       <View
