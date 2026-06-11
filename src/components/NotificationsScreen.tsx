@@ -1,4 +1,14 @@
 import { ProfileAvatar } from "@/components/ProfileAvatar";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Text } from "@/components/ui/text";
@@ -16,7 +26,6 @@ import { useRouter } from "expo-router";
 import { useEffect, useState, type ComponentProps } from "react";
 import {
   ActivityIndicator,
-  Alert,
   Pressable,
   RefreshControl,
   ScrollView,
@@ -25,6 +34,18 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 type NotificationsTab = "inbox" | "friends";
+type FriendDialogState =
+  | {
+      description: string;
+      kind: "feedback";
+      title: string;
+    }
+  | {
+      description: string;
+      friendshipId: number;
+      kind: "remove";
+      username: string;
+    };
 
 export default function NotificationsScreen() {
   const insets = useSafeAreaInsets();
@@ -45,6 +66,9 @@ export default function NotificationsScreen() {
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<SocialSearchResult[]>([]);
   const [isSearching, setIsSearching] = useState(false);
+  const [dialogState, setDialogState] = useState<FriendDialogState | null>(
+    null,
+  );
   const [pendingFriendshipIds, setPendingFriendshipIds] = useState<number[]>(
     [],
   );
@@ -132,31 +156,75 @@ export default function NotificationsScreen() {
   }
 
   async function handleSearchAction(result: SocialSearchResult) {
-    if (
-      result.relationshipState === "incoming_request" &&
-      result.friendshipId
-    ) {
-      trackPendingFriendship(result.friendshipId, true);
+    try {
+      if (
+        result.relationshipState === "incoming_request" &&
+        result.friendshipId
+      ) {
+        trackPendingFriendship(result.friendshipId, true);
 
-      try {
-        await respondToFriendRequest(result.friendshipId, true);
-      } finally {
-        trackPendingFriendship(result.friendshipId, false);
+        try {
+          await respondToFriendRequest(result.friendshipId, true);
+        } finally {
+          trackPendingFriendship(result.friendshipId, false);
+        }
+
+        return;
       }
 
+      if (result.relationshipState !== "none") {
+        return;
+      }
+
+      trackPendingProfile(result.id, true);
+
+      try {
+        await sendFriendRequest(result.id);
+        setDialogState({
+          description: `@${result.username} will see your request in their inbox.`,
+          kind: "feedback",
+          title: "Friend request sent",
+        });
+      } finally {
+        trackPendingProfile(result.id, false);
+      }
+    } catch (error) {
+      console.error("Failed to update friendship state:", error);
+      setDialogState({
+        description:
+          error instanceof Error ? error.message : "Please try again.",
+        kind: "feedback",
+        title: "Couldn't update friendship",
+      });
+    }
+  }
+
+  async function handleConfirmRemoveFriend() {
+    if (dialogState?.kind !== "remove") {
       return;
     }
 
-    if (result.relationshipState !== "none") {
-      return;
-    }
-
-    trackPendingProfile(result.id, true);
+    const { friendshipId, username } = dialogState;
+    trackPendingFriendship(friendshipId, true);
+    setDialogState(null);
 
     try {
-      await sendFriendRequest(result.id);
+      await removeFriend(friendshipId);
+      setDialogState({
+        description: `@${username} has been removed from your friends list.`,
+        kind: "feedback",
+        title: "Friend removed",
+      });
+    } catch (error) {
+      console.error("Failed to remove friend:", error);
+      setDialogState({
+        description:
+          error instanceof Error ? error.message : "Please try again.",
+        kind: "feedback",
+        title: "Couldn't remove friend",
+      });
     } finally {
-      trackPendingProfile(result.id, false);
+      trackPendingFriendship(friendshipId, false);
     }
   }
 
@@ -244,36 +312,12 @@ export default function NotificationsScreen() {
             isLoading={isRefreshingSocial}
             isSearching={isSearching}
             onRemoveFriend={async (friendshipId, username) => {
-              Alert.alert(
-                "Remove friend?",
-                `You and @${username} will stop being connected in Slingo.`,
-                [
-                  {
-                    style: "cancel",
-                    text: "Cancel",
-                  },
-                  {
-                    style: "destructive",
-                    text: "Remove",
-                    onPress: () => {
-                      trackPendingFriendship(friendshipId, true);
-                      removeFriend(friendshipId)
-                        .catch((error) => {
-                          console.error("Failed to remove friend:", error);
-                          Alert.alert(
-                            "Couldn't remove friend",
-                            error instanceof Error
-                              ? error.message
-                              : "Please try again.",
-                          );
-                        })
-                        .finally(() => {
-                          trackPendingFriendship(friendshipId, false);
-                        });
-                    },
-                  },
-                ],
-              );
+              setDialogState({
+                description: `You and @${username} will stop being connected in Slingo.`,
+                friendshipId,
+                kind: "remove",
+                username,
+              });
             }}
             onAcceptIncoming={async (friendshipId) => {
               trackPendingFriendship(friendshipId, true);
@@ -295,6 +339,61 @@ export default function NotificationsScreen() {
           />
         )}
       </ScrollView>
+
+      <AlertDialog
+        open={dialogState != null}
+        onOpenChange={(open) => {
+          if (!open) {
+            setDialogState(null);
+          }
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {dialogState?.kind === "remove"
+                ? "Remove friend?"
+                : dialogState?.title}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {dialogState?.description}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+
+          <AlertDialogFooter>
+            {dialogState?.kind === "remove" ? (
+              <>
+                <AlertDialogCancel>
+                  <Text className="text-sm font-medium text-slate-300">
+                    Cancel
+                  </Text>
+                </AlertDialogCancel>
+                <AlertDialogAction
+                  className="border-red-200 bg-red-50 active:bg-red-100"
+                  onPress={() => {
+                    handleConfirmRemoveFriend().catch((error) => {
+                      console.error(
+                        "Unexpected remove friend dialog error:",
+                        error,
+                      );
+                    });
+                  }}
+                >
+                  <Text className="text-sm font-bold text-red-500">
+                    Remove Friend
+                  </Text>
+                </AlertDialogAction>
+              </>
+            ) : (
+              <AlertDialogAction onPress={() => setDialogState(null)}>
+                <Text className="text-sm font-bold text-primary-foreground">
+                  OK
+                </Text>
+              </AlertDialogAction>
+            )}
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </View>
   );
 }
@@ -542,7 +641,7 @@ function FriendsTab({
                     onPress={() => {
                       onSearchAction(result).catch((error) => {
                         console.error(
-                          "Failed to update friendship state:",
+                          "Unexpected friendship action error:",
                           error,
                         );
                       });
@@ -714,23 +813,63 @@ function ConnectionsSection({
             </Text>
           </View>
           {actionLabel && onAction ? (
-            <Button
-              className="rounded-full px-4"
-              disabled={pendingFriendshipIds?.includes(entry.friendshipId)}
-              size="sm"
-              variant={actionVariant}
-              onPress={() => {
-                onAction(entry.friendshipId, entry.username).catch((error) => {
-                  console.error("Failed to update friendship state:", error);
-                });
-              }}
-            >
-              <Text className="text-sm font-bold text-primary-foreground">
-                {pendingFriendshipIds?.includes(entry.friendshipId)
-                  ? "Working..."
-                  : actionLabel}
-              </Text>
-            </Button>
+            actionVariant === "destructive" ? (
+              <Pressable
+                className={cn(
+                  "items-center rounded-2xl border px-4 py-2.5",
+                  pendingFriendshipIds?.includes(entry.friendshipId)
+                    ? "border-slate-800 bg-slate-950"
+                    : "border-red-500/30 bg-red-500/10 active:bg-red-500/20",
+                )}
+                disabled={pendingFriendshipIds?.includes(entry.friendshipId)}
+                onPress={() => {
+                  onAction(entry.friendshipId, entry.username).catch(
+                    (error) => {
+                      console.error(
+                        "Failed to update friendship state:",
+                        error,
+                      );
+                    },
+                  );
+                }}
+              >
+                <Text
+                  className={cn(
+                    "text-sm font-bold",
+                    pendingFriendshipIds?.includes(entry.friendshipId)
+                      ? "text-slate-500"
+                      : "text-red-300",
+                  )}
+                >
+                  {pendingFriendshipIds?.includes(entry.friendshipId)
+                    ? "Working..."
+                    : actionLabel}
+                </Text>
+              </Pressable>
+            ) : (
+              <Button
+                className="rounded-full px-4"
+                disabled={pendingFriendshipIds?.includes(entry.friendshipId)}
+                size="sm"
+                variant={actionVariant}
+                onPress={() => {
+                  onAction(entry.friendshipId, entry.username).catch(
+                    (error) => {
+                      console.error(
+                        "Failed to update friendship state:",
+                        error,
+                      );
+                    },
+                  );
+                }}
+              >
+                <Text className="text-sm font-bold text-primary-foreground">
+                  {pendingFriendshipIds?.includes(entry.friendshipId)
+                    ? "Working..."
+                    : actionLabel}
+                </Text>
+              </Button>
+            )
           ) : (
             <Text className="text-xs font-bold uppercase tracking-[0.16em] text-slate-500">
               {formatRelativeTime(entry.createdAt)}
