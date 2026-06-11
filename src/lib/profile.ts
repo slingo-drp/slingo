@@ -61,6 +61,18 @@ export async function resolveAvatarUrl(avatarValue?: string | null) {
   return data.signedUrl;
 }
 
+export function getAvatarStoragePath(avatarValue?: string | null) {
+  if (!avatarValue) {
+    return null;
+  }
+
+  if (avatarValue.startsWith(MICAH_AVATAR_BASE_URL)) {
+    return null;
+  }
+
+  return extractAvatarPath(avatarValue);
+}
+
 export async function upsertProfile(
   userId: string,
   updates: ProfileUpdate = {},
