@@ -1,6 +1,6 @@
+import { useNotifications } from "@/hooks/use-notifications";
 import { Ionicons } from "@expo/vector-icons";
 import { Tabs } from "expo-router";
-import { useNotifications } from "@/hooks/use-notifications";
 
 export default function TabsLayout() {
   const { unreadCount } = useNotifications();
@@ -55,7 +55,7 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="notifications"
         options={{
-          title: "Notifications",
+          title: "Friends",
           tabBarBadge:
             unreadCount > 0
               ? unreadCount > 99
@@ -63,7 +63,7 @@ export default function TabsLayout() {
                 : unreadCount
               : undefined,
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="notifications" color={color} size={size} />
+            <Ionicons name="person" color={color} size={size} />
           ),
         }}
       />
