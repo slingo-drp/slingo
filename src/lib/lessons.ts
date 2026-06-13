@@ -1,6 +1,6 @@
 import type { VideoSource } from "expo-video";
 import { supabase } from "./supabase";
-import type { Domain, Language, VideoRow, WordSenseRow } from "./types";
+import type { Domain, Language, Level, VideoRow, WordSenseRow } from "./types";
 
 // ─── Domain types ─────────────────────────────────────────────────────────────
 
@@ -55,6 +55,7 @@ const DEFAULT_TOPIC: Domain = "everyday";
 export type LessonClipFilters = {
   domains?: Domain[];
   language?: Language | null;
+  level?: Level | null;
 };
 
 // ─── Query ────────────────────────────────────────────────────────────────────
@@ -84,6 +85,7 @@ async function queryClips(videoId?: number, filters: LessonClipFilters = {}) {
 
   if (videoId !== undefined) query = query.eq("id", videoId);
   if (filters.language) query = query.eq("language", filters.language);
+  if (filters.level) query = query.eq("level", filters.level);
   if (filters.domains?.length) {
     query = query.filter("topic", "in", `(${filters.domains.join(",")})`);
   }
@@ -160,7 +162,7 @@ export async function fetchLessonClips(
 
   if (clips.length === 0) {
     throw new Error(
-      "No lesson clips matched your current language or content filters.",
+      "No lesson clips matched your current language, level, or content filters.",
     );
   }
 

@@ -24,6 +24,7 @@ function InvalidLessonState({ message }: { message: string }) {
 
 export default function ClipRoute() {
   const language = useSettingsStore((state) => state.language);
+  const level = useSettingsStore((state) => state.level);
   const domains = useSettingsStore((state) => state.domains);
   const params = useLocalSearchParams<{
     id?: string | string[];
@@ -49,8 +50,9 @@ export default function ClipRoute() {
     return fetchSharedLessonFeed(numericClipId, {
       domains,
       language,
+      level,
     });
-  }, [domains, language, numericClipId]);
+  }, [domains, language, level, numericClipId]);
 
   if (numericClipId === null) {
     return <InvalidLessonState message="This shared lesson link is invalid." />;
