@@ -1,8 +1,9 @@
 import LessonFeedScreen from "@/components/LessonFeedScreen";
 import { fetchSharedLessonFeed } from "@/lib/lessons";
+import { useSettingsStore } from "@/store/useSettingsStore";
 import { useLocalSearchParams } from "expo-router";
-import { useCallback, useMemo } from "react";
 import { StatusBar } from "expo-status-bar";
+import { useCallback, useMemo } from "react";
 import { Text, View } from "react-native";
 
 function normalizeRouteParam(id: string | string[] | undefined) {
@@ -28,6 +29,7 @@ export default function ClipRoute() {
   }>();
   const clipId = normalizeRouteParam(params.id);
   const startMsParam = normalizeRouteParam(params.t);
+  const language = useSettingsStore((s) => s.language);
 
   const numericClipId = useMemo(() => {
     return clipId && /^\d+$/.test(clipId) ? Number.parseInt(clipId, 10) : null;
@@ -43,8 +45,8 @@ export default function ClipRoute() {
       throw new Error("This shared lesson link is invalid.");
     }
 
-    return fetchSharedLessonFeed(numericClipId);
-  }, [numericClipId]);
+    return fetchSharedLessonFeed(numericClipId, language);
+  }, [numericClipId, language]);
 
   if (numericClipId === null) {
     return <InvalidLessonState message="This shared lesson link is invalid." />;
