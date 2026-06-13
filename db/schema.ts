@@ -116,6 +116,7 @@ export const videos = pgTable(
     videoUrl: text("video_url").notNull(),
     language: languageEnum("language").notNull(),
     level: levelEnum("level").notNull(),
+    topic: domainEnum("topic").notNull().default("everyday"),
     title: text("title").notNull(),
     description: text("description"),
     createdAt: timestamp("created_at", { withTimezone: true })
@@ -123,6 +124,8 @@ export const videos = pgTable(
       .defaultNow(),
   },
   (table) => [
+    index("videos_language_topic_idx").on(table.language, table.topic),
+
     pgPolicy("public read videos", {
       for: "select",
       to: [anonRole, authenticatedRole],

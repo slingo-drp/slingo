@@ -474,7 +474,7 @@ export default function SettingsScreen() {
         </SettingsSection>
 
         <SettingsSection
-          description="Choose the language you want to study."
+          description="Choose the language you want the lesson feed to focus on."
           title="Language"
         >
           {LANGUAGES.map((entry) => (
@@ -516,7 +516,7 @@ export default function SettingsScreen() {
         </SettingsSection>
 
         <SettingsSection
-          description="Pick the kinds of clips you want highlighted in your preferences."
+          description="Pick the kinds of clips you want included in your lesson feed."
           title="Content Type"
         >
           {DOMAINS.map((entry) => (
