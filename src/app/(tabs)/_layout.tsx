@@ -1,9 +1,17 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Tabs } from "expo-router";
 import { useNotifications } from "@/hooks/use-notifications";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+
+const TAB_BAR_BASE_HEIGHT = 60;
+const TAB_BAR_TOP_PADDING = 8;
+const TAB_BAR_MIN_BOTTOM_PADDING = 8;
 
 export default function TabsLayout() {
   const { unreadCount } = useNotifications();
+  const insets = useSafeAreaInsets();
+  const bottomPadding = Math.max(insets.bottom, TAB_BAR_MIN_BOTTOM_PADDING);
+  const tabBarHeight = TAB_BAR_BASE_HEIGHT + bottomPadding;
 
   return (
     <Tabs
@@ -15,9 +23,9 @@ export default function TabsLayout() {
         tabBarStyle: {
           backgroundColor: "#020617",
           borderTopColor: "rgba(148, 163, 184, 0.18)",
-          height: 68,
-          paddingTop: 8,
-          paddingBottom: 8,
+          height: tabBarHeight,
+          paddingTop: TAB_BAR_TOP_PADDING,
+          paddingBottom: bottomPadding,
         },
         tabBarLabelStyle: {
           fontSize: 12,
