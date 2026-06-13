@@ -154,11 +154,17 @@ function toClip(video: VideoResult): LessonClip {
 
 // ─── Public API ───────────────────────────────────────────────────────────────
 
-export async function fetchLessonClips(
+async function fetchFilteredClips(
   filters: LessonClipFilters = {},
 ): Promise<LessonClip[]> {
   const videos = await queryClips(undefined, filters);
-  const clips = videos.map(toClip).filter((clip) => clip.transcript.length > 0);
+  return videos.map(toClip).filter((clip) => clip.transcript.length > 0);
+}
+
+export async function fetchLessonClips(
+  filters: LessonClipFilters = {},
+): Promise<LessonClip[]> {
+  const clips = await fetchFilteredClips(filters);
 
   if (clips.length === 0) {
     throw new Error(
@@ -181,16 +187,20 @@ export async function fetchSharedLessonFeed(
   videoId: number,
   filters: LessonClipFilters = {},
 ): Promise<LessonClip[]> {
-  const [sharedClip, allClips] = await Promise.all([
+  const [sharedClip, filteredClips] = await Promise.all([
     fetchLessonClip(videoId),
-    queryClips(undefined, filters).then((videos) =>
-      videos.map(toClip).filter((clip) => clip.transcript.length > 0),
-    ),
+    fetchFilteredClips(filters),
   ]);
 
   if (!sharedClip) {
     throw new Error("That shared lesson could not be found.");
   }
 
-  return [sharedClip, ...allClips.filter((clip) => clip.id !== sharedClip.id)];
+  // Shared lessons should always open, even when they fall outside the user's
+  // current language, level, or topic preferences. Only the surrounding feed
+  // stays filtered.
+  return [
+    sharedClip,
+    ...filteredClips.filter((clip) => clip.id !== sharedClip.id),
+  ];
 }
