@@ -1,31 +1,11 @@
-import LessonFeedScreen from "@/components/LessonFeedScreen";
-import { fetchSharedLessonFeed } from "@/lib/lessons";
-import { useSettingsStore } from "@/store/useSettingsStore";
-import { useLocalSearchParams } from "expo-router";
-import { useCallback, useMemo } from "react";
-import { StatusBar } from "expo-status-bar";
-import { Text, View } from "react-native";
+import { buildLessonHref } from "@/lib/lesson-links";
+import { Redirect, useLocalSearchParams } from "expo-router";
 
-function normalizeRouteParam(id: string | string[] | undefined) {
-  return Array.isArray(id) ? id[0] : id;
+function normalizeRouteParam(value: string | string[] | undefined) {
+  return Array.isArray(value) ? value[0] : value;
 }
 
-function InvalidLessonState({ message }: { message: string }) {
-  return (
-    <View className="flex-1 items-center justify-center bg-slate-950 px-6">
-      <StatusBar style="light" />
-      <Text className="mb-2 text-lg font-black text-white">
-        Failed to load lesson
-      </Text>
-      <Text className="text-center text-sm text-white/60">{message}</Text>
-    </View>
-  );
-}
-
-export default function ClipRoute() {
-  const language = useSettingsStore((state) => state.language);
-  const level = useSettingsStore((state) => state.level);
-  const domains = useSettingsStore((state) => state.domains);
+export default function LegacyClipRoute() {
   const params = useLocalSearchParams<{
     id?: string | string[];
     t?: string | string[];
@@ -33,39 +13,10 @@ export default function ClipRoute() {
   const clipId = normalizeRouteParam(params.id);
   const startMsParam = normalizeRouteParam(params.t);
 
-  const numericClipId = useMemo(() => {
-    return clipId && /^\d+$/.test(clipId) ? Number.parseInt(clipId, 10) : null;
-  }, [clipId]);
-  const initialStartMs = useMemo(() => {
-    return startMsParam && /^\d+$/.test(startMsParam)
-      ? Number.parseInt(startMsParam, 10)
-      : null;
-  }, [startMsParam]);
-
-  const loadClips = useCallback(() => {
-    if (numericClipId === null) {
-      throw new Error("This shared lesson link is invalid.");
-    }
-
-    return fetchSharedLessonFeed(numericClipId, {
-      domains,
-      language,
-      level,
-    });
-  }, [domains, language, level, numericClipId]);
-
-  if (numericClipId === null) {
-    return <InvalidLessonState message="This shared lesson link is invalid." />;
+  if (!clipId) {
+    return <Redirect href="/" />;
   }
 
-  return (
-    <LessonFeedScreen
-      key={`${numericClipId}-${initialStartMs ?? "none"}`}
-      errorTitle="Failed to load lesson"
-      initialStartMs={initialStartMs}
-      initialVideoId={numericClipId}
-      loadClips={loadClips}
-      loadingMessage="Loading your lesson..."
-    />
-  );
+  // Keep this route only as a compatibility shim for older /:id links.
+  return <Redirect href={buildLessonHref(clipId, { startMs: startMsParam })} />;
 }

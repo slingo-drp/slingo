@@ -20,6 +20,7 @@ import {
   type SocialConnection,
   type SocialSearchResult,
 } from "@/lib/friends";
+import { buildLessonHref } from "@/lib/lesson-links";
 import type { InboxNotification } from "@/lib/notifications";
 import { cn } from "@/lib/utils";
 import { Ionicons } from "@expo/vector-icons";
@@ -124,7 +125,7 @@ export default function NotificationsScreen() {
     }
 
     if (notification.type === "video_share") {
-      router.push(`/lesson/${notification.video.id}`);
+      router.push(buildLessonHref(notification.video.id));
     }
   }
 

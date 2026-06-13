@@ -1,5 +1,6 @@
 import { supabase } from "./supabase";
 import type { TablesInsert } from "./database.types";
+import { buildSharedLessonUrl } from "./lesson-links";
 import type { WordSenseRow, WordRow } from "./types";
 import type { LessonClip, LessonSentence, SelectedWord } from "./lessons";
 
@@ -164,7 +165,7 @@ function toBookmarkPayload(
 }
 
 export function buildLessonLink(videoId: number) {
-  return `${process.env.EXPO_PUBLIC_WEB_SERVER_URL}/${videoId}`;
+  return buildSharedLessonUrl(videoId);
 }
 
 export function createOptimisticBookmark(

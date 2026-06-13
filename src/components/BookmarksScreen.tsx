@@ -2,6 +2,7 @@ import SlideUpSheet from "@/components/animated/SlideUpSheet";
 import PronunciationButton from "@/components/PronunciationButton";
 import { Input } from "@/components/ui/input";
 import { useBookmarks } from "@/hooks/use-bookmarks";
+import { buildLessonHref } from "@/lib/lesson-links";
 import type { Bookmark } from "@/lib/bookmarks";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
@@ -173,7 +174,9 @@ export default function BookmarksScreen() {
           if (!selectedBookmark) return;
           setSelectedBookmark(null);
           router.push(
-            `/lesson/${selectedBookmark.videoId}?t=${selectedBookmark.startMs}`,
+            buildLessonHref(selectedBookmark.videoId, {
+              startMs: selectedBookmark.startMs,
+            }),
           );
         }}
         onRemove={() => {
