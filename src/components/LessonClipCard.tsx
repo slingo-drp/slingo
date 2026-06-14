@@ -47,6 +47,10 @@ type LessonClipCardProps = {
   subtitlesVisible: boolean;
   onToggleSubtitles: () => void;
   onDismissWord: () => void;
+  onOpenShare: () => void;
+  onCloseShare: () => void;
+  shareSheetKey: string;
+  shareSheetOpen: boolean;
 };
 
 // ─── Component ───────────────────────────────────────────────────────────────
@@ -61,11 +65,14 @@ export default function LessonClipCard({
   subtitlesVisible,
   onToggleSubtitles,
   onDismissWord,
+  onOpenShare,
+  onCloseShare,
+  shareSheetKey,
+  shareSheetOpen,
 }: LessonClipCardProps) {
   const insets = useSafeAreaInsets();
   const segments = useSegments();
   const [currentTimeSeconds, setCurrentTimeSeconds] = useState(0);
-  const [isShareSheetOpen, setIsShareSheetOpen] = useState(false);
   const [liked, setLiked] = useState(false);
   const activeSentenceIdRef = useRef<number | null>(null);
   const isTabbedRoute = segments[0] === "(tabs)";
@@ -132,7 +139,7 @@ export default function LessonClipCard({
         onLike={toggleLike}
         subtitlesVisible={subtitlesVisible}
         onToggleSubtitles={onToggleSubtitles}
-        onShare={() => setIsShareSheetOpen(true)}
+        onShare={onOpenShare}
       />
 
       <View
@@ -159,9 +166,10 @@ export default function LessonClipCard({
         <ClipInfo clip={clip} />
       </View>
       <ShareClipSheet
+        key={shareSheetKey}
         clip={clip}
-        isOpen={isShareSheetOpen}
-        onClose={() => setIsShareSheetOpen(false)}
+        isOpen={shareSheetOpen}
+        onClose={onCloseShare}
         onShareLink={handleShareLink}
       />
       {/* </SafeAreaView> */}

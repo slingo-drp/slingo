@@ -53,6 +53,8 @@ export default function Feed({
     initialFeedId,
   );
 
+  const [openShareFeedId, setOpenShareFeedId] = useState<string | null>(null);
+  const [shareSheetSession, setShareSheetSession] = useState(0);
   const [selectedWord, setSelectedWord] = useState<SelectedWord | null>(null);
   const [subtitlesVisible, setSubtitlesVisible] = useState(true);
   const dismissWord = useCallback(() => setSelectedWord(null), []);
@@ -70,12 +72,26 @@ export default function Feed({
     ({ viewableItems }: { viewableItems: ViewToken<FeedClip>[] }) => {
       const visibleClip = viewableItems.find((item) => item.isViewable)?.item;
       if (visibleClip) {
+        if (visibleClip.feedId !== activeFeedId) {
+          setOpenShareFeedId(null);
+        }
         setActiveFeedId(visibleClip.feedId);
         onActiveClipLevelChange?.(visibleClip.level);
       }
     },
-    [onActiveClipLevelChange],
+    [activeFeedId, onActiveClipLevelChange],
   );
+
+  const handleOpenShare = useCallback((feedId: string) => {
+    setShareSheetSession((session) => session + 1);
+    setOpenShareFeedId(feedId);
+  }, []);
+
+  const handleCloseShare = useCallback((feedId: string) => {
+    setOpenShareFeedId((currentFeedId) =>
+      currentFeedId === feedId ? null : currentFeedId,
+    );
+  }, []);
 
   const renderItem = useCallback(
     ({ item }: ListRenderItemInfo<FeedClip>) => (
@@ -88,6 +104,8 @@ export default function Feed({
         initialSeekMs={item.feedId === initialFeedId ? initialStartMs : null}
         isActive={isScreenFocused && item.feedId === activeFeedId}
         onDismissWord={dismissWord}
+        onCloseShare={() => handleCloseShare(item.feedId)}
+        onOpenShare={() => handleOpenShare(item.feedId)}
         onToggleSubtitles={() => {
           setSelectedWord(null);
           setSubtitlesVisible((v) => !v);
@@ -95,17 +113,23 @@ export default function Feed({
         onWordPress={(word, clip, sentence) =>
           setSelectedWord({ word, clip, sentence })
         }
+        shareSheetKey={`${item.feedId}-${shareSheetSession}`}
+        shareSheetOpen={openShareFeedId === item.feedId}
         subtitlesVisible={subtitlesVisible}
       />
     ),
     [
       activeFeedId,
       dismissWord,
+      handleCloseShare,
+      handleOpenShare,
       height,
       initialFeedId,
       initialStartMs,
       isScreenFocused,
+      openShareFeedId,
       selectedWord,
+      shareSheetSession,
       subtitlesVisible,
     ],
   );
