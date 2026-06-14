@@ -11,7 +11,7 @@ function normalizeRouteParam(value: string | string[] | undefined) {
 
 function InvalidLessonState({ message }: { message: string }) {
   return (
-    <View className="flex-1 items-center justify-center bg-slate-950 px-6">
+    <View className="flex-1 items-center justify-center bg-app-background px-6">
       <StatusBar style="light" />
       <Text className="mb-2 text-lg font-black text-white">
         Failed to load lesson

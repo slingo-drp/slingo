@@ -38,6 +38,30 @@ const buttonVariants = cva(
           Platform.select({ web: "hover:bg-accent dark:hover:bg-accent/50" }),
         ),
         link: "",
+        app: cn(
+          "border border-app-primary-border/30 bg-app-primary-surface/15 active:bg-app-primary-surface/20 shadow-sm shadow-black/5",
+          Platform.select({ web: "hover:bg-app-primary-surface/20" }),
+        ),
+        appOutline: cn(
+          "border border-app-border-strong bg-app-surface active:bg-app-border shadow-sm shadow-black/5",
+          Platform.select({ web: "hover:bg-app-border" }),
+        ),
+        appSuccess: cn(
+          "bg-app-primary active:bg-app-primary/90 shadow-sm shadow-black/5",
+          Platform.select({ web: "hover:bg-app-primary/90" }),
+        ),
+        appDangerSoft: cn(
+          "border border-app-destructive-border/70 bg-app-destructive-surface/25 active:bg-app-destructive-surface/35 shadow-sm shadow-black/5",
+          Platform.select({ web: "hover:bg-app-destructive-surface/35" }),
+        ),
+        appGhost: cn(
+          "active:bg-app-surface",
+          Platform.select({ web: "hover:bg-app-surface" }),
+        ),
+        appIcon: cn(
+          "border border-app-border-strong bg-app-surface active:bg-app-border shadow-sm shadow-black/5",
+          Platform.select({ web: "hover:bg-app-border" }),
+        ),
       },
       size: {
         default: cn(
@@ -84,6 +108,12 @@ const buttonTextVariants = cva(
             web: "underline-offset-4 hover:underline group-hover:underline",
           }),
         ),
+        app: "text-app-primary",
+        appOutline: "text-app-text",
+        appSuccess: "text-app-primary-foreground",
+        appDangerSoft: "text-app-destructive",
+        appGhost: "text-app-text",
+        appIcon: "text-app-text",
       },
       size: {
         default: "",

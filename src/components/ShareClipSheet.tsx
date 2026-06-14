@@ -2,7 +2,9 @@ import { LearningLanguageBadge } from "@/components/LearningLanguageBadge";
 import { ProfileAvatar } from "@/components/ProfileAvatar";
 import SlideUpSheet from "@/components/animated/SlideUpSheet";
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { SheetHandle } from "@/components/ui/sheet-handle";
 import { Text } from "@/components/ui/text";
 import { useAuthContext } from "@/hooks/use-auth-context";
 import { useNotifications } from "@/hooks/use-notifications";
@@ -90,9 +92,7 @@ export default function ShareClipSheet({
       isOpen={isOpen}
       onClose={handleClose}
     >
-      <View className="items-center pb-4">
-        <View className="h-1.5 w-12 rounded-full bg-slate-700" />
-      </View>
+      <SheetHandle />
 
       {mode === "menu" ? (
         <View className="gap-4">
@@ -127,12 +127,12 @@ export default function ShareClipSheet({
             Set your username first
           </Text>
 
-          <View className="rounded-3xl border border-amber-400/25 bg-amber-400/10 px-4 py-4">
+          <Card variant="appWarning">
             <Text className="text-sm font-semibold leading-6 text-amber-100/90">
               Save a username in Settings, then come back here to share lessons
               with friends.
             </Text>
-          </View>
+          </Card>
 
           <View className="flex-row gap-3">
             <Button
@@ -164,7 +164,7 @@ export default function ShareClipSheet({
               Share with friends
             </Text>
             <Pressable
-              className="rounded-full border border-slate-700 p-2"
+              className="rounded-full border border-app-border-strong p-2"
               onPress={() => setMode("menu")}
             >
               <Ionicons color="#cbd5e1" name="arrow-back" size={18} />
@@ -172,11 +172,11 @@ export default function ShareClipSheet({
           </View>
 
           <View className="gap-2">
-            <Text className="text-[11px] font-black uppercase tracking-[0.16em] text-slate-500">
+            <Text variant="sectionLabel" className="tracking-[0.16em]">
               Note
             </Text>
             <Input
-              className="min-h-24 border-slate-700 bg-slate-950 px-4 py-3 text-white"
+              className="min-h-24 border-app-border-strong bg-app-surface-inset px-4 py-3 text-app-text"
               multiline
               numberOfLines={4}
               placeholder="Add a short message (optional)"
@@ -185,22 +185,22 @@ export default function ShareClipSheet({
               value={note}
               onChangeText={setNote}
             />
-            <Text className="text-right text-xs font-semibold text-slate-500">
+            <Text className="text-right text-xs font-semibold text-app-text-subtle">
               {note.trim().length}/280
             </Text>
           </View>
 
           <View className="mt-8 gap-2">
-            <Text className="text-[11px] font-black uppercase tracking-[0.16em] text-slate-500">
+            <Text variant="sectionLabel" className="tracking-[0.16em]">
               Friends
             </Text>
             {socialState.acceptedFriends.length === 0 ? (
-              <View className="rounded-3xl border border-slate-800 bg-slate-900 px-4 py-5">
+              <Card className="py-5" variant="app">
                 <Text className="text-sm font-semibold leading-6 text-slate-400">
                   Add and accept a friend first, then they will appear here as a
                   share recipient.
                 </Text>
-              </View>
+              </Card>
             ) : (
               <ScrollView
                 className="max-h-72"
@@ -216,8 +216,8 @@ export default function ShareClipSheet({
                         className={cn(
                           "flex-row items-center gap-3 rounded-2xl border px-3 py-3",
                           isSelected
-                            ? "bg-emerald-400/12 border-emerald-400/40"
-                            : "border-slate-800 bg-slate-900",
+                            ? "bg-app-primary-surface/12 border-app-primary-border/40"
+                            : "border-app-border bg-app-surface",
                         )}
                         onPress={() => setSelectedFriendId(friend.userId)}
                       >
@@ -296,10 +296,10 @@ function ActionCard({
 }) {
   return (
     <Pressable
-      className="flex-row items-center gap-3 rounded-3xl border border-slate-800 bg-slate-900 px-4 py-4"
+      className="flex-row items-center gap-3 rounded-3xl border border-app-border bg-app-surface px-4 py-4"
       onPress={onPress}
     >
-      <View className="rounded-2xl border border-slate-700 bg-slate-950 p-3">
+      <View className="rounded-2xl border border-app-border-strong bg-app-surface-inset p-3">
         <Ionicons color="#6ee7b7" name={icon} size={22} />
       </View>
       <View className="flex-1 gap-1">

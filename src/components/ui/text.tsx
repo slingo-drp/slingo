@@ -40,6 +40,12 @@ const textVariants = cva(
         large: "text-lg font-semibold",
         small: "text-sm font-medium leading-none",
         muted: "text-muted-foreground text-sm",
+        screenTitle: "text-3xl font-black tracking-tight text-app-text",
+        sectionLabel:
+          "text-[11px] font-black uppercase tracking-[0.2em] text-app-text-subtle",
+        mutedBody: "text-sm font-semibold leading-6 text-app-text-muted",
+        microLabel:
+          "text-[10px] font-black uppercase tracking-[0.14em] text-app-text-subtle",
       },
     },
     defaultVariants: {

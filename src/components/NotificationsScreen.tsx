@@ -11,6 +11,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -23,6 +24,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
+import { SegmentedControl } from "@/components/ui/segmented-control";
 import { Text } from "@/components/ui/text";
 import { useAuthContext } from "@/hooks/use-auth-context";
 import { useNotifications } from "@/hooks/use-notifications";
@@ -202,7 +204,7 @@ export default function NotificationsScreen({
 
       try {
         await sendFriendRequest(result.id);
-        showToast("✓ Friend request sent");
+        showToast("Friend request sent");
       } finally {
         trackPendingProfile(result.id, false);
       }
@@ -265,7 +267,7 @@ export default function NotificationsScreen({
   }
 
   return (
-    <View className="flex-1 bg-slate-950">
+    <View className="flex-1 bg-app-background">
       <ScrollView
         className="flex-1"
         contentContainerStyle={{
@@ -288,24 +290,21 @@ export default function NotificationsScreen({
         showsVerticalScrollIndicator={false}
       >
         <View className="gap-2">
-          <Text className="text-3xl font-black tracking-tight text-white">
+          <Text variant="screenTitle">
             {currentTab === "friends" ? "Friends" : "Notifications"}
           </Text>
         </View>
 
         {mode == null ? (
-          <View className="flex-row rounded-2xl border border-slate-800 bg-slate-900 p-1">
-            <SegmentButton
-              active={currentTab === "inbox"}
-              label="Inbox"
-              onPress={() => setActiveTab("inbox")}
-            />
-            <SegmentButton
-              active={currentTab === "friends"}
-              label="Friends"
-              onPress={() => setActiveTab("friends")}
-            />
-          </View>
+          <SegmentedControl
+            className="bg-app-surface"
+            items={[
+              { label: "Inbox", value: "inbox" },
+              { label: "Friends", value: "friends" },
+            ]}
+            value={currentTab}
+            onValueChange={setActiveTab}
+          />
         ) : null}
 
         {currentTab === "inbox" ? (
@@ -502,8 +501,8 @@ function InboxTab({
             className={cn(
               "gap-3 rounded-3xl border px-3.5 py-3.5",
               notification.isRead
-                ? "border-slate-800 bg-slate-900"
-                : "border-emerald-400/30 bg-emerald-400/10",
+                ? "border-app-border bg-app-surface"
+                : "border-app-primary-border/30 bg-app-primary-surface/10",
               canOpenCard && "active:opacity-95",
             )}
             onPress={() => {
@@ -543,7 +542,7 @@ function InboxTab({
                       {!notification.isRead ? (
                         <View className="h-2 w-2 rounded-full bg-emerald-300" />
                       ) : null}
-                      <Text className="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-500">
+                      <Text className="text-[10px] font-bold uppercase tracking-[0.14em] text-app-text-subtle">
                         {formatRelativeTime(notification.createdAt)}
                       </Text>
                     </View>
@@ -579,8 +578,8 @@ function InboxTab({
                       </Text>
                     </Button>
                   ) : notification.type === "friend_request" ? (
-                    <View className="rounded-full border border-slate-700 bg-slate-950 px-3 py-2">
-                      <Text className="text-xs font-bold uppercase tracking-[0.16em] text-slate-400">
+                    <View className="rounded-full border border-app-border-strong bg-app-surface-inset px-3 py-2">
+                      <Text className="text-xs font-bold uppercase tracking-[0.16em] text-app-text-muted">
                         Accepted
                       </Text>
                     </View>
@@ -603,9 +602,9 @@ function InboxTab({
 
 function SharedVideoNote({ note }: { note: string }) {
   return (
-    <View className="rounded-2xl border border-slate-700 bg-slate-950 px-3 py-2.5">
+    <View className="rounded-2xl border border-app-border-strong bg-app-surface-inset px-3 py-2.5">
       <View className="flex-row items-start gap-2.5">
-        <View className="mt-0.5 rounded-full bg-slate-800 p-1.5">
+        <View className="mt-0.5 rounded-full bg-app-border p-1.5">
           <Ionicons
             name="chatbubble-ellipses-outline"
             size={12}
@@ -614,7 +613,7 @@ function SharedVideoNote({ note }: { note: string }) {
         </View>
 
         <View className="flex-1 gap-1">
-          <Text className="text-[10px] font-black uppercase tracking-[0.14em] text-slate-500">
+          <Text className="text-[10px] font-black uppercase tracking-[0.14em] text-app-text-subtle">
             Message
           </Text>
           <Text
@@ -646,7 +645,7 @@ function InboxFilterDropdown({
     <View className="items-end">
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Pressable className="flex-row items-center gap-2 rounded-2xl border border-slate-800 bg-slate-900 px-3 py-2.5 active:bg-slate-800">
+          <Pressable className="flex-row items-center gap-2 rounded-2xl border border-app-border bg-app-surface px-3 py-2.5 active:bg-app-border">
             <Text className="text-xs font-black uppercase tracking-[0.16em] text-slate-300">
               {inboxFilter}
             </Text>
@@ -667,7 +666,7 @@ function InboxFilterDropdown({
               </DropdownMenuItemIndicator>
               <Text>All</Text>
               <DropdownMenuItemInset>
-                <Text className="text-xs font-bold uppercase tracking-[0.14em] text-slate-500">
+                <Text className="text-xs font-bold uppercase tracking-[0.14em] text-app-text-subtle">
                   {totalCount}
                 </Text>
               </DropdownMenuItemInset>
@@ -678,7 +677,7 @@ function InboxFilterDropdown({
               </DropdownMenuItemIndicator>
               <Text>Unread</Text>
               <DropdownMenuItemInset>
-                <Text className="text-xs font-bold uppercase tracking-[0.14em] text-slate-500">
+                <Text className="text-xs font-bold uppercase tracking-[0.14em] text-app-text-subtle">
                   {unreadCount}
                 </Text>
               </DropdownMenuItemInset>
@@ -689,7 +688,7 @@ function InboxFilterDropdown({
               </DropdownMenuItemIndicator>
               <Text>Read</Text>
               <DropdownMenuItemInset>
-                <Text className="text-xs font-bold uppercase tracking-[0.14em] text-slate-500">
+                <Text className="text-xs font-bold uppercase tracking-[0.14em] text-app-text-subtle">
                   {readCount}
                 </Text>
               </DropdownMenuItemInset>
@@ -765,7 +764,7 @@ function FriendsTab({
   return (
     <View className="gap-4">
       {!hasUsername ? (
-        <View className="gap-3 rounded-3xl border border-amber-400/25 bg-amber-400/10 px-4 py-4">
+        <Card variant="appWarning">
           <View className="flex-row items-start gap-3">
             <Ionicons color="#fbbf24" name="at-outline" size={24} />
             <View className="flex-1 gap-1">
@@ -784,12 +783,10 @@ function FriendsTab({
               Open Settings
             </Text>
           </Button>
-        </View>
+        </Card>
       ) : (
-        <View className="gap-3 rounded-3xl border border-slate-800 bg-slate-900 px-4 py-4">
-          <Text className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-500">
-            Find friends
-          </Text>
+        <Card variant="app">
+          <Text variant="sectionLabel">Find friends</Text>
 
           <Input
             autoCapitalize="none"
@@ -836,31 +833,30 @@ function FriendsTab({
               </Text>
             )
           )}
-        </View>
+        </Card>
       )}
 
-      <View className="gap-3 rounded-3xl border border-slate-800 bg-slate-900 px-4 py-4">
-        <Text className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-500">
-          Connections
-        </Text>
+      <Card variant="app">
+        <Text variant="sectionLabel">Connections</Text>
 
-        <View className="flex-row rounded-2xl border border-slate-800 bg-slate-950 p-1">
-          <SegmentButton
-            active={connectionsView === "incoming"}
-            label={`Incoming${incomingRequests.length ? ` (${incomingRequests.length})` : ""}`}
-            onPress={() => setConnectionsView("incoming")}
-          />
-          <SegmentButton
-            active={connectionsView === "pending"}
-            label={`Pending${outgoingRequests.length ? ` (${outgoingRequests.length})` : ""}`}
-            onPress={() => setConnectionsView("pending")}
-          />
-          <SegmentButton
-            active={connectionsView === "friends"}
-            label={`Friends${acceptedFriends.length ? ` (${acceptedFriends.length})` : ""}`}
-            onPress={() => setConnectionsView("friends")}
-          />
-        </View>
+        <SegmentedControl
+          items={[
+            {
+              label: `Incoming${incomingRequests.length ? ` (${incomingRequests.length})` : ""}`,
+              value: "incoming",
+            },
+            {
+              label: `Pending${outgoingRequests.length ? ` (${outgoingRequests.length})` : ""}`,
+              value: "pending",
+            },
+            {
+              label: `Friends${acceptedFriends.length ? ` (${acceptedFriends.length})` : ""}`,
+              value: "friends",
+            },
+          ]}
+          value={connectionsView}
+          onValueChange={setConnectionsView}
+        />
 
         <ConnectionsSection
           actionLabel={connectionsActionLabel}
@@ -886,7 +882,7 @@ function FriendsTab({
                 : "Friends"
           }
         />
-      </View>
+      </Card>
 
       {isLoading ? (
         <View className="items-center py-3">
@@ -909,7 +905,7 @@ function FriendSearchRow({
   const cta = getSearchCta(result.relationshipState, isPending);
 
   return (
-    <View className="flex-row items-center gap-3 rounded-2xl border border-slate-800 bg-slate-950 px-3 py-3">
+    <View className="flex-row items-center gap-3 rounded-2xl border border-app-border bg-app-surface-inset px-3 py-3">
       <ProfileAvatar
         name={result.fullName ?? result.username}
         size={46}
@@ -963,9 +959,7 @@ function ConnectionsSection({
   return (
     <View className="gap-3">
       <View className="gap-1">
-        <Text className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-500">
-          {title}
-        </Text>
+        <Text variant="sectionLabel">{title}</Text>
         {entries.length === 0 ? (
           <Text className="text-sm font-semibold leading-6 text-slate-400">
             {emptyDescription}
@@ -976,7 +970,7 @@ function ConnectionsSection({
       {entries.map((entry) => (
         <View
           key={`${title}-${entry.friendshipId}`}
-          className="flex-row items-center gap-3 rounded-2xl border border-slate-800 bg-slate-950 px-3 py-3"
+          className="flex-row items-center gap-3 rounded-2xl border border-app-border bg-app-surface-inset px-3 py-3"
         >
           <ProfileAvatar
             name={entry.fullName ?? entry.username}
@@ -1003,8 +997,8 @@ function ConnectionsSection({
                 className={cn(
                   "items-center rounded-2xl border px-4 py-2.5",
                   pendingFriendshipIds?.includes(entry.friendshipId)
-                    ? "border-slate-800 bg-slate-950"
-                    : "border-red-500/30 bg-red-500/10 active:bg-red-500/20",
+                    ? "border-app-border bg-app-surface-inset"
+                    : "border-app-destructive-border/30 bg-app-destructive-surface/10 active:bg-app-destructive-surface/20",
                 )}
                 disabled={pendingFriendshipIds?.includes(entry.friendshipId)}
                 onPress={() => {
@@ -1022,8 +1016,8 @@ function ConnectionsSection({
                   className={cn(
                     "text-sm font-bold",
                     pendingFriendshipIds?.includes(entry.friendshipId)
-                      ? "text-slate-500"
-                      : "text-red-300",
+                      ? "text-app-text-subtle"
+                      : "text-app-destructive",
                   )}
                 >
                   {pendingFriendshipIds?.includes(entry.friendshipId)
@@ -1056,42 +1050,13 @@ function ConnectionsSection({
               </Button>
             )
           ) : (
-            <Text className="text-xs font-bold uppercase tracking-[0.16em] text-slate-500">
+            <Text className="text-xs font-bold uppercase tracking-[0.16em] text-app-text-subtle">
               {formatRelativeTime(entry.createdAt)}
             </Text>
           )}
         </View>
       ))}
     </View>
-  );
-}
-
-function SegmentButton({
-  active,
-  label,
-  onPress,
-}: {
-  active: boolean;
-  label: string;
-  onPress: () => void;
-}) {
-  return (
-    <Pressable
-      className={cn(
-        "flex-1 rounded-2xl px-4 py-3",
-        active ? "bg-emerald-400/20" : "bg-transparent",
-      )}
-      onPress={onPress}
-    >
-      <Text
-        className={cn(
-          "text-center text-xs font-black",
-          active ? "text-emerald-300" : "text-slate-400",
-        )}
-      >
-        {label}
-      </Text>
-    </Pressable>
   );
 }
 
@@ -1105,8 +1070,8 @@ function EmptyCard({
   title: string;
 }) {
   return (
-    <View className="items-center gap-3 rounded-3xl border border-slate-800 bg-slate-900 px-5 py-8">
-      <View className="rounded-full border border-slate-700 bg-slate-950 p-4">
+    <Card variant="appEmpty">
+      <View className="rounded-full border border-app-border-strong bg-app-surface-inset p-4">
         <Ionicons color="#94a3b8" name={icon} size={28} />
       </View>
       <View className="items-center gap-1">
@@ -1115,7 +1080,7 @@ function EmptyCard({
           {description}
         </Text>
       </View>
-    </View>
+    </Card>
   );
 }
 

@@ -21,7 +21,7 @@ function DropdownMenuContent({
     <DropdownMenuPortal>
       <DropdownMenuPrimitive.Content
         className={cn(
-          "z-50 min-w-44 overflow-hidden rounded-2xl border border-slate-700 bg-slate-900 p-1 shadow-lg shadow-black/40",
+          "z-50 min-w-44 overflow-hidden rounded-2xl border border-app-border-strong bg-app-surface p-1 shadow-lg shadow-black/40",
           className,
         )}
         sideOffset={sideOffset}
@@ -38,7 +38,7 @@ function DropdownMenuLabel({
   return (
     <DropdownMenuPrimitive.Label
       className={cn(
-        "px-3 py-2 text-[11px] font-black uppercase tracking-[0.18em] text-slate-500",
+        "px-3 py-2 text-[11px] font-black uppercase tracking-[0.18em] text-app-text-subtle",
         className,
       )}
       {...props}
@@ -52,7 +52,7 @@ function DropdownMenuSeparator({
 }: React.ComponentProps<typeof DropdownMenuPrimitive.Separator>) {
   return (
     <DropdownMenuPrimitive.Separator
-      className={cn("my-1 h-px bg-slate-800", className)}
+      className={cn("my-1 h-px bg-app-border", className)}
       {...props}
     />
   );
@@ -63,10 +63,10 @@ function DropdownMenuItem({
   ...props
 }: React.ComponentProps<typeof DropdownMenuPrimitive.Item>) {
   return (
-    <TextClassContext.Provider value="text-sm font-semibold text-white">
+    <TextClassContext.Provider value="text-sm font-semibold text-app-text">
       <DropdownMenuPrimitive.Item
         className={cn(
-          "flex-row items-center gap-3 rounded-xl px-3 py-3 active:bg-slate-800",
+          "flex-row items-center gap-3 rounded-xl px-3 py-3 active:bg-app-border",
           className,
         )}
         {...props}
@@ -80,10 +80,10 @@ function DropdownMenuRadioItem({
   ...props
 }: React.ComponentProps<typeof DropdownMenuPrimitive.RadioItem>) {
   return (
-    <TextClassContext.Provider value="text-sm font-semibold text-white">
+    <TextClassContext.Provider value="text-sm font-semibold text-app-text">
       <DropdownMenuPrimitive.RadioItem
         className={cn(
-          "flex-row items-center gap-3 rounded-xl px-3 py-3 active:bg-slate-800",
+          "flex-row items-center gap-3 rounded-xl px-3 py-3 active:bg-app-border",
           className,
         )}
         {...props}

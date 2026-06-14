@@ -4,7 +4,11 @@ const { hairlineWidth } = require("nativewind/theme");
 module.exports = {
   // NOTE: Update this to include the paths to all files that contain Nativewind classes.
   darkMode: "class",
-  content: ["./src/app/**/*.{ts,tsx}", "./src/components/**/*.{ts,tsx}"],
+  content: [
+    "./src/app/**/*.{ts,tsx}",
+    "./src/components/**/*.{ts,tsx}",
+    "./src/providers/**/*.{ts,tsx}",
+  ],
   presets: [require("nativewind/preset")],
   theme: {
     extend: {
@@ -41,6 +45,37 @@ module.exports = {
         card: {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
+        },
+        app: {
+          background: "hsl(var(--app-background) / <alpha-value>)",
+          surface: "hsl(var(--app-surface) / <alpha-value>)",
+          "surface-inset": "hsl(var(--app-surface-inset) / <alpha-value>)",
+          border: "hsl(var(--app-border) / <alpha-value>)",
+          "border-strong": "hsl(var(--app-border-strong) / <alpha-value>)",
+          text: "hsl(var(--app-text) / <alpha-value>)",
+          "text-muted": "hsl(var(--app-text-muted) / <alpha-value>)",
+          "text-subtle": "hsl(var(--app-text-subtle) / <alpha-value>)",
+          primary: {
+            DEFAULT: "hsl(var(--app-primary) / <alpha-value>)",
+            foreground: "hsl(var(--app-primary-foreground) / <alpha-value>)",
+            surface: "hsl(var(--app-primary-surface) / <alpha-value>)",
+            border: "hsl(var(--app-primary-border) / <alpha-value>)",
+          },
+          success: {
+            DEFAULT: "hsl(var(--app-success) / <alpha-value>)",
+            surface: "hsl(var(--app-success-surface) / <alpha-value>)",
+            border: "hsl(var(--app-success-border) / <alpha-value>)",
+          },
+          destructive: {
+            DEFAULT: "hsl(var(--app-destructive) / <alpha-value>)",
+            surface: "hsl(var(--app-destructive-surface) / <alpha-value>)",
+            border: "hsl(var(--app-destructive-border) / <alpha-value>)",
+          },
+          warning: {
+            DEFAULT: "hsl(var(--app-warning) / <alpha-value>)",
+            surface: "hsl(var(--app-warning-surface) / <alpha-value>)",
+            border: "hsl(var(--app-warning-border) / <alpha-value>)",
+          },
         },
       },
       borderRadius: {

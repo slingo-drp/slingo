@@ -113,7 +113,7 @@ export default function LessonFeedScreen({
 
   if (loadState.status === "loading") {
     return (
-      <View className="flex-1 bg-slate-950">
+      <View className="flex-1 bg-app-background">
         <StatusBar style="light" />
         <CenteredState>
           <ActivityIndicator color="#34d399" size="large" />
@@ -134,7 +134,7 @@ export default function LessonFeedScreen({
       : errorTitle;
 
     return (
-      <View className="flex-1 bg-slate-950">
+      <View className="flex-1 bg-app-background">
         <StatusBar style="light" />
         <CenteredState padded>
           <Text className="mb-2 text-lg font-black text-white">
@@ -150,7 +150,7 @@ export default function LessonFeedScreen({
   }
 
   return (
-    <View className="flex-1 bg-slate-950">
+    <View className="flex-1 bg-app-background">
       <Feed
         key={feedKey}
         clips={loadState.clips}
@@ -175,7 +175,7 @@ function CenteredState({
 }) {
   return (
     <View
-      className={`flex-1 items-center justify-center bg-slate-950${padded ? "px-6" : ""}`}
+      className={`flex-1 items-center justify-center bg-app-background${padded ? "px-6" : ""}`}
     >
       {children}
     </View>

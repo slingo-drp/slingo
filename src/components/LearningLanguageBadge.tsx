@@ -36,7 +36,7 @@ export function LearningLanguageBadge({
       accessibilityLabel={`${LANGUAGE_NAMES[language]} learning language`}
       accessibilityRole="text"
       className={cn(
-        "rounded-full border border-slate-700 bg-slate-950 px-2 py-0.5",
+        "rounded-full border border-app-border-strong bg-app-surface-inset px-2 py-0.5",
         className,
       )}
     >

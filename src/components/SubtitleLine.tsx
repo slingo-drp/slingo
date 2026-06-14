@@ -40,7 +40,7 @@ function SubtitleLine({ clip, sentence, onWordPress }: SubtitleLineProps) {
   return (
     <View
       className={cn(
-        "max-w-[92%] self-center border border-white/15 bg-slate-950/40",
+        "max-w-[92%] self-center border border-white/15 bg-app-surface-inset/40",
         layout.container,
       )}
     >

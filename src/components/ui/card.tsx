@@ -1,20 +1,39 @@
 import { Text, TextClassContext } from "@/components/ui/text";
 import { cn } from "@/lib/utils";
+import { cva, type VariantProps } from "class-variance-authority";
 import { View } from "react-native";
+
+const cardVariants = cva("flex flex-col border shadow-sm shadow-black/5", {
+  variants: {
+    variant: {
+      default: "gap-6 rounded-xl border-border bg-card py-6",
+      app: "gap-3 rounded-3xl border-app-border bg-app-surface px-4 py-4",
+      appInset:
+        "gap-3 rounded-2xl border-app-border bg-app-surface-inset px-3 py-3",
+      appWarning:
+        "gap-3 rounded-3xl border-app-warning-border/25 bg-app-warning-surface/10 px-4 py-4",
+      appEmpty:
+        "items-center gap-3 rounded-3xl border-app-border bg-app-surface px-5 py-8",
+    },
+  },
+  defaultVariants: {
+    variant: "default",
+  },
+});
 
 function Card({
   className,
+  variant,
   ...props
-}: React.ComponentProps<typeof View> & React.RefAttributes<View>) {
+}: React.ComponentProps<typeof View> &
+  React.RefAttributes<View> &
+  VariantProps<typeof cardVariants>) {
+  const textClass =
+    !variant || variant === "default" ? "text-card-foreground" : undefined;
+
   return (
-    <TextClassContext.Provider value="text-card-foreground">
-      <View
-        className={cn(
-          "flex flex-col gap-6 rounded-xl border border-border bg-card py-6 shadow-sm shadow-black/5",
-          className,
-        )}
-        {...props}
-      />
+    <TextClassContext.Provider value={textClass}>
+      <View className={cn(cardVariants({ variant }), className)} {...props} />
     </TextClassContext.Provider>
   );
 }
@@ -82,4 +101,5 @@ export {
   CardFooter,
   CardHeader,
   CardTitle,
+  cardVariants,
 };
