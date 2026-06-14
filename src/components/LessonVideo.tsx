@@ -112,13 +112,13 @@ export default function LessonVideo({
         onTogglePlayback={togglePlayback}
       />
 
+      <VideoScrubber player={player} />
+
       {!isReadyToDisplay ? (
         <View className="absolute inset-0 items-center justify-center bg-slate-950">
           <ActivityIndicator color="#34d399" size="large" />
         </View>
       ) : null}
-
-      <VideoScrubber player={player} />
     </View>
   );
 }

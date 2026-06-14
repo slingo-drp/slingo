@@ -3,7 +3,12 @@ import { useSegments } from "expo-router";
 import { useEventListener } from "expo";
 import type { VideoPlayer } from "expo-video";
 import { useEffect, useRef, useState } from "react";
-import { GestureResponderEvent, View } from "react-native";
+import {
+  GestureResponderEvent,
+  View,
+  type LayoutChangeEvent,
+  type LayoutRectangle,
+} from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const SCRUBBER_TOUCH_HEIGHT = 18;
@@ -19,7 +24,9 @@ export default function VideoScrubber({ player }: { player: VideoPlayer }) {
   const [isInteracting, setIsInteracting] = useState(false);
   const isScrubbing = useRef(false);
   const containerWidthRef = useRef(containerWidth);
+  const containerPageXRef = useRef(0);
   const seekRef = useRef<(pct: number) => void>(() => {});
+  const scrubberRef = useRef<View>(null);
   const { startScrub, endScrub } = useScrubStore();
 
   useEffect(() => {
@@ -38,10 +45,33 @@ export default function VideoScrubber({ player }: { player: VideoPlayer }) {
     }
   });
 
+  const measureScrubber = () => {
+    scrubberRef.current?.measure(
+      (
+        _x: number,
+        _y: number,
+        width: number,
+        _height: number,
+        pageX: number,
+      ) => {
+        containerWidthRef.current = width;
+        containerPageXRef.current = pageX;
+        setContainerWidth(width);
+      },
+    );
+  };
+
+  const handleLayout = (event: LayoutChangeEvent) => {
+    const layout: LayoutRectangle = event.nativeEvent.layout;
+    containerWidthRef.current = layout.width;
+    setContainerWidth(layout.width);
+    requestAnimationFrame(measureScrubber);
+  };
+
   const updateProgressFromTouch = (evt: GestureResponderEvent) => {
     const width = containerWidthRef.current;
     if (width === 0 || player.duration <= 0) return;
-    const touchX = evt.nativeEvent.locationX;
+    const touchX = evt.nativeEvent.pageX - containerPageXRef.current;
     const percentage = Math.max(0, Math.min(1, touchX / width));
     setProgress(percentage * 100);
     seekRef.current(percentage);
@@ -55,14 +85,13 @@ export default function VideoScrubber({ player }: { player: VideoPlayer }) {
 
   return (
     <View
-      className="absolute inset-x-0 z-20 justify-end"
+      ref={scrubberRef}
+      className="absolute inset-x-0 z-50 justify-end"
       style={{
         bottom: bottomOffset,
         height: SCRUBBER_TOUCH_HEIGHT,
       }}
-      onLayout={(event) => {
-        setContainerWidth(event.nativeEvent.layout.width);
-      }}
+      onLayout={handleLayout}
       onStartShouldSetResponder={() => true}
       onMoveShouldSetResponder={() => true}
       onStartShouldSetResponderCapture={() => true}
@@ -72,6 +101,7 @@ export default function VideoScrubber({ player }: { player: VideoPlayer }) {
         isScrubbing.current = true;
         setIsInteracting(true);
         startScrub();
+        measureScrubber();
         updateProgressFromTouch(evt);
       }}
       onResponderMove={(evt) => {
