@@ -81,7 +81,8 @@ export default function LessonFeedScreen({
         loadState.clips[0] ??
         null)
       : null;
-  const displayedVideoLevel = activeVideoLevel ?? initialLoadedClip?.level ?? null;
+  const displayedVideoLevel =
+    activeVideoLevel ?? initialLoadedClip?.level ?? null;
 
   useEffect(() => {
     const requestId = requestIdRef.current + 1;

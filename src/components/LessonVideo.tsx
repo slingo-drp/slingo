@@ -1,32 +1,33 @@
 import type { LessonClip } from "@/lib/lessons";
-import { useSettingsStore } from "@/store/useSettingsStore";
 import { useEventListener } from "expo";
 import { useVideoPlayer, VideoView } from "expo-video";
-import { useEffect, useMemo, useRef, useState } from "react";
-import { ActivityIndicator, Pressable, StyleSheet, View } from "react-native";
-import VideoScrubber from "./VideoScrubber"; // <-- Import your new component
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { ActivityIndicator, StyleSheet, View } from "react-native";
+import LessonVideoGestureOverlay from "./LessonVideoGestureOverlay";
+import VideoScrubber from "./VideoScrubber";
 
 const PLAYBACK_UPDATE_INTERVAL_SECONDS = 0.1;
+const BASE_PLAYBACK_RATE = 1.0;
 
 export default function LessonVideo({
   clip,
   initialSeekMs,
   isActive,
+  onDoubleTapLike,
   onPlaybackTimeChange,
 }: {
   clip: LessonClip;
   initialSeekMs: number | null;
   isActive: boolean;
+  onDoubleTapLike: () => void;
   onPlaybackTimeChange: (currentTimeSeconds: number) => void;
 }) {
-  const speed = useSettingsStore((state) => state.speed);
-
   const player = useVideoPlayer(clip.source, (p) => {
     p.loop = true;
     p.muted = false;
     p.preservesPitch = true;
     p.timeUpdateEventInterval = PLAYBACK_UPDATE_INTERVAL_SECONDS;
-    p.playbackRate = speed;
+    p.playbackRate = BASE_PLAYBACK_RATE;
   });
 
   const playerRef = useRef(player);
@@ -37,6 +38,7 @@ export default function LessonVideo({
     [clip.videoId, initialSeekMs],
   );
   const isReadyToDisplay = readySourceKey === currentSourceKey;
+  const shouldPlay = isActive && isReadyToDisplay;
 
   useEffect(() => {
     playerRef.current = player;
@@ -48,15 +50,15 @@ export default function LessonVideo({
 
   useEffect(() => {
     playerRef.current.preservesPitch = true;
-    playerRef.current.playbackRate = speed;
-  }, [speed]);
+    playerRef.current.playbackRate = BASE_PLAYBACK_RATE;
+  }, []);
 
   useEffect(() => {
     onPlaybackTimeChange(player.currentTime);
 
-    if (isActive) player.play();
+    if (shouldPlay) player.play();
     else player.pause();
-  }, [isActive, onPlaybackTimeChange, player]);
+  }, [onPlaybackTimeChange, player, shouldPlay]);
 
   useEventListener(player, "timeUpdate", ({ currentTime }) => {
     onPlaybackTimeChange(currentTime);
@@ -79,10 +81,17 @@ export default function LessonVideo({
     }
   });
 
-  const onPress = () => {
+  const togglePlayback = useCallback(() => {
     if (playerRef.current.playing) playerRef.current.pause();
     else playerRef.current.play();
-  };
+
+    return playerRef.current.playing;
+  }, []);
+
+  const setGesturePlaybackRate = useCallback((playbackRate: number | null) => {
+    playerRef.current.preservesPitch = true;
+    playerRef.current.playbackRate = playbackRate ?? BASE_PLAYBACK_RATE;
+  }, []);
 
   return (
     <View style={StyleSheet.absoluteFill}>
@@ -90,10 +99,18 @@ export default function LessonVideo({
         contentFit="cover"
         nativeControls={false}
         player={player}
-        style={[StyleSheet.absoluteFill, !isReadyToDisplay && styles.hiddenVideo]}
+        style={[
+          StyleSheet.absoluteFill,
+          !isReadyToDisplay && styles.hiddenVideo,
+        ]}
       />
 
-      <Pressable onPress={onPress} style={StyleSheet.absoluteFill} />
+      <LessonVideoGestureOverlay
+        isActive={shouldPlay}
+        onDoubleTap={onDoubleTapLike}
+        onHoldRateChange={setGesturePlaybackRate}
+        onTogglePlayback={togglePlayback}
+      />
 
       {!isReadyToDisplay ? (
         <View className="absolute inset-0 items-center justify-center bg-slate-950">

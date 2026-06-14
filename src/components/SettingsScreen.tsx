@@ -31,7 +31,6 @@ import {
   LANGUAGES,
   LANGUAGE_NAMES,
   LEVELS,
-  SPEEDS,
   SUBTITLE_SIZES,
   useSettingsStore,
 } from "@/store/useSettingsStore";
@@ -60,11 +59,9 @@ export default function SettingsScreen() {
   const {
     language,
     level,
-    speed,
     subtitleSize,
     setLanguage,
     setLevel,
-    setSpeed,
     setSubtitleSize,
   } = useSettingsStore();
   const [isAvatarUpdating, setIsAvatarUpdating] = useState(false);
@@ -495,17 +492,6 @@ export default function SettingsScreen() {
               active={level === entry}
               label={entry}
               onPress={() => setLevel(entry)}
-            />
-          ))}
-        </SettingsSection>
-
-        <SettingsSection title="Playback Speed">
-          {SPEEDS.map((entry) => (
-            <Chip
-              key={entry}
-              active={speed === entry}
-              label={`${entry}x`}
-              onPress={() => setSpeed(entry)}
             />
           ))}
         </SettingsSection>

@@ -66,6 +66,7 @@ export default function LessonClipCard({
   const segments = useSegments();
   const [currentTimeSeconds, setCurrentTimeSeconds] = useState(0);
   const [isShareSheetOpen, setIsShareSheetOpen] = useState(false);
+  const [liked, setLiked] = useState(false);
   const activeSentenceIdRef = useRef<number | null>(null);
   const isTabbedRoute = segments[0] === "(tabs)";
   const bottomOverlayOffset = isTabbedRoute ? 0 : insets.bottom + 8;
@@ -114,6 +115,7 @@ export default function LessonClipCard({
   }, [clip]);
 
   const showSubtitleOverlay = subtitlesVisible && activeSentence != null;
+  const toggleLike = useCallback(() => setLiked((prev) => !prev), []);
 
   return (
     <View className="w-full overflow-hidden bg-slate-900" style={{ height }}>
@@ -121,10 +123,13 @@ export default function LessonClipCard({
         clip={clip}
         initialSeekMs={initialSeekMs}
         isActive={isActive}
+        onDoubleTapLike={toggleLike}
         onPlaybackTimeChange={handlePlaybackTimeChange}
       />
 
       <ClipActions
+        liked={liked}
+        onLike={toggleLike}
         subtitlesVisible={subtitlesVisible}
         onToggleSubtitles={onToggleSubtitles}
         onShare={() => setIsShareSheetOpen(true)}
