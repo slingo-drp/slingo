@@ -2,7 +2,7 @@ import type { LessonClip, SelectedWord } from "@/lib/lessons";
 import { useScrubStore } from "@/store/useScrubStore";
 import { useIsFocused } from "expo-router/react-navigation";
 import { StatusBar } from "expo-status-bar";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import {
   FlatList,
   View,
@@ -37,6 +37,7 @@ export default function Feed({
 }) {
   const isScreenFocused = useIsFocused();
   const scrollEnabled = useScrubStore((s) => s.scrollEnabled);
+  const listRef = useRef<FlatList<FeedClip>>(null);
   const [height, setHeight] = useState(0);
   const feedClips = useMemo(() => createFeedClips(clips), [clips]);
   const initialFeedId = useMemo(
@@ -71,8 +72,25 @@ export default function Feed({
     [],
   );
 
+  const handleAdvanceFromIndex = useCallback(
+    (index: number) => {
+      const nextIndex = Math.min(index + 1, feedClips.length - 1);
+      const nextClip = feedClips[nextIndex];
+
+      if (nextIndex === index || !nextClip) return;
+
+      setActiveFeedId(nextClip.feedId);
+
+      listRef.current?.scrollToIndex({
+        animated: false,
+        index: nextIndex,
+      });
+    },
+    [feedClips],
+  );
+
   const renderItem = useCallback(
-    ({ item }: ListRenderItemInfo<FeedClip>) => (
+    ({ index, item }: ListRenderItemInfo<FeedClip>) => (
       <LessonClipCard
         activeInsight={
           selectedWord?.clip.videoId === item.videoId ? selectedWord : null
@@ -81,7 +99,10 @@ export default function Feed({
         height={height}
         initialSeekMs={item.feedId === initialFeedId ? initialStartMs : null}
         isActive={isScreenFocused && item.feedId === activeFeedId}
+        itemIndex={index}
+        onAdvance={handleAdvanceFromIndex}
         onDismissWord={dismissWord}
+        nextClip={feedClips[index + 1] ?? null}
         onToggleSubtitles={() => {
           setSelectedWord(null);
           setSubtitlesVisible((v) => !v);
@@ -95,7 +116,9 @@ export default function Feed({
     [
       activeFeedId,
       dismissWord,
+      feedClips,
       height,
+      handleAdvanceFromIndex,
       initialFeedId,
       initialStartMs,
       isScreenFocused,
@@ -120,6 +143,7 @@ export default function Feed({
         getItemLayout={getItemLayout}
         initialNumToRender={1}
         keyExtractor={(item) => item.feedId}
+        ref={listRef}
         maxToRenderPerBatch={2}
         onViewableItemsChanged={onViewableItemsChanged}
         overScrollMode="never"

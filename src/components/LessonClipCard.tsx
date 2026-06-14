@@ -1,3 +1,8 @@
+import LessonGestureFeedbackOverlay from "@/components/LessonGestureFeedbackOverlay";
+import type {
+  DifficultySwipeDirection,
+  GestureHoldSide,
+} from "@/lib/lesson-feed-gestures";
 import type {
   LessonClip,
   LessonSentence,
@@ -5,14 +10,22 @@ import type {
   SubtitleWord,
 } from "@/lib/lessons";
 import { buildSharedLessonUrl } from "@/lib/lesson-links";
+import { useClipFeedbackStore } from "@/store/useClipFeedbackStore";
 import { languageToFlag } from "@/lib/utils";
 import { useSegments } from "expo-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Share, Text, View } from "react-native";
+import { Share, Text, View, useWindowDimensions } from "react-native";
+import Animated, {
+  Extrapolation,
+  interpolate,
+  useAnimatedStyle,
+  useSharedValue,
+} from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import ClipActions from "./ClipActions";
 import ClipInfo from "./ClipInfo";
 import LessonVideo from "./LessonVideo";
+import LessonVideoPreview from "./LessonVideoPreview";
 import ShareClipSheet from "./ShareClipSheet";
 import SubtitleLine from "./SubtitleLine";
 import WordInsightPanel from "./WordInsightPanel";
@@ -38,7 +51,10 @@ type LessonClipCardProps = {
   height: number;
   initialSeekMs: number | null;
   isActive: boolean;
+  itemIndex: number;
+  nextClip: LessonClip | null;
   activeInsight: SelectedWord | null;
+  onAdvance: (index: number) => void;
   onWordPress: (
     word: SubtitleWord,
     clip: LessonClip,
@@ -56,7 +72,10 @@ export default function LessonClipCard({
   height,
   initialSeekMs,
   isActive,
+  itemIndex,
+  nextClip,
   activeInsight,
+  onAdvance,
   onWordPress,
   subtitlesVisible,
   onToggleSubtitles,
@@ -64,9 +83,15 @@ export default function LessonClipCard({
 }: LessonClipCardProps) {
   const insets = useSafeAreaInsets();
   const segments = useSegments();
+  const { width } = useWindowDimensions();
+  const setClipFeedback = useClipFeedbackStore((state) => state.setFeedback);
   const [currentTimeSeconds, setCurrentTimeSeconds] = useState(0);
   const [isShareSheetOpen, setIsShareSheetOpen] = useState(false);
+  const [swipePreviewDirection, setSwipePreviewDirection] =
+    useState<DifficultySwipeDirection | null>(null);
   const activeSentenceIdRef = useRef<number | null>(null);
+  const holdSide = useSharedValue<GestureHoldSide>(0);
+  const swipeTranslateX = useSharedValue(0);
   const isTabbedRoute = segments[0] === "(tabs)";
   const bottomOverlayOffset = isTabbedRoute ? 0 : insets.bottom + 8;
 
@@ -79,6 +104,18 @@ export default function LessonClipCard({
   useEffect(() => {
     activeSentenceIdRef.current = null;
   }, [clip.id]);
+
+  useEffect(() => {
+    holdSide.set(0);
+    swipeTranslateX.set(0);
+  }, [clip.id, holdSide, swipeTranslateX]);
+
+  useEffect(() => {
+    if (isActive) return;
+
+    holdSide.set(0);
+    swipeTranslateX.set(0);
+  }, [holdSide, isActive, swipeTranslateX]);
 
   const handlePlaybackTimeChange = useCallback(
     (time: number) => {
@@ -113,66 +150,139 @@ export default function LessonClipCard({
     });
   }, [clip]);
 
+  const handleDifficultySwipe = useCallback(
+    (direction: DifficultySwipeDirection) => {
+      setSwipePreviewDirection(null);
+      setClipFeedback(
+        clip.videoId,
+        direction === "left" ? "too_easy" : "too_hard",
+      );
+      onDismissWord();
+      onAdvance(itemIndex);
+    },
+    [clip.videoId, itemIndex, onAdvance, onDismissWord, setClipFeedback],
+  );
+
+  const cardAnimatedStyle = useAnimatedStyle(() => {
+    const translateX = swipeTranslateX.get();
+
+    return {
+      transform: [{ translateX }],
+    };
+  });
+
+  const currentOverlayAnimatedStyle = useAnimatedStyle(() => ({
+    opacity: interpolate(
+      Math.abs(swipeTranslateX.get()),
+      [0, 28],
+      [1, 0],
+      Extrapolation.CLAMP,
+    ),
+  }));
+
+  const nextClipAnimatedStyle = useAnimatedStyle(() => {
+    const translateX = swipeTranslateX.get();
+    const nextTranslateX =
+      swipePreviewDirection === "left"
+        ? width + translateX - 1
+        : swipePreviewDirection === "right"
+          ? -width + translateX + 1
+          : width;
+
+    return {
+      transform: [{ translateX: nextTranslateX }],
+    };
+  });
+
   const showSubtitleOverlay = subtitlesVisible && activeSentence != null;
+  const showNextClipPreview =
+    isActive && nextClip != null && swipePreviewDirection != null;
 
   return (
     <View className="w-full overflow-hidden bg-slate-900" style={{ height }}>
-      <LessonVideo
-        clip={clip}
-        initialSeekMs={initialSeekMs}
-        isActive={isActive}
-        onPlaybackTimeChange={handlePlaybackTimeChange}
-      />
-      <View
-        pointerEvents="box-none"
-        className="absolute inset-x-0 top-0 flex-row items-center justify-between px-4"
-        style={{ paddingTop: insets.top + 8 }}
+      {showNextClipPreview ? (
+        <Animated.View
+          pointerEvents="none"
+          className="absolute inset-0"
+          style={nextClipAnimatedStyle}
+        >
+          <LessonVideoPreview clip={nextClip} />
+        </Animated.View>
+      ) : null}
+
+      <Animated.View
+        className="absolute inset-0 overflow-hidden bg-slate-900"
+        style={cardAnimatedStyle}
       >
-        <Text className="text-2xl font-extrabold text-white">Slingo</Text>
+        <LessonVideo
+          clip={clip}
+          holdSide={holdSide}
+          initialSeekMs={initialSeekMs}
+          isActive={isActive}
+          onDifficultySwipe={handleDifficultySwipe}
+          onPlaybackTimeChange={handlePlaybackTimeChange}
+          onSwipePreviewChange={setSwipePreviewDirection}
+          swipeTranslateX={swipeTranslateX}
+        />
+        <Animated.View
+          pointerEvents="box-none"
+          className="absolute inset-0"
+          style={currentOverlayAnimatedStyle}
+        >
+          <View
+            pointerEvents="box-none"
+            className="absolute inset-x-0 top-0 flex-row items-center justify-between px-4"
+            style={{ paddingTop: insets.top + 8 }}
+          >
+            <Text className="text-2xl font-extrabold text-white">Slingo</Text>
 
-        <View className="min-w-12 items-center rounded-lg border border-white/25 bg-gray-500/50 px-2.5 py-1.5">
-          <Text className="text-sm font-extrabold text-white">
-            {clip.level}
-          </Text>
-        </View>
-      </View>
-
-      <ClipActions
-        subtitlesVisible={subtitlesVisible}
-        onToggleSubtitles={onToggleSubtitles}
-        onShare={() => setIsShareSheetOpen(true)}
-      />
-
-      <View
-        pointerEvents="box-none"
-        className="absolute inset-x-0 bottom-0 gap-3 pl-4 pr-20"
-        style={{ paddingBottom: bottomOverlayOffset }}
-      >
-        {showSubtitleOverlay && (
-          <View pointerEvents="box-none" className="space-y-2">
-            <WordInsightPanel
-              key={activeInsight?.clip.videoId}
-              onDismiss={onDismissWord}
-              selected={activeInsight}
-            />
-            {activeSentence && (
-              <SubtitleLine
-                clip={clip}
-                sentence={activeSentence}
-                onWordPress={onWordPress}
-              />
-            )}
+            <View className="min-w-12 items-center rounded-lg border border-white/25 bg-gray-500/50 px-2.5 py-1.5">
+              <Text className="text-sm font-extrabold text-white">
+                {clip.level}
+              </Text>
+            </View>
           </View>
-        )}
-        <ClipInfo clip={clip} />
-      </View>
+
+          <ClipActions
+            subtitlesVisible={subtitlesVisible}
+            onToggleSubtitles={onToggleSubtitles}
+            onShare={() => setIsShareSheetOpen(true)}
+          />
+
+          <View
+            className="absolute inset-x-0 bottom-0 gap-3 pl-4 pr-20"
+            style={{ paddingBottom: bottomOverlayOffset }}
+          >
+            {showSubtitleOverlay && (
+              <View className="space-y-2">
+                <WordInsightPanel
+                  key={activeInsight?.clip.videoId}
+                  onDismiss={onDismissWord}
+                  selected={activeInsight}
+                />
+                {activeSentence && (
+                  <SubtitleLine
+                    clip={clip}
+                    sentence={activeSentence}
+                    onWordPress={onWordPress}
+                  />
+                )}
+              </View>
+            )}
+            <ClipInfo clip={clip} />
+          </View>
+        </Animated.View>
+      </Animated.View>
       <ShareClipSheet
         clip={clip}
         isOpen={isShareSheetOpen}
         onClose={() => setIsShareSheetOpen(false)}
         onShareLink={handleShareLink}
       />
-      {/* </SafeAreaView> */}
+      <LessonGestureFeedbackOverlay
+        holdSide={holdSide}
+        swipeTranslateX={swipeTranslateX}
+      />
     </View>
   );
 }

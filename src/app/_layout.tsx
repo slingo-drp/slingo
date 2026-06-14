@@ -10,6 +10,7 @@ import { PortalHost } from "@rn-primitives/portal";
 import * as Linking from "expo-linking";
 import { Stack } from "expo-router";
 import { useEffect } from "react";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
 import {
   initialWindowMetrics,
   SafeAreaProvider,
@@ -45,16 +46,18 @@ function RootNavigator() {
 
 export default function RootLayout() {
   return (
-    <SafeAreaProvider initialMetrics={initialWindowMetrics}>
-      <AuthProvider>
-        <NotificationsProvider>
-          <BookmarksProvider>
-            <SplashScreenController />
-            <RootNavigator />
-            <PortalHost />
-          </BookmarksProvider>
-        </NotificationsProvider>
-      </AuthProvider>
-    </SafeAreaProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <SafeAreaProvider initialMetrics={initialWindowMetrics}>
+        <AuthProvider>
+          <NotificationsProvider>
+            <BookmarksProvider>
+              <SplashScreenController />
+              <RootNavigator />
+              <PortalHost />
+            </BookmarksProvider>
+          </NotificationsProvider>
+        </AuthProvider>
+      </SafeAreaProvider>
+    </GestureHandlerRootView>
   );
 }
