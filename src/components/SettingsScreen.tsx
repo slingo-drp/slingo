@@ -395,9 +395,6 @@ export default function SettingsScreen() {
           <Text className="text-3xl font-black tracking-tight text-white">
             Settings
           </Text>
-          <Text className="text-sm font-semibold leading-6 text-slate-400">
-            Tune playback, subtitles, and learning preferences from one place.
-          </Text>
         </View>
 
         <SettingsSection title="Profile">
@@ -453,8 +450,7 @@ export default function SettingsScreen() {
                 }}
               />
               <Text className="text-xs font-semibold leading-5 text-slate-400">
-                Friends and in-app lesson sharing use this handle. Lowercase
-                letters, numbers, and underscores only.
+                Lowercase letters, numbers, and underscores only.
               </Text>
             </View>
 
@@ -470,10 +466,7 @@ export default function SettingsScreen() {
           </View>
         </SettingsSection>
 
-        <SettingsSection
-          description="Choose the language you want the lesson feed to focus on."
-          title="Language"
-        >
+        <SettingsSection title="Language">
           {LANGUAGES.map((entry) => (
             <Chip
               key={entry}
@@ -486,10 +479,7 @@ export default function SettingsScreen() {
               }}
             />
           ))}
-          <View className="w-full flex-row items-center justify-between gap-2 px-1 pt-1">
-            <Text className="flex-1 text-xs font-semibold leading-5 text-slate-400">
-              This language is visible to friends on your profile cards.
-            </Text>
+          <View className="w-full flex-row items-center justify-end gap-2 px-1 pt-1">
             {isLanguageSaving ? (
               <Text className="text-[11px] font-bold uppercase tracking-[0.14em] text-emerald-300">
                 Saving...
@@ -498,10 +488,7 @@ export default function SettingsScreen() {
           </View>
         </SettingsSection>
 
-        <SettingsSection
-          description="Set the level that best matches your comfort zone."
-          title="Level"
-        >
+        <SettingsSection title="Level">
           {LEVELS.map((entry) => (
             <Chip
               key={entry}
@@ -512,10 +499,7 @@ export default function SettingsScreen() {
           ))}
         </SettingsSection>
 
-        <SettingsSection
-          description="Change video playback speed across lessons."
-          title="Playback Speed"
-        >
+        <SettingsSection title="Playback Speed">
           {SPEEDS.map((entry) => (
             <Chip
               key={entry}
@@ -526,10 +510,7 @@ export default function SettingsScreen() {
           ))}
         </SettingsSection>
 
-        <SettingsSection
-          description="Control how large word chips appear over the video."
-          title="Subtitle Size"
-        >
+        <SettingsSection title="Subtitle Size">
           {SUBTITLE_SIZES.map((entry) => (
             <Chip
               key={entry}
@@ -540,10 +521,7 @@ export default function SettingsScreen() {
           ))}
         </SettingsSection>
 
-        <SettingsSection
-          description="Manage saved words across your account."
-          title="Bookmarks"
-        >
+        <SettingsSection title="Bookmarks">
           <AlertDialog>
             <AlertDialogTrigger asChild>
               <Pressable

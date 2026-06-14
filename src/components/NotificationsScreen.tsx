@@ -279,10 +279,6 @@ export default function NotificationsScreen() {
           <Text className="text-3xl font-black tracking-tight text-white">
             Notifications
           </Text>
-          <Text className="text-sm font-semibold leading-6 text-slate-400">
-            Follow friend requests, shared lessons, and the next social updates
-            from one inbox.
-          </Text>
         </View>
 
         <View className="flex-row rounded-2xl border border-slate-800 bg-slate-900 p-1">
@@ -614,14 +610,9 @@ function FriendsTab({
         </View>
       ) : (
         <View className="gap-3 rounded-3xl border border-slate-800 bg-slate-900 px-4 py-4">
-          <View className="gap-1">
-            <Text className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-500">
-              Find friends
-            </Text>
-            <Text className="text-sm font-semibold leading-6 text-slate-300">
-              Search by username and add people directly from the app.
-            </Text>
-          </View>
+          <Text className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-500">
+            Find friends
+          </Text>
 
           <Input
             autoCapitalize="none"
@@ -672,15 +663,9 @@ function FriendsTab({
       )}
 
       <View className="gap-3 rounded-3xl border border-slate-800 bg-slate-900 px-4 py-4">
-        <View className="gap-1">
-          <Text className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-500">
-            Connections
-          </Text>
-          <Text className="text-sm font-semibold leading-6 text-slate-300">
-            Switch between incoming requests, pending requests, and accepted
-            friends from one place.
-          </Text>
-        </View>
+        <Text className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-500">
+          Connections
+        </Text>
 
         <View className="flex-row rounded-2xl border border-slate-800 bg-slate-950 p-1">
           <SegmentButton
