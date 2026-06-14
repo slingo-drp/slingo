@@ -1,4 +1,5 @@
 import type { LessonClip, SelectedWord } from "@/lib/lessons";
+import type { Level } from "@/lib/types";
 import { useScrubStore } from "@/store/useScrubStore";
 import { useIsFocused } from "expo-router/react-navigation";
 import { StatusBar } from "expo-status-bar";
@@ -30,10 +31,12 @@ export default function Feed({
   clips,
   initialVideoId = null,
   initialStartMs = null,
+  onActiveClipLevelChange,
 }: {
   clips: LessonClip[];
   initialVideoId?: number | null;
   initialStartMs?: number | null;
+  onActiveClipLevelChange?: (level: Level) => void;
 }) {
   const isScreenFocused = useIsFocused();
   const scrollEnabled = useScrubStore((s) => s.scrollEnabled);
@@ -66,9 +69,12 @@ export default function Feed({
   const onViewableItemsChanged = useCallback(
     ({ viewableItems }: { viewableItems: ViewToken<FeedClip>[] }) => {
       const visibleClip = viewableItems.find((item) => item.isViewable)?.item;
-      if (visibleClip) setActiveFeedId(visibleClip.feedId);
+      if (visibleClip) {
+        setActiveFeedId(visibleClip.feedId);
+        onActiveClipLevelChange?.(visibleClip.level);
+      }
     },
-    [],
+    [onActiveClipLevelChange],
   );
 
   const renderItem = useCallback(

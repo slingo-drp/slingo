@@ -1,5 +1,6 @@
 import type { LessonClip, LessonClipFilters } from "@/lib/lessons";
 import { sanitizeLessonSearchQuery } from "@/lib/lesson-topics";
+import type { Level } from "@/lib/types";
 import { useLessonFiltersStore } from "@/store/useLessonFiltersStore";
 import { useSettingsStore } from "@/store/useSettingsStore";
 import { StatusBar } from "expo-status-bar";
@@ -42,6 +43,7 @@ export default function LessonFeedScreen({
   const selectedTopics = useLessonFiltersStore((state) => state.selectedTopics);
   const deferredSearchQuery = useDeferredValue(searchQuery);
   const [loadState, setLoadState] = useState<LoadState>({ status: "loading" });
+  const [activeVideoLevel, setActiveVideoLevel] = useState<Level | null>(null);
   const hasResolvedRequestRef = useRef(false);
   const requestIdRef = useRef(0);
   const lessonFilters = useMemo<LessonClipFilters>(
@@ -73,6 +75,13 @@ export default function LessonFeedScreen({
     ],
   );
   const isRefreshing = loadState.status === "success-refreshing";
+  const initialLoadedClip =
+    loadState.status === "success" || loadState.status === "success-refreshing"
+      ? (loadState.clips.find((clip) => clip.videoId === initialVideoId) ??
+        loadState.clips[0] ??
+        null)
+      : null;
+  const displayedVideoLevel = activeVideoLevel ?? initialLoadedClip?.level ?? null;
 
   useEffect(() => {
     const requestId = requestIdRef.current + 1;
@@ -111,7 +120,7 @@ export default function LessonFeedScreen({
             {loadingMessage}
           </Text>
         </CenteredState>
-        <LessonFeedHeader isRefreshing={false} />
+        <LessonFeedHeader currentVideoLevel={null} isRefreshing={false} />
       </View>
     );
   }
@@ -134,7 +143,7 @@ export default function LessonFeedScreen({
             {loadState.message}
           </Text>
         </CenteredState>
-        <LessonFeedHeader isRefreshing={false} />
+        <LessonFeedHeader currentVideoLevel={null} isRefreshing={false} />
       </View>
     );
   }
@@ -146,8 +155,12 @@ export default function LessonFeedScreen({
         clips={loadState.clips}
         initialStartMs={initialStartMs}
         initialVideoId={initialVideoId}
+        onActiveClipLevelChange={setActiveVideoLevel}
       />
-      <LessonFeedHeader isRefreshing={isRefreshing} />
+      <LessonFeedHeader
+        currentVideoLevel={displayedVideoLevel}
+        isRefreshing={isRefreshing}
+      />
     </View>
   );
 }
