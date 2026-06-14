@@ -1,4 +1,5 @@
 import type { LessonClip } from "@/lib/lessons";
+import { formatTopicLabel } from "@/lib/lesson-topics";
 import { useState } from "react";
 import { Pressable, Text, View } from "react-native";
 
@@ -17,7 +18,7 @@ export default function ClipInfo({ clip }: Props) {
 
         <View className="rounded-full border border-emerald-400/40 bg-emerald-400/15 px-2.5 py-0.5">
           <Text className="text-xs font-semibold uppercase text-emerald-300">
-            {topic}
+            {formatTopicLabel(topic)}
           </Text>
         </View>
       </View>

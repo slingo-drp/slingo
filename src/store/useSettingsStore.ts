@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import type { Domain, Language, Level } from "../lib/types";
+import type { Language, Level } from "../lib/types";
 
 export const LANGUAGES: readonly Language[] = [
   "es",
@@ -11,23 +11,6 @@ export const LANGUAGES: readonly Language[] = [
 ];
 
 export const LEVELS: readonly Level[] = ["A1", "A2", "B1", "B2", "C1", "C2"];
-
-export const DOMAINS: readonly Domain[] = [
-  "nature",
-  "sports",
-  "food",
-  "technology",
-  "politics",
-  "business",
-  "health",
-  "travel",
-  "culture",
-  "history",
-  "science",
-  "entertainment",
-  "everyday",
-  "other",
-];
 
 export const LANGUAGE_NAMES: Record<Language, string> = {
   es: "Spanish",
@@ -49,14 +32,12 @@ export type SubtitleSize = (typeof SUBTITLE_SIZES)[number];
 interface SettingsState {
   language: Language;
   level: Level;
-  domains: Domain[];
   speed: PlaybackSpeed;
   subtitleSize: SubtitleSize;
   setLanguage: (lang: Language) => void;
   setLevel: (lvl: Level) => void;
   setSpeed: (spd: PlaybackSpeed) => void;
   setSubtitleSize: (size: SubtitleSize) => void;
-  toggleDomain: (domain: Domain) => void;
 }
 
 // ─── Zustand Store ───────────────────────────────────────────────────────────
@@ -64,17 +45,10 @@ interface SettingsState {
 export const useSettingsStore = create<SettingsState>((set) => ({
   language: "es",
   level: "A2",
-  domains: [],
   speed: 1.0,
   subtitleSize: "Medium",
   setLanguage: (language) => set({ language }),
   setLevel: (level) => set({ level }),
   setSpeed: (speed) => set({ speed }),
   setSubtitleSize: (subtitleSize) => set({ subtitleSize }),
-  toggleDomain: (domain) =>
-    set((state) => ({
-      domains: state.domains.includes(domain)
-        ? state.domains.filter((d) => d !== domain)
-        : [...state.domains, domain],
-    })),
 }));

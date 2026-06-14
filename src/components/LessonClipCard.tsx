@@ -8,7 +8,7 @@ import { buildSharedLessonUrl } from "@/lib/lesson-links";
 import { languageToFlag } from "@/lib/utils";
 import { useSegments } from "expo-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Share, Text, View } from "react-native";
+import { Share, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import ClipActions from "./ClipActions";
 import ClipInfo from "./ClipInfo";
@@ -123,19 +123,6 @@ export default function LessonClipCard({
         isActive={isActive}
         onPlaybackTimeChange={handlePlaybackTimeChange}
       />
-      <View
-        pointerEvents="box-none"
-        className="absolute inset-x-0 top-0 flex-row items-center justify-between px-4"
-        style={{ paddingTop: insets.top + 8 }}
-      >
-        <Text className="text-2xl font-extrabold text-white">Slingo</Text>
-
-        <View className="min-w-12 items-center rounded-lg border border-white/25 bg-gray-500/50 px-2.5 py-1.5">
-          <Text className="text-sm font-extrabold text-white">
-            {clip.level}
-          </Text>
-        </View>
-      </View>
 
       <ClipActions
         subtitlesVisible={subtitlesVisible}

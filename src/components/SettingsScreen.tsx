@@ -28,7 +28,6 @@ import { supabase } from "@/lib/supabase";
 import type { Language } from "@/lib/types";
 import { cn, languageToFlag } from "@/lib/utils";
 import {
-  DOMAINS,
   LANGUAGES,
   LANGUAGE_NAMES,
   LEVELS,
@@ -61,12 +60,10 @@ export default function SettingsScreen() {
   const {
     language,
     level,
-    domains,
     speed,
     subtitleSize,
     setLanguage,
     setLevel,
-    toggleDomain,
     setSpeed,
     setSubtitleSize,
   } = useSettingsStore();
@@ -511,20 +508,6 @@ export default function SettingsScreen() {
               active={level === entry}
               label={entry}
               onPress={() => setLevel(entry)}
-            />
-          ))}
-        </SettingsSection>
-
-        <SettingsSection
-          description="Pick the kinds of clips you want included in your lesson feed."
-          title="Content Type"
-        >
-          {DOMAINS.map((entry) => (
-            <Chip
-              key={entry}
-              active={domains.includes(entry)}
-              label={entry.charAt(0).toUpperCase() + entry.slice(1)}
-              onPress={() => toggleDomain(entry)}
             />
           ))}
         </SettingsSection>

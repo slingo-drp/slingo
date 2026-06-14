@@ -1,6 +1,5 @@
 import LessonFeedScreen from "@/components/LessonFeedScreen";
-import { fetchSharedLessonFeed } from "@/lib/lessons";
-import { useSettingsStore } from "@/store/useSettingsStore";
+import { fetchSharedLessonFeed, type LessonClipFilters } from "@/lib/lessons";
 import { useLocalSearchParams } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useCallback, useMemo } from "react";
@@ -23,9 +22,6 @@ function InvalidLessonState({ message }: { message: string }) {
 }
 
 export default function LessonInTabsRoute() {
-  const language = useSettingsStore((state) => state.language);
-  const level = useSettingsStore((state) => state.level);
-  const domains = useSettingsStore((state) => state.domains);
   const params = useLocalSearchParams<{
     id?: string | string[];
     t?: string | string[];
@@ -43,17 +39,16 @@ export default function LessonInTabsRoute() {
       : null;
   }, [startMsParam]);
 
-  const loadClips = useCallback(() => {
-    if (numericClipId === null) {
-      throw new Error("This shared lesson link is invalid.");
-    }
+  const loadClips = useCallback(
+    (filters: LessonClipFilters) => {
+      if (numericClipId === null) {
+        throw new Error("This shared lesson link is invalid.");
+      }
 
-    return fetchSharedLessonFeed(numericClipId, {
-      domains,
-      language,
-      level,
-    });
-  }, [domains, language, level, numericClipId]);
+      return fetchSharedLessonFeed(numericClipId, filters);
+    },
+    [numericClipId],
+  );
 
   if (numericClipId === null) {
     return <InvalidLessonState message="This shared lesson link is invalid." />;
