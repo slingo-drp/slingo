@@ -47,6 +47,10 @@ type LessonClipCardProps = {
   subtitlesVisible: boolean;
   onToggleSubtitles: () => void;
   onDismissWord: () => void;
+  onOpenShare: () => void;
+  onCloseShare: () => void;
+  shareSheetKey: string;
+  shareSheetOpen: boolean;
 };
 
 // ─── Component ───────────────────────────────────────────────────────────────
@@ -61,11 +65,15 @@ export default function LessonClipCard({
   subtitlesVisible,
   onToggleSubtitles,
   onDismissWord,
+  onOpenShare,
+  onCloseShare,
+  shareSheetKey,
+  shareSheetOpen,
 }: LessonClipCardProps) {
   const insets = useSafeAreaInsets();
   const segments = useSegments();
   const [currentTimeSeconds, setCurrentTimeSeconds] = useState(0);
-  const [isShareSheetOpen, setIsShareSheetOpen] = useState(false);
+  const [liked, setLiked] = useState(false);
   const activeSentenceIdRef = useRef<number | null>(null);
   const isTabbedRoute = segments[0] === "(tabs)";
   const bottomOverlayOffset = isTabbedRoute ? 0 : insets.bottom + 8;
@@ -114,6 +122,7 @@ export default function LessonClipCard({
   }, [clip]);
 
   const showSubtitleOverlay = subtitlesVisible && activeSentence != null;
+  const toggleLike = useCallback(() => setLiked((prev) => !prev), []);
 
   return (
     <View className="w-full overflow-hidden bg-slate-900" style={{ height }}>
@@ -121,22 +130,25 @@ export default function LessonClipCard({
         clip={clip}
         initialSeekMs={initialSeekMs}
         isActive={isActive}
+        onDoubleTapLike={toggleLike}
         onPlaybackTimeChange={handlePlaybackTimeChange}
       />
 
       <ClipActions
+        liked={liked}
+        onLike={toggleLike}
         subtitlesVisible={subtitlesVisible}
         onToggleSubtitles={onToggleSubtitles}
-        onShare={() => setIsShareSheetOpen(true)}
+        onShare={onOpenShare}
       />
 
       <View
         pointerEvents="box-none"
-        className="absolute inset-x-0 bottom-0 gap-3 pl-4 pr-20"
+        className="absolute inset-x-0 bottom-0 gap-2.5 pl-4 pr-20"
         style={{ paddingBottom: bottomOverlayOffset }}
       >
         {showSubtitleOverlay && (
-          <View pointerEvents="box-none" className="space-y-2">
+          <View pointerEvents="box-none" className="gap-2">
             <WordInsightPanel
               key={activeInsight?.clip.videoId}
               onDismiss={onDismissWord}
@@ -154,9 +166,10 @@ export default function LessonClipCard({
         <ClipInfo clip={clip} />
       </View>
       <ShareClipSheet
+        key={shareSheetKey}
         clip={clip}
-        isOpen={isShareSheetOpen}
-        onClose={() => setIsShareSheetOpen(false)}
+        isOpen={shareSheetOpen}
+        onClose={onCloseShare}
         onShareLink={handleShareLink}
       />
       {/* </SafeAreaView> */}

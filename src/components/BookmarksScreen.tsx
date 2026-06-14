@@ -87,10 +87,6 @@ export default function BookmarksScreen() {
           <Text className="text-3xl font-black tracking-tight text-white">
             Bookmarks
           </Text>
-          <Text className="text-sm font-semibold leading-6 text-slate-400">
-            Saved words stay tied to the latest sentence and clip you bookmarked
-            them from.
-          </Text>
         </View>
 
         {sortedBookmarks.length > 0 ? (
@@ -123,9 +119,6 @@ export default function BookmarksScreen() {
           <View className="mt-2 rounded-3xl border border-slate-800 bg-slate-900 px-5 py-8">
             <Text className="text-lg font-black text-white">
               No bookmarks matched your search
-            </Text>
-            <Text className="mt-2 text-sm leading-6 text-slate-400">
-              Try a different word or clear the search field.
             </Text>
           </View>
         ) : (

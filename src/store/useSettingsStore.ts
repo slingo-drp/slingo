@@ -21,10 +21,8 @@ export const LANGUAGE_NAMES: Record<Language, string> = {
   ja: "Japanese",
 };
 
-export const SPEEDS = [0.75, 1.0, 1.25, 1.5] as const;
 export const SUBTITLE_SIZES = ["Small", "Medium", "Large"] as const;
 
-export type PlaybackSpeed = (typeof SPEEDS)[number];
 export type SubtitleSize = (typeof SUBTITLE_SIZES)[number];
 
 // ─── Store Interface ─────────────────────────────────────────────────────────
@@ -32,11 +30,9 @@ export type SubtitleSize = (typeof SUBTITLE_SIZES)[number];
 interface SettingsState {
   language: Language;
   level: Level;
-  speed: PlaybackSpeed;
   subtitleSize: SubtitleSize;
   setLanguage: (lang: Language) => void;
   setLevel: (lvl: Level) => void;
-  setSpeed: (spd: PlaybackSpeed) => void;
   setSubtitleSize: (size: SubtitleSize) => void;
 }
 
@@ -45,10 +41,8 @@ interface SettingsState {
 export const useSettingsStore = create<SettingsState>((set) => ({
   language: "es",
   level: "A2",
-  speed: 1.0,
   subtitleSize: "Medium",
   setLanguage: (language) => set({ language }),
   setLevel: (level) => set({ level }),
-  setSpeed: (speed) => set({ speed }),
   setSubtitleSize: (subtitleSize) => set({ subtitleSize }),
 }));

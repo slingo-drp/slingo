@@ -12,6 +12,14 @@ type ProfileUpdate = Database["public"]["Tables"]["profiles"]["Update"] & {
 export const AVATAR_BUCKET = "avatars";
 const MICAH_AVATAR_BASE_URL = "https://api.dicebear.com/10.x/micah/svg";
 const USERNAME_REGEX = /^[a-z0-9_]+$/;
+const SIGNED_AVATAR_URL_LIFETIME_SECONDS = 60 * 60 * 24 * 7;
+const SIGNED_AVATAR_URL_CACHE_MS = 1000 * 60 * 60 * 24 * 6;
+
+const signedAvatarUrlCache = new Map<
+  string,
+  { expiresAt: number; url: string }
+>();
+const inflightSignedAvatarUrlRequests = new Map<string, Promise<string>>();
 
 export function buildMicahAvatarUrl(seed: string) {
   return `${MICAH_AVATAR_BASE_URL}?seed=${encodeURIComponent(seed)}`;
@@ -79,15 +87,40 @@ export async function resolveAvatarUrl(avatarValue?: string | null) {
     return avatarValue;
   }
 
-  const { data, error } = await supabase.storage
-    .from(AVATAR_BUCKET)
-    .createSignedUrl(avatarPath, 60 * 60 * 24 * 7);
+  const cachedEntry = signedAvatarUrlCache.get(avatarPath);
 
-  if (error) {
-    throw error;
+  if (cachedEntry && cachedEntry.expiresAt > Date.now()) {
+    return cachedEntry.url;
   }
 
-  return data.signedUrl;
+  const inflightRequest = inflightSignedAvatarUrlRequests.get(avatarPath);
+
+  if (inflightRequest) {
+    return await inflightRequest;
+  }
+
+  const request = supabase.storage
+    .from(AVATAR_BUCKET)
+    .createSignedUrl(avatarPath, SIGNED_AVATAR_URL_LIFETIME_SECONDS)
+    .then(({ data, error }) => {
+      if (error) {
+        throw error;
+      }
+
+      signedAvatarUrlCache.set(avatarPath, {
+        expiresAt: Date.now() + SIGNED_AVATAR_URL_CACHE_MS,
+        url: data.signedUrl,
+      });
+
+      return data.signedUrl;
+    })
+    .finally(() => {
+      inflightSignedAvatarUrlRequests.delete(avatarPath);
+    });
+
+  inflightSignedAvatarUrlRequests.set(avatarPath, request);
+
+  return await request;
 }
 
 export function getAvatarStoragePath(avatarValue?: string | null) {

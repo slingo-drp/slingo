@@ -8,10 +8,11 @@ const TAB_BAR_TOP_PADDING = 8;
 const TAB_BAR_MIN_BOTTOM_PADDING = 8;
 
 export default function TabsLayout() {
-  const { unreadCount } = useNotifications();
+  const { socialState, unreadCount } = useNotifications();
   const insets = useSafeAreaInsets();
   const bottomPadding = Math.max(insets.bottom, TAB_BAR_MIN_BOTTOM_PADDING);
   const tabBarHeight = TAB_BAR_BASE_HEIGHT + bottomPadding;
+  const incomingFriendRequestCount = socialState.incomingRequests.length;
 
   return (
     <Tabs
@@ -43,20 +44,26 @@ export default function TabsLayout() {
         }}
       />
       <Tabs.Screen
+        name="friends"
+        options={{
+          title: "Friends",
+          tabBarBadge:
+            incomingFriendRequestCount > 0
+              ? incomingFriendRequestCount > 99
+                ? "99+"
+                : incomingFriendRequestCount
+              : undefined,
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="people" color={color} size={size} />
+          ),
+        }}
+      />
+      <Tabs.Screen
         name="bookmarks"
         options={{
           title: "Bookmarks",
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="bookmark" color={color} size={size} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="settings"
-        options={{
-          title: "Settings",
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="settings" color={color} size={size} />
           ),
         }}
       />
@@ -72,6 +79,15 @@ export default function TabsLayout() {
               : undefined,
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="notifications" color={color} size={size} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="settings"
+        options={{
+          title: "Settings",
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="settings" color={color} size={size} />
           ),
         }}
       />

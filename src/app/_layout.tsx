@@ -2,6 +2,7 @@ import "../../global.css";
 
 import BookmarksProvider from "@/providers/bookmarks-provider";
 import NotificationsProvider from "@/providers/notifications-provider";
+import ToastProvider from "@/providers/toast-provider";
 import { SplashScreenController } from "@/components/splash-screen-controller";
 import { useAuthContext } from "@/hooks/use-auth-context";
 import { createSessionFromUrl } from "@/lib/auth";
@@ -10,6 +11,7 @@ import { PortalHost } from "@rn-primitives/portal";
 import * as Linking from "expo-linking";
 import { Stack } from "expo-router";
 import { useEffect } from "react";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
 import {
   initialWindowMetrics,
   SafeAreaProvider,
@@ -46,16 +48,20 @@ function RootNavigator() {
 
 export default function RootLayout() {
   return (
-    <SafeAreaProvider initialMetrics={initialWindowMetrics}>
-      <AuthProvider>
-        <NotificationsProvider>
-          <BookmarksProvider>
-            <SplashScreenController />
-            <RootNavigator />
-            <PortalHost />
-          </BookmarksProvider>
-        </NotificationsProvider>
-      </AuthProvider>
-    </SafeAreaProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <SafeAreaProvider initialMetrics={initialWindowMetrics}>
+        <AuthProvider>
+          <NotificationsProvider>
+            <BookmarksProvider>
+              <ToastProvider>
+                <SplashScreenController />
+                <RootNavigator />
+                <PortalHost />
+              </ToastProvider>
+            </BookmarksProvider>
+          </NotificationsProvider>
+        </AuthProvider>
+      </SafeAreaProvider>
+    </GestureHandlerRootView>
   );
 }

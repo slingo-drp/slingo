@@ -1,6 +1,5 @@
 import { Ionicons, MaterialIcons } from "@expo/vector-icons";
 import type { ReactNode } from "react";
-import { useState } from "react";
 import { Pressable, Text, View } from "react-native";
 import Animated, {
   useAnimatedStyle,
@@ -9,6 +8,8 @@ import Animated, {
 } from "react-native-reanimated";
 
 type ClipActionsProps = {
+  liked: boolean;
+  onLike: () => void;
   subtitlesVisible: boolean;
   onToggleSubtitles: () => void;
   onShare: () => void;
@@ -22,17 +23,18 @@ export const iconDropShadow = {
 };
 
 export default function ClipActions({
+  liked,
+  onLike,
   subtitlesVisible,
   onToggleSubtitles,
   onShare,
 }: ClipActionsProps) {
-  const [liked, setLiked] = useState(false);
   return (
     <View className="absolute bottom-32 right-3 z-20 items-center gap-4">
       <ClipActionButton
         label="Like"
-        onPress={() => setLiked((prev) => !prev)}
-        accessibilityLabel={liked ? "Like" : "Unlike"}
+        onPress={onLike}
+        accessibilityLabel={liked ? "Unlike" : "Like"}
         icon={
           <Ionicons
             name="heart"

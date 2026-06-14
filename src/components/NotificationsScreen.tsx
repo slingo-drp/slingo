@@ -11,10 +11,22 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItemIndicator,
+  DropdownMenuItemInset,
+  DropdownMenuLabel,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Text } from "@/components/ui/text";
 import { useAuthContext } from "@/hooks/use-auth-context";
 import { useNotifications } from "@/hooks/use-notifications";
+import { useToast } from "@/hooks/use-toast";
 import {
   searchSocialProfiles,
   type SocialConnection,
@@ -36,6 +48,10 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 type NotificationsTab = "inbox" | "friends";
+type InboxFilter = "all" | "read" | "unread";
+type NotificationsScreenProps = {
+  mode?: NotificationsTab;
+};
 type FriendDialogState =
   | {
       description: string;
@@ -49,10 +65,13 @@ type FriendDialogState =
       username: string;
     };
 
-export default function NotificationsScreen() {
+export default function NotificationsScreen({
+  mode,
+}: NotificationsScreenProps) {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { profile } = useAuthContext();
+  const { showToast } = useToast();
   const {
     isLoading,
     isRefreshingSocial,
@@ -77,12 +96,13 @@ export default function NotificationsScreen() {
   const [pendingProfileIds, setPendingProfileIds] = useState<string[]>([]);
   const hasUsername = !!profile?.username;
   const trimmedSearchQuery = searchQuery.trim();
+  const currentTab = mode ?? activeTab;
   const activeIncomingFriendshipIds = new Set(
     socialState.incomingRequests.map((entry) => entry.friendshipId),
   );
 
   useEffect(() => {
-    if (activeTab !== "friends" || !hasUsername) {
+    if (currentTab !== "friends" || !hasUsername) {
       return;
     }
 
@@ -117,7 +137,7 @@ export default function NotificationsScreen() {
       isCancelled = true;
       clearTimeout(timeoutId);
     };
-  }, [activeTab, hasUsername, trimmedSearchQuery]);
+  }, [currentTab, hasUsername, trimmedSearchQuery]);
 
   async function handleNotificationPress(notification: InboxNotification) {
     if (!notification.isRead) {
@@ -182,11 +202,7 @@ export default function NotificationsScreen() {
 
       try {
         await sendFriendRequest(result.id);
-        setDialogState({
-          description: `@${result.username} will see your request in their inbox.`,
-          kind: "feedback",
-          title: "Friend request sent",
-        });
+        showToast("✓ Friend request sent");
       } finally {
         trackPendingProfile(result.id, false);
       }
@@ -212,11 +228,7 @@ export default function NotificationsScreen() {
 
     try {
       await removeFriend(friendshipId);
-      setDialogState({
-        description: `@${username} has been removed from your friends list.`,
-        kind: "feedback",
-        title: "Friend removed",
-      });
+      showToast(`✓ Removed @${username}`);
     } catch (error) {
       console.error("Failed to remove friend:", error);
       setDialogState({
@@ -277,28 +289,26 @@ export default function NotificationsScreen() {
       >
         <View className="gap-2">
           <Text className="text-3xl font-black tracking-tight text-white">
-            Notifications
-          </Text>
-          <Text className="text-sm font-semibold leading-6 text-slate-400">
-            Follow friend requests, shared lessons, and the next social updates
-            from one inbox.
+            {currentTab === "friends" ? "Friends" : "Notifications"}
           </Text>
         </View>
 
-        <View className="flex-row rounded-2xl border border-slate-800 bg-slate-900 p-1">
-          <SegmentButton
-            active={activeTab === "inbox"}
-            label="Inbox"
-            onPress={() => setActiveTab("inbox")}
-          />
-          <SegmentButton
-            active={activeTab === "friends"}
-            label="Friends"
-            onPress={() => setActiveTab("friends")}
-          />
-        </View>
+        {mode == null ? (
+          <View className="flex-row rounded-2xl border border-slate-800 bg-slate-900 p-1">
+            <SegmentButton
+              active={currentTab === "inbox"}
+              label="Inbox"
+              onPress={() => setActiveTab("inbox")}
+            />
+            <SegmentButton
+              active={currentTab === "friends"}
+              label="Friends"
+              onPress={() => setActiveTab("friends")}
+            />
+          </View>
+        ) : null}
 
-        {activeTab === "inbox" ? (
+        {currentTab === "inbox" ? (
           <InboxTab
             activeIncomingFriendshipIds={activeIncomingFriendshipIds}
             notifications={notifications}
@@ -413,6 +423,8 @@ function InboxTab({
   onPressNotification: (notification: InboxNotification) => Promise<void>;
   pendingFriendshipIds: number[];
 }) {
+  const [inboxFilter, setInboxFilter] = useState<InboxFilter>("all");
+
   if (notifications.length === 0) {
     return (
       <EmptyCard
@@ -423,9 +435,58 @@ function InboxTab({
     );
   }
 
+  const filteredNotifications = notifications.filter((notification) => {
+    if (inboxFilter === "read") {
+      return notification.isRead;
+    }
+
+    if (inboxFilter === "unread") {
+      return !notification.isRead;
+    }
+
+    return true;
+  });
+
+  const readCount = notifications.filter(
+    (notification) => notification.isRead,
+  ).length;
+  const unreadCount = notifications.length - readCount;
+
+  const filterMenu = (
+    <InboxFilterDropdown
+      inboxFilter={inboxFilter}
+      readCount={readCount}
+      totalCount={notifications.length}
+      unreadCount={unreadCount}
+      onValueChange={setInboxFilter}
+    />
+  );
+
+  if (filteredNotifications.length === 0) {
+    return (
+      <View className="gap-3">
+        {filterMenu}
+
+        <EmptyCard
+          description={
+            inboxFilter === "unread"
+              ? "No unread notifications."
+              : "No read notifications."
+          }
+          icon="mail-open-outline"
+          title={inboxFilter === "unread" ? "All caught up" : "Nothing here"}
+        />
+      </View>
+    );
+  }
+
   return (
     <View className="gap-3">
-      {notifications.map((notification) => {
+      {filterMenu}
+
+      {filteredNotifications.map((notification) => {
+        const showsChevron = notification.type === "video_share";
+        const canOpenCard = showsChevron || !notification.isRead;
         const isPendingAction =
           notification.type !== "video_share" &&
           pendingFriendshipIds.includes(notification.friendshipId);
@@ -435,12 +496,15 @@ function InboxTab({
 
         return (
           <Pressable
+            accessibilityRole={canOpenCard ? "button" : undefined}
+            disabled={!canOpenCard}
             key={notification.id}
             className={cn(
-              "gap-4 rounded-3xl border px-4 py-4",
+              "gap-3 rounded-3xl border px-3.5 py-3.5",
               notification.isRead
                 ? "border-slate-800 bg-slate-900"
                 : "border-emerald-400/30 bg-emerald-400/10",
+              canOpenCard && "active:opacity-95",
             )}
             onPress={() => {
               onPressNotification(notification).catch((error) => {
@@ -453,39 +517,48 @@ function InboxTab({
                 name={
                   notification.actor.fullName ?? notification.actor.username
                 }
-                size={56}
+                size={50}
                 uri={notification.actor.avatarUrl}
               />
 
               <View className="flex-1 gap-2">
-                <View className="gap-1">
-                  <View className="flex-row flex-wrap items-center gap-1.5">
-                    <Text className="text-base font-black text-white">
-                      {notificationActorLabel(notification)}
-                    </Text>
-                    <LearningLanguageBadge
-                      language={notification.actor.learningLanguage}
-                      variant="flag"
-                    />
-                    <Text className="flex-1 text-sm font-black text-white">
-                      {notificationActionLabel(notification)}
-                    </Text>
+                <View className="gap-1.5">
+                  <View className="flex-row items-start justify-between gap-3">
+                    <View className="flex-1 gap-1">
+                      <View className="flex-row flex-wrap items-center gap-1.5">
+                        <Text className="text-sm font-black text-white">
+                          {notificationActorLabel(notification)}
+                        </Text>
+                        <LearningLanguageBadge
+                          language={notification.actor.learningLanguage}
+                          variant="flag"
+                        />
+                      </View>
+                      <Text className="text-sm font-black leading-5 text-white">
+                        {notificationActionLabel(notification)}
+                      </Text>
+                    </View>
+
+                    <View className="items-end gap-1">
+                      {!notification.isRead ? (
+                        <View className="h-2 w-2 rounded-full bg-emerald-300" />
+                      ) : null}
+                      <Text className="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-500">
+                        {formatRelativeTime(notification.createdAt)}
+                      </Text>
+                    </View>
                   </View>
-                  <Text className="text-xs font-semibold leading-6 text-slate-300">
+
+                  <Text className="text-xs font-semibold leading-5 text-slate-300">
                     {notificationDescription(notification)}
                   </Text>
-                  {notification.type === "video_share" && notification.note ? (
-                    <Text className="rounded-2xl border border-slate-700 bg-slate-950 px-3 py-2 text-sm font-medium text-slate-200">
-                      “{notification.note}”
-                    </Text>
+                  {notification.type === "video_share" &&
+                  notification.note?.trim() ? (
+                    <SharedVideoNote note={notification.note} />
                   ) : null}
                 </View>
 
-                <View className="flex-row items-center justify-between gap-3">
-                  <Text className="text-xs font-bold uppercase tracking-[0.16em] text-slate-500">
-                    {formatRelativeTime(notification.createdAt)}
-                  </Text>
-
+                <View className="flex-row items-center justify-end gap-3">
                   {notification.type === "friend_request" &&
                   canAcceptRequest ? (
                     <Button
@@ -508,22 +581,122 @@ function InboxTab({
                   ) : notification.type === "friend_request" ? (
                     <View className="rounded-full border border-slate-700 bg-slate-950 px-3 py-2">
                       <Text className="text-xs font-bold uppercase tracking-[0.16em] text-slate-400">
-                        Handled
+                        Accepted
                       </Text>
                     </View>
-                  ) : (
+                  ) : showsChevron ? (
                     <Ionicons
                       color={notification.isRead ? "#64748b" : "#6ee7b7"}
                       name="chevron-forward"
-                      size={20}
+                      size={18}
                     />
-                  )}
+                  ) : null}
                 </View>
               </View>
             </View>
           </Pressable>
         );
       })}
+    </View>
+  );
+}
+
+function SharedVideoNote({ note }: { note: string }) {
+  return (
+    <View className="rounded-2xl border border-slate-700 bg-slate-950 px-3 py-2.5">
+      <View className="flex-row items-start gap-2.5">
+        <View className="mt-0.5 rounded-full bg-slate-800 p-1.5">
+          <Ionicons
+            name="chatbubble-ellipses-outline"
+            size={12}
+            color="#94a3b8"
+          />
+        </View>
+
+        <View className="flex-1 gap-1">
+          <Text className="text-[10px] font-black uppercase tracking-[0.14em] text-slate-500">
+            Message
+          </Text>
+          <Text
+            numberOfLines={4}
+            className="text-sm font-medium leading-5 text-slate-200"
+          >
+            {note.trim()}
+          </Text>
+        </View>
+      </View>
+    </View>
+  );
+}
+
+function InboxFilterDropdown({
+  inboxFilter,
+  readCount,
+  totalCount,
+  unreadCount,
+  onValueChange,
+}: {
+  inboxFilter: InboxFilter;
+  readCount: number;
+  totalCount: number;
+  unreadCount: number;
+  onValueChange: (value: InboxFilter) => void;
+}) {
+  return (
+    <View className="items-end">
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Pressable className="flex-row items-center gap-2 rounded-2xl border border-slate-800 bg-slate-900 px-3 py-2.5 active:bg-slate-800">
+            <Text className="text-xs font-black uppercase tracking-[0.16em] text-slate-300">
+              {inboxFilter}
+            </Text>
+            <Ionicons name="chevron-down" size={14} color="#94a3b8" />
+          </Pressable>
+        </DropdownMenuTrigger>
+
+        <DropdownMenuContent align="end" sideOffset={10}>
+          <DropdownMenuLabel>Inbox</DropdownMenuLabel>
+          <DropdownMenuSeparator />
+          <DropdownMenuRadioGroup
+            value={inboxFilter}
+            onValueChange={(value) => onValueChange(value as InboxFilter)}
+          >
+            <DropdownMenuRadioItem value="all">
+              <DropdownMenuItemIndicator>
+                <Ionicons name="checkmark" size={16} color="#6ee7b7" />
+              </DropdownMenuItemIndicator>
+              <Text>All</Text>
+              <DropdownMenuItemInset>
+                <Text className="text-xs font-bold uppercase tracking-[0.14em] text-slate-500">
+                  {totalCount}
+                </Text>
+              </DropdownMenuItemInset>
+            </DropdownMenuRadioItem>
+            <DropdownMenuRadioItem value="unread">
+              <DropdownMenuItemIndicator>
+                <Ionicons name="checkmark" size={16} color="#6ee7b7" />
+              </DropdownMenuItemIndicator>
+              <Text>Unread</Text>
+              <DropdownMenuItemInset>
+                <Text className="text-xs font-bold uppercase tracking-[0.14em] text-slate-500">
+                  {unreadCount}
+                </Text>
+              </DropdownMenuItemInset>
+            </DropdownMenuRadioItem>
+            <DropdownMenuRadioItem value="read">
+              <DropdownMenuItemIndicator>
+                <Ionicons name="checkmark" size={16} color="#6ee7b7" />
+              </DropdownMenuItemIndicator>
+              <Text>Read</Text>
+              <DropdownMenuItemInset>
+                <Text className="text-xs font-bold uppercase tracking-[0.14em] text-slate-500">
+                  {readCount}
+                </Text>
+              </DropdownMenuItemInset>
+            </DropdownMenuRadioItem>
+          </DropdownMenuRadioGroup>
+        </DropdownMenuContent>
+      </DropdownMenu>
     </View>
   );
 }
@@ -614,14 +787,9 @@ function FriendsTab({
         </View>
       ) : (
         <View className="gap-3 rounded-3xl border border-slate-800 bg-slate-900 px-4 py-4">
-          <View className="gap-1">
-            <Text className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-500">
-              Find friends
-            </Text>
-            <Text className="text-sm font-semibold leading-6 text-slate-300">
-              Search by username and add people directly from the app.
-            </Text>
-          </View>
+          <Text className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-500">
+            Find friends
+          </Text>
 
           <Input
             autoCapitalize="none"
@@ -672,15 +840,9 @@ function FriendsTab({
       )}
 
       <View className="gap-3 rounded-3xl border border-slate-800 bg-slate-900 px-4 py-4">
-        <View className="gap-1">
-          <Text className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-500">
-            Connections
-          </Text>
-          <Text className="text-sm font-semibold leading-6 text-slate-300">
-            Switch between incoming requests, pending requests, and accepted
-            friends from one place.
-          </Text>
-        </View>
+        <Text className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-500">
+          Connections
+        </Text>
 
         <View className="flex-row rounded-2xl border border-slate-800 bg-slate-950 p-1">
           <SegmentButton

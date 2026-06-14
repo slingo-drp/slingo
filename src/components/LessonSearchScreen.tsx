@@ -99,11 +99,9 @@ export default function LessonSearchScreen() {
         </View>
 
         <View className="gap-3 rounded-3xl border border-slate-800 bg-slate-900 px-4 py-4">
-          <View className="gap-1">
-            <Text className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-500">
-              Topics
-            </Text>
-          </View>
+          <Text className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-500">
+            Topics
+          </Text>
 
           <View className="flex-row flex-wrap gap-2">
             {LESSON_TOPICS.map((topic) => {

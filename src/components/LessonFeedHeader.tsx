@@ -1,5 +1,5 @@
 import { useLessonFiltersStore } from "@/store/useLessonFiltersStore";
-import { useSettingsStore } from "@/store/useSettingsStore";
+import type { Level } from "@/lib/types";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { ActivityIndicator, Pressable, Text, View } from "react-native";
@@ -20,13 +20,14 @@ function getSearchSummary(searchQuery: string, topicCount: number) {
 }
 
 export default function LessonFeedHeader({
+  currentVideoLevel = null,
   isRefreshing,
 }: {
+  currentVideoLevel?: Level | null;
   isRefreshing: boolean;
 }) {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const level = useSettingsStore((state) => state.level);
   const searchQuery = useLessonFiltersStore((state) => state.searchQuery);
   const selectedTopics = useLessonFiltersStore((state) => state.selectedTopics);
   const summary = getSearchSummary(searchQuery, selectedTopics.length);
@@ -55,9 +56,13 @@ export default function LessonFeedHeader({
           ) : null}
         </Pressable>
 
-        <View className="flex h-full min-w-12 items-center justify-center rounded-lg bg-slate-950/40 px-2.5 py-1.5">
-          <Text className="text-sm font-extrabold text-white">{level}</Text>
-        </View>
+        {currentVideoLevel ? (
+          <View className="flex h-full min-w-12 items-center justify-center rounded-lg bg-slate-950/40 px-2.5 py-1.5">
+            <Text className="text-sm font-extrabold text-white">
+              {currentVideoLevel}
+            </Text>
+          </View>
+        ) : null}
       </View>
     </View>
   );

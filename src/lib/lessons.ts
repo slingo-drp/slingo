@@ -55,6 +55,7 @@ const UNKNOWN_CREATOR = "slingo";
 const UNTITLED_DESCRIPTION = "This video does not have a description.";
 const UNTITLED_TITLE = "Untitled Lesson";
 const DEFAULT_TOPIC: Domain = "everyday";
+const LEVEL_ORDER: readonly Level[] = ["A1", "A2", "B1", "B2", "C1", "C2"];
 
 export type LessonClipFilters = {
   topics?: Domain[];
@@ -76,9 +77,52 @@ const CLIP_QUERY = `
   )
 ` as const;
 
+function getEligibleLevels(level: Level | null | undefined) {
+  if (!level) {
+    return [] as Level[];
+  }
+
+  const targetIndex = LEVEL_ORDER.indexOf(level);
+
+  if (targetIndex === -1) {
+    return [level];
+  }
+
+  return LEVEL_ORDER.slice(0, targetIndex + 1);
+}
+
+function getLevelPriority(level: Level, targetLevel: Level | null | undefined) {
+  const targetIndex = targetLevel ? LEVEL_ORDER.indexOf(targetLevel) : -1;
+  const levelIndex = LEVEL_ORDER.indexOf(level);
+
+  if (targetIndex === -1 || levelIndex === -1) {
+    return Number.MAX_SAFE_INTEGER;
+  }
+
+  return Math.abs(targetIndex - levelIndex);
+}
+
+function sortVideosByLevelPriority<T extends { level: Level }>(
+  videos: T[],
+  targetLevel: Level | null | undefined,
+) {
+  return [...videos].sort((left, right) => {
+    const priorityDifference =
+      getLevelPriority(left.level, targetLevel) -
+      getLevelPriority(right.level, targetLevel);
+
+    if (priorityDifference !== 0) {
+      return priorityDifference;
+    }
+
+    return 0;
+  });
+}
+
 async function queryClips(videoId?: number, filters: LessonClipFilters = {}) {
   const sanitizedSearchQuery = sanitizeLessonSearchQuery(filters.searchQuery);
   const matchingTopics = findTopicsMatchingQuery(sanitizedSearchQuery);
+  const eligibleLevels = getEligibleLevels(filters.level);
   let query = supabase
     .from("videos")
     .select(CLIP_QUERY)
@@ -92,7 +136,9 @@ async function queryClips(videoId?: number, filters: LessonClipFilters = {}) {
 
   if (videoId !== undefined) query = query.eq("id", videoId);
   if (filters.language) query = query.eq("language", filters.language);
-  if (filters.level) query = query.eq("level", filters.level);
+  if (eligibleLevels.length) {
+    query = query.filter("level", "in", `(${eligibleLevels.join(",")})`);
+  }
   if (filters.topics?.length) {
     query = query.filter("topic", "in", `(${filters.topics.join(",")})`);
   }
@@ -109,7 +155,7 @@ async function queryClips(videoId?: number, filters: LessonClipFilters = {}) {
   const { data, error } = await query;
   if (error) throw new Error(`Failed to fetch clips: ${error.message}`);
 
-  return data ?? [];
+  return sortVideosByLevelPriority(data ?? [], filters.level);
 }
 
 type VideoResult = Awaited<ReturnType<typeof queryClips>>[number];
@@ -154,7 +200,7 @@ function toClip(video: VideoResult): LessonClip {
     id: `${video.id}`,
     videoId: video.id,
     videoUrl: video.video_url,
-    source: { uri: video.video_url } as VideoSource,
+    source: { uri: video.video_url, useCaching: true } as VideoSource,
     language: video.language,
     level: video.level,
     transcript,

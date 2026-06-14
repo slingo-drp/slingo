@@ -6,6 +6,8 @@ import { Input } from "@/components/ui/input";
 import { Text } from "@/components/ui/text";
 import { useAuthContext } from "@/hooks/use-auth-context";
 import { useNotifications } from "@/hooks/use-notifications";
+import { useToast } from "@/hooks/use-toast";
+import type { SocialConnection } from "@/lib/friends";
 import type { LessonClip } from "@/lib/lessons";
 import { cn } from "@/lib/utils";
 import { Ionicons } from "@expo/vector-icons";
@@ -34,6 +36,7 @@ export default function ShareClipSheet({
   const { profile } = useAuthContext();
   const { socialState, shareVideoToFriend, isRefreshingSocial } =
     useNotifications();
+  const { showToast } = useToast();
   const [mode, setMode] = useState<ShareSheetMode>("menu");
   const [selectedFriendId, setSelectedFriendId] = useState<string | null>(null);
   const [note, setNote] = useState("");
@@ -64,11 +67,10 @@ export default function ShareClipSheet({
 
     try {
       await shareVideoToFriend(selectedFriendId, clip.videoId, note);
-      Alert.alert(
-        "Lesson shared",
+      showToast(
         selectedFriend
-          ? `Sent to @${selectedFriend.username}.`
-          : "Your friend will see it in their inbox.",
+          ? `✓ Shared with ${getFriendDisplayName(selectedFriend)}`
+          : "✓ Video sent",
       );
       handleClose();
     } catch (error) {
@@ -94,16 +96,9 @@ export default function ShareClipSheet({
 
       {mode === "menu" ? (
         <View className="gap-4">
-          <View className="gap-1">
-            <Text className="text-2xl font-black text-white">Share lesson</Text>
-            <Text className="text-sm font-semibold leading-6 text-slate-400">
-              Send this lesson to a friend in Slingo, or share the public link
-              outside the app.
-            </Text>
-          </View>
+          <Text className="text-2xl font-black text-white">Share lesson</Text>
 
           <ActionCard
-            description="Choose one of your accepted friends and optionally add a short note."
             icon="people"
             onPress={() => {
               setMode(profile?.username ? "friends" : "needs_username");
@@ -111,7 +106,6 @@ export default function ShareClipSheet({
             title="Share with friends"
           />
           <ActionCard
-            description="Open the system share sheet with the lesson link."
             icon="link"
             onPress={() => {
               onShareLink()
@@ -129,15 +123,9 @@ export default function ShareClipSheet({
 
       {mode === "needs_username" ? (
         <View className="gap-4">
-          <View className="gap-1">
-            <Text className="text-2xl font-black text-white">
-              Set your username first
-            </Text>
-            <Text className="text-sm font-semibold leading-6 text-slate-400">
-              In-app sharing uses your username handle so friends can find and
-              connect with you.
-            </Text>
-          </View>
+          <Text className="text-2xl font-black text-white">
+            Set your username first
+          </Text>
 
           <View className="rounded-3xl border border-amber-400/25 bg-amber-400/10 px-4 py-4">
             <Text className="text-sm font-semibold leading-6 text-amber-100/90">
@@ -172,14 +160,9 @@ export default function ShareClipSheet({
       {mode === "friends" ? (
         <View className="gap-4">
           <View className="flex-row items-start justify-between gap-3">
-            <View className="flex-1 gap-1">
-              <Text className="text-2xl font-black text-white">
-                Share with friends
-              </Text>
-              <Text className="text-sm font-semibold leading-6 text-slate-400">
-                Pick one accepted friend and include an optional note.
-              </Text>
-            </View>
+            <Text className="flex-1 text-2xl font-black text-white">
+              Share with friends
+            </Text>
             <Pressable
               className="rounded-full border border-slate-700 p-2"
               onPress={() => setMode("menu")}
@@ -296,13 +279,17 @@ export default function ShareClipSheet({
   );
 }
 
+function getFriendDisplayName(friend: SocialConnection) {
+  return friend.fullName?.trim().split(/\s+/)[0] ?? `@${friend.username}`;
+}
+
 function ActionCard({
   description,
   icon,
   onPress,
   title,
 }: {
-  description: string;
+  description?: string;
   icon: ComponentProps<typeof Ionicons>["name"];
   onPress: () => void;
   title: string;
@@ -317,9 +304,11 @@ function ActionCard({
       </View>
       <View className="flex-1 gap-1">
         <Text className="text-base font-black text-white">{title}</Text>
-        <Text className="text-sm font-semibold leading-6 text-slate-400">
-          {description}
-        </Text>
+        {description ? (
+          <Text className="text-sm font-semibold leading-6 text-slate-400">
+            {description}
+          </Text>
+        ) : null}
       </View>
       <Ionicons color="#94a3b8" name="chevron-forward" size={20} />
     </Pressable>
