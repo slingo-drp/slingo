@@ -11,6 +11,17 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItemIndicator,
+  DropdownMenuItemInset,
+  DropdownMenuLabel,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Text } from "@/components/ui/text";
 import { useAuthContext } from "@/hooks/use-auth-context";
@@ -36,6 +47,7 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 type NotificationsTab = "inbox" | "friends";
+type InboxFilter = "all" | "read" | "unread";
 type FriendDialogState =
   | {
       description: string;
@@ -409,6 +421,8 @@ function InboxTab({
   onPressNotification: (notification: InboxNotification) => Promise<void>;
   pendingFriendshipIds: number[];
 }) {
+  const [inboxFilter, setInboxFilter] = useState<InboxFilter>("all");
+
   if (notifications.length === 0) {
     return (
       <EmptyCard
@@ -419,9 +433,56 @@ function InboxTab({
     );
   }
 
+  const filteredNotifications = notifications.filter((notification) => {
+    if (inboxFilter === "read") {
+      return notification.isRead;
+    }
+
+    if (inboxFilter === "unread") {
+      return !notification.isRead;
+    }
+
+    return true;
+  });
+
+  const readCount = notifications.filter(
+    (notification) => notification.isRead,
+  ).length;
+  const unreadCount = notifications.length - readCount;
+
+  const filterMenu = (
+    <InboxFilterDropdown
+      inboxFilter={inboxFilter}
+      readCount={readCount}
+      totalCount={notifications.length}
+      unreadCount={unreadCount}
+      onValueChange={setInboxFilter}
+    />
+  );
+
+  if (filteredNotifications.length === 0) {
+    return (
+      <View className="gap-3">
+        {filterMenu}
+
+        <EmptyCard
+          description={
+            inboxFilter === "unread"
+              ? "No unread notifications."
+              : "No read notifications."
+          }
+          icon="mail-open-outline"
+          title={inboxFilter === "unread" ? "All caught up" : "Nothing here"}
+        />
+      </View>
+    );
+  }
+
   return (
     <View className="gap-3">
-      {notifications.map((notification) => {
+      {filterMenu}
+
+      {filteredNotifications.map((notification) => {
         const isPendingAction =
           notification.type !== "video_share" &&
           pendingFriendshipIds.includes(notification.friendshipId);
@@ -520,6 +581,78 @@ function InboxTab({
           </Pressable>
         );
       })}
+    </View>
+  );
+}
+
+function InboxFilterDropdown({
+  inboxFilter,
+  readCount,
+  totalCount,
+  unreadCount,
+  onValueChange,
+}: {
+  inboxFilter: InboxFilter;
+  readCount: number;
+  totalCount: number;
+  unreadCount: number;
+  onValueChange: (value: InboxFilter) => void;
+}) {
+  return (
+    <View className="items-end">
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Pressable className="flex-row items-center gap-2 rounded-2xl border border-slate-800 bg-slate-900 px-3 py-2.5 active:bg-slate-800">
+            <Text className="text-xs font-black uppercase tracking-[0.16em] text-slate-300">
+              {inboxFilter}
+            </Text>
+            <Ionicons name="chevron-down" size={14} color="#94a3b8" />
+          </Pressable>
+        </DropdownMenuTrigger>
+
+        <DropdownMenuContent align="end" sideOffset={10}>
+          <DropdownMenuLabel>Inbox</DropdownMenuLabel>
+          <DropdownMenuSeparator />
+          <DropdownMenuRadioGroup
+            value={inboxFilter}
+            onValueChange={(value) => onValueChange(value as InboxFilter)}
+          >
+            <DropdownMenuRadioItem value="all">
+              <DropdownMenuItemIndicator>
+                <Ionicons name="checkmark" size={16} color="#6ee7b7" />
+              </DropdownMenuItemIndicator>
+              <Text>All</Text>
+              <DropdownMenuItemInset>
+                <Text className="text-xs font-bold uppercase tracking-[0.14em] text-slate-500">
+                  {totalCount}
+                </Text>
+              </DropdownMenuItemInset>
+            </DropdownMenuRadioItem>
+            <DropdownMenuRadioItem value="unread">
+              <DropdownMenuItemIndicator>
+                <Ionicons name="checkmark" size={16} color="#6ee7b7" />
+              </DropdownMenuItemIndicator>
+              <Text>Unread</Text>
+              <DropdownMenuItemInset>
+                <Text className="text-xs font-bold uppercase tracking-[0.14em] text-slate-500">
+                  {unreadCount}
+                </Text>
+              </DropdownMenuItemInset>
+            </DropdownMenuRadioItem>
+            <DropdownMenuRadioItem value="read">
+              <DropdownMenuItemIndicator>
+                <Ionicons name="checkmark" size={16} color="#6ee7b7" />
+              </DropdownMenuItemIndicator>
+              <Text>Read</Text>
+              <DropdownMenuItemInset>
+                <Text className="text-xs font-bold uppercase tracking-[0.14em] text-slate-500">
+                  {readCount}
+                </Text>
+              </DropdownMenuItemInset>
+            </DropdownMenuRadioItem>
+          </DropdownMenuRadioGroup>
+        </DropdownMenuContent>
+      </DropdownMenu>
     </View>
   );
 }
