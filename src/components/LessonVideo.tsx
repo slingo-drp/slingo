@@ -2,8 +2,8 @@ import type { LessonClip } from "@/lib/lessons";
 import { useSettingsStore } from "@/store/useSettingsStore";
 import { useEventListener } from "expo";
 import { useVideoPlayer, VideoView } from "expo-video";
-import { useEffect, useRef } from "react";
-import { Pressable, StyleSheet, View } from "react-native";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { ActivityIndicator, Pressable, StyleSheet, View } from "react-native";
 import VideoScrubber from "./VideoScrubber"; // <-- Import your new component
 
 const PLAYBACK_UPDATE_INTERVAL_SECONDS = 0.1;
@@ -31,6 +31,12 @@ export default function LessonVideo({
 
   const playerRef = useRef(player);
   const hasAppliedInitialSeekRef = useRef(false);
+  const [readySourceKey, setReadySourceKey] = useState<string | null>(null);
+  const currentSourceKey = useMemo(
+    () => `${clip.videoId}:${initialSeekMs ?? "none"}`,
+    [clip.videoId, initialSeekMs],
+  );
+  const isReadyToDisplay = readySourceKey === currentSourceKey;
 
   useEffect(() => {
     playerRef.current = player;
@@ -62,7 +68,15 @@ export default function LessonVideo({
       hasAppliedInitialSeekRef.current = true;
     }
 
+    setReadySourceKey(currentSourceKey);
     onPlaybackTimeChange(playerRef.current.currentTime);
+  });
+
+  useEventListener(player, "statusChange", ({ status }) => {
+    if (status === "readyToPlay") {
+      setReadySourceKey(currentSourceKey);
+      return;
+    }
   });
 
   const onPress = () => {
@@ -76,12 +90,24 @@ export default function LessonVideo({
         contentFit="cover"
         nativeControls={false}
         player={player}
-        style={StyleSheet.absoluteFill}
+        style={[StyleSheet.absoluteFill, !isReadyToDisplay && styles.hiddenVideo]}
       />
 
       <Pressable onPress={onPress} style={StyleSheet.absoluteFill} />
+
+      {!isReadyToDisplay ? (
+        <View className="absolute inset-0 items-center justify-center bg-slate-950">
+          <ActivityIndicator color="#34d399" size="large" />
+        </View>
+      ) : null}
 
       <VideoScrubber player={player} />
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  hiddenVideo: {
+    opacity: 0,
+  },
+});

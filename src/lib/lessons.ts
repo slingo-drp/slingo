@@ -200,7 +200,7 @@ function toClip(video: VideoResult): LessonClip {
     id: `${video.id}`,
     videoId: video.id,
     videoUrl: video.video_url,
-    source: { uri: video.video_url } as VideoSource,
+    source: { uri: video.video_url, useCaching: true } as VideoSource,
     language: video.language,
     level: video.level,
     transcript,
