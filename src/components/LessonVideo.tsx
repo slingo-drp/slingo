@@ -24,6 +24,7 @@ export default function LessonVideo({
   const player = useVideoPlayer(clip.source, (p) => {
     p.loop = true;
     p.muted = false;
+    p.preservesPitch = true;
     p.timeUpdateEventInterval = PLAYBACK_UPDATE_INTERVAL_SECONDS;
     p.playbackRate = speed;
   });
@@ -40,6 +41,7 @@ export default function LessonVideo({
   }, [clip.videoId, initialSeekMs]);
 
   useEffect(() => {
+    playerRef.current.preservesPitch = true;
     playerRef.current.playbackRate = speed;
   }, [speed]);
 

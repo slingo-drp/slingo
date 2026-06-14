@@ -4,6 +4,7 @@ import type {
   SelectedWord,
   SubtitleWord,
 } from "@/lib/lessons";
+import { buildSharedLessonUrl } from "@/lib/lesson-links";
 import { languageToFlag } from "@/lib/utils";
 import { useSegments } from "expo-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -95,7 +96,7 @@ export default function LessonClipCard({
 
   const handleShareLink = useCallback(async () => {
     const { title, language, topic } = clip;
-    const deepLink = `${process.env.EXPO_PUBLIC_WEB_SERVER_URL}/${clip.id}`;
+    const deepLink = buildSharedLessonUrl(clip.id);
 
     const lines = [
       `🎬 ${title}`,

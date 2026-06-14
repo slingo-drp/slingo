@@ -1,6 +1,6 @@
 import type { VideoSource } from "expo-video";
 import { supabase } from "./supabase";
-import type { VideoRow, WordSenseRow } from "./types";
+import type { Domain, Language, Level, VideoRow, WordSenseRow } from "./types";
 
 // ─── Domain types ─────────────────────────────────────────────────────────────
 
@@ -34,7 +34,7 @@ export type LessonClip = {
   translation: string | null;
   words: SubtitleWord[];
   creator: string;
-  topic: string;
+  topic: Domain;
   title: string;
   description: string;
 };
@@ -48,14 +48,20 @@ export type SelectedWord = {
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 const UNKNOWN_CREATOR = "slingo";
-const FALLBACK_TOPIC = "topic";
 const UNTITLED_DESCRIPTION = "This video does not have a description.";
 const UNTITLED_TITLE = "Untitled Lesson";
+const DEFAULT_TOPIC: Domain = "everyday";
+
+export type LessonClipFilters = {
+  domains?: Domain[];
+  language?: Language | null;
+  level?: Level | null;
+};
 
 // ─── Query ────────────────────────────────────────────────────────────────────
 
 const CLIP_QUERY = `
-  id, video_url, language, level, title, description,
+  id, video_url, language, level, topic, title, description,
   sentences (
     id, sentence_text, translation, start_ms, end_ms,
     transcript_tokens (
@@ -65,7 +71,7 @@ const CLIP_QUERY = `
   )
 ` as const;
 
-async function queryClips(videoId?: number) {
+async function queryClips(videoId?: number, filters: LessonClipFilters = {}) {
   let query = supabase
     .from("videos")
     .select(CLIP_QUERY)
@@ -78,6 +84,11 @@ async function queryClips(videoId?: number) {
     });
 
   if (videoId !== undefined) query = query.eq("id", videoId);
+  if (filters.language) query = query.eq("language", filters.language);
+  if (filters.level) query = query.eq("level", filters.level);
+  if (filters.domains?.length) {
+    query = query.filter("topic", "in", `(${filters.domains.join(",")})`);
+  }
 
   const { data, error } = await query;
   if (error) throw new Error(`Failed to fetch clips: ${error.message}`);
@@ -107,21 +118,6 @@ function toSubtitleWord(token: TokenResult): SubtitleWord {
   };
 }
 
-function dominantDomain(tokens: TokenResult[]): string {
-  const counts = new Map<string, number>();
-  for (const token of tokens) {
-    const domain = (
-      Array.isArray(token.word_senses)
-        ? token.word_senses[0]
-        : token.word_senses
-    )?.domain;
-    if (domain) counts.set(domain, (counts.get(domain) ?? 0) + 1);
-  }
-  return (
-    [...counts.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] ?? FALLBACK_TOPIC
-  );
-}
-
 function toSentence(sentence: SentenceResult): LessonSentence {
   return {
     id: sentence.id,
@@ -136,6 +132,7 @@ function toSentence(sentence: SentenceResult): LessonSentence {
 function toClip(video: VideoResult): LessonClip {
   const transcript = video.sentences.map(toSentence);
   const firstSentence = transcript[0];
+  const topic = (video as VideoResult & { topic?: Domain | null }).topic;
 
   return {
     id: `${video.id}`,
@@ -149,9 +146,7 @@ function toClip(video: VideoResult): LessonClip {
     translation: firstSentence?.translation ?? null,
     words: firstSentence?.words ?? [],
     creator: UNKNOWN_CREATOR,
-    topic: dominantDomain(
-      video.sentences.flatMap((sentence) => sentence.transcript_tokens),
-    ),
+    topic: topic ?? DEFAULT_TOPIC,
     title: video.title ?? UNTITLED_TITLE,
     description: video.description || UNTITLED_DESCRIPTION,
   };
@@ -159,17 +154,21 @@ function toClip(video: VideoResult): LessonClip {
 
 // ─── Public API ───────────────────────────────────────────────────────────────
 
-export async function fetchLessonClips(language?: string): Promise<LessonClip[]> {
-  const videos = await queryClips();
-  let clips = videos.map(toClip).filter((clip) => clip.transcript.length > 0);
+async function fetchFilteredClips(
+  filters: LessonClipFilters = {},
+): Promise<LessonClip[]> {
+  const videos = await queryClips(undefined, filters);
+  return videos.map(toClip).filter((clip) => clip.transcript.length > 0);
+}
 
-  if (language) {
-    clips = clips.filter((clip) => clip.language === language);
-  }
+export async function fetchLessonClips(
+  filters: LessonClipFilters = {},
+): Promise<LessonClip[]> {
+  const clips = await fetchFilteredClips(filters);
 
   if (clips.length === 0) {
     throw new Error(
-      "No lesson clips found. Please add some videos and sentences to the database.",
+      "No lesson clips matched your current language, level, or content filters.",
     );
   }
 
@@ -186,16 +185,22 @@ export async function fetchLessonClip(
 
 export async function fetchSharedLessonFeed(
   videoId: number,
-  language?: string,
+  filters: LessonClipFilters = {},
 ): Promise<LessonClip[]> {
-  const [sharedClip, allClips] = await Promise.all([
+  const [sharedClip, filteredClips] = await Promise.all([
     fetchLessonClip(videoId),
-    fetchLessonClips(language),
+    fetchFilteredClips(filters),
   ]);
 
   if (!sharedClip) {
     throw new Error("That shared lesson could not be found.");
   }
 
-  return [sharedClip, ...allClips.filter((clip) => clip.id !== sharedClip.id)];
+  // Shared lessons should always open, even when they fall outside the user's
+  // current language, level, or topic preferences. Only the surrounding feed
+  // stays filtered.
+  return [
+    sharedClip,
+    ...filteredClips.filter((clip) => clip.id !== sharedClip.id),
+  ];
 }
