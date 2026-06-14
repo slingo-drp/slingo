@@ -1,4 +1,8 @@
 import type { VideoSource } from "expo-video";
+import {
+  findTopicsMatchingQuery,
+  sanitizeLessonSearchQuery,
+} from "./lesson-topics";
 import { supabase } from "./supabase";
 import type { Domain, Language, Level, VideoRow, WordSenseRow } from "./types";
 
@@ -53,9 +57,10 @@ const UNTITLED_TITLE = "Untitled Lesson";
 const DEFAULT_TOPIC: Domain = "everyday";
 
 export type LessonClipFilters = {
-  domains?: Domain[];
+  topics?: Domain[];
   language?: Language | null;
   level?: Level | null;
+  searchQuery?: string | null;
 };
 
 // ─── Query ────────────────────────────────────────────────────────────────────
@@ -72,6 +77,8 @@ const CLIP_QUERY = `
 ` as const;
 
 async function queryClips(videoId?: number, filters: LessonClipFilters = {}) {
+  const sanitizedSearchQuery = sanitizeLessonSearchQuery(filters.searchQuery);
+  const matchingTopics = findTopicsMatchingQuery(sanitizedSearchQuery);
   let query = supabase
     .from("videos")
     .select(CLIP_QUERY)
@@ -86,8 +93,17 @@ async function queryClips(videoId?: number, filters: LessonClipFilters = {}) {
   if (videoId !== undefined) query = query.eq("id", videoId);
   if (filters.language) query = query.eq("language", filters.language);
   if (filters.level) query = query.eq("level", filters.level);
-  if (filters.domains?.length) {
-    query = query.filter("topic", "in", `(${filters.domains.join(",")})`);
+  if (filters.topics?.length) {
+    query = query.filter("topic", "in", `(${filters.topics.join(",")})`);
+  }
+  if (sanitizedSearchQuery) {
+    const searchFilters = [
+      `title.ilike.*${sanitizedSearchQuery}*`,
+      `description.ilike.*${sanitizedSearchQuery}*`,
+      ...matchingTopics.map((topic) => `topic.eq.${topic}`),
+    ];
+
+    query = query.or(searchFilters.join(","));
   }
 
   const { data, error } = await query;
@@ -168,7 +184,7 @@ export async function fetchLessonClips(
 
   if (clips.length === 0) {
     throw new Error(
-      "No lesson clips matched your current language, level, or content filters.",
+      "No lesson clips matched your current language, level, or search filters.",
     );
   }
 
@@ -197,8 +213,8 @@ export async function fetchSharedLessonFeed(
   }
 
   // Shared lessons should always open, even when they fall outside the user's
-  // current language, level, or topic preferences. Only the surrounding feed
-  // stays filtered.
+  // current language, level, search, or topic preferences. Only the
+  // surrounding feed stays filtered.
   return [
     sharedClip,
     ...filteredClips.filter((clip) => clip.id !== sharedClip.id),
