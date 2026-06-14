@@ -1,25 +1,26 @@
-import { ProfileAvatar } from "@/components/ProfileAvatar";
 import { LearningLanguageBadge } from "@/components/LearningLanguageBadge";
+import { ProfileAvatar } from "@/components/ProfileAvatar";
 import {
   AlertDialog,
   AlertDialogAction,
-  AlertDialogCancel,
   AlertDialogContent,
   AlertDialogDescription,
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Text as UiText } from "@/components/ui/text";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { SelectableChip } from "@/components/ui/selectable-chip";
+import { Text } from "@/components/ui/text";
 import { useAuthContext } from "@/hooks/use-auth-context";
 import { useBookmarks } from "@/hooks/use-bookmarks";
 import { useToast } from "@/hooks/use-toast";
 import {
   AVATAR_BUCKET,
-  getUsernameValidationError,
   getAvatarStoragePath,
+  getUsernameValidationError,
   normalizeUsernameInput,
   resolveAvatarUrl,
   updateProfile,
@@ -35,22 +36,16 @@ import {
   SUBTITLE_SIZES,
   useSettingsStore,
 } from "@/store/useSettingsStore";
-import * as ImagePicker from "expo-image-picker";
 import { ImageManipulator, SaveFormat } from "expo-image-manipulator";
+import * as ImagePicker from "expo-image-picker";
 import { StatusBar } from "expo-status-bar";
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import {
-  Alert,
-  Platform,
-  Pressable,
-  ScrollView,
-  Text,
-  View,
-} from "react-native";
+import { Alert, Platform, ScrollView, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const AVATAR_UPLOAD_SIZE = 512;
 const AVATAR_UPLOAD_QUALITY = 0.72;
+type DestructiveSettingsDialog = "clearBookmarks" | "signOut";
 
 export default function SettingsScreen() {
   const insets = useSafeAreaInsets();
@@ -82,6 +77,8 @@ export default function SettingsScreen() {
     description: string;
     title: string;
   } | null>(null);
+  const [destructiveDialog, setDestructiveDialog] =
+    useState<DestructiveSettingsDialog | null>(null);
   const isMountedRef = useRef(false);
   const languageSaveRequestIdRef = useRef(0);
   const committedLanguageRef = useRef<Language | null>(
@@ -210,7 +207,7 @@ export default function SettingsScreen() {
       await refreshProfile();
       setUsernameDraft(nextProfile?.username ?? normalizedUsername);
       setHasEditedUsername(false);
-      showToast("✓ Username saved");
+      showToast("Username saved");
     } catch (error) {
       console.error("Failed to save username:", error);
       Alert.alert("Couldn't save username", getUsernameErrorMessage(error));
@@ -364,7 +361,7 @@ export default function SettingsScreen() {
           uri: nextAvatarUri,
         });
         setOptimisticAvatarUri(null);
-        showToast("✓ Avatar updated");
+        showToast("Avatar updated");
       }
     } catch (error) {
       if (isMountedRef.current) {
@@ -380,7 +377,7 @@ export default function SettingsScreen() {
   }
 
   return (
-    <View className="flex-1 bg-slate-950">
+    <View className="flex-1 bg-app-background">
       <StatusBar style="light" />
       <ScrollView
         className="flex-1"
@@ -393,9 +390,7 @@ export default function SettingsScreen() {
         showsVerticalScrollIndicator={false}
       >
         <View className="gap-2">
-          <Text className="text-3xl font-black tracking-tight text-white">
-            Settings
-          </Text>
+          <Text variant="screenTitle">Settings</Text>
         </View>
 
         <SettingsSection title="Profile">
@@ -417,7 +412,7 @@ export default function SettingsScreen() {
                   {userEmail ?? "Signed in"}
                 </Text>
                 {isProfileLoading ? (
-                  <Text className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+                  <Text className="text-xs font-semibold uppercase tracking-[0.16em] text-app-text-subtle">
                     Loading profile
                   </Text>
                 ) : null}
@@ -435,13 +430,13 @@ export default function SettingsScreen() {
             />
 
             <View className="gap-2">
-              <Text className="text-[11px] font-black uppercase tracking-[0.16em] text-slate-500">
+              <Text variant="sectionLabel" className="tracking-[0.16em]">
                 Username
               </Text>
               <Input
                 autoCapitalize="none"
                 autoCorrect={false}
-                className="h-12 border-slate-700 bg-slate-950 text-white"
+                className="h-12 border-app-border-strong bg-app-surface-inset text-app-text"
                 placeholder="@your_handle"
                 placeholderTextColor="#64748b"
                 value={usernameValue}
@@ -450,7 +445,7 @@ export default function SettingsScreen() {
                   setUsernameDraft(value);
                 }}
               />
-              <Text className="text-xs font-semibold leading-5 text-slate-400">
+              <Text className="text-xs font-semibold leading-5 text-app-text-muted">
                 Lowercase letters, numbers, and underscores only.
               </Text>
             </View>
@@ -469,7 +464,7 @@ export default function SettingsScreen() {
 
         <SettingsSection title="Language">
           {LANGUAGES.map((entry) => (
-            <Chip
+            <SelectableChip
               key={entry}
               active={language === entry}
               label={`${languageToFlag(entry)} ${LANGUAGE_NAMES[entry]}`}
@@ -491,7 +486,7 @@ export default function SettingsScreen() {
 
         <SettingsSection title="Level">
           {LEVELS.map((entry) => (
-            <Chip
+            <SelectableChip
               key={entry}
               active={level === entry}
               label={entry}
@@ -502,7 +497,7 @@ export default function SettingsScreen() {
 
         <SettingsSection title="Subtitle Size">
           {SUBTITLE_SIZES.map((entry) => (
-            <Chip
+            <SelectableChip
               key={entry}
               active={subtitleSize === entry}
               label={entry}
@@ -512,70 +507,82 @@ export default function SettingsScreen() {
         </SettingsSection>
 
         <SettingsSection title="Bookmarks">
-          <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <Pressable
-                accessibilityLabel="Clear all bookmarks"
-                accessibilityRole="button"
-                className={cn(
-                  "items-center rounded-2xl border px-4 py-3",
-                  bookmarks.length === 0
-                    ? "border-slate-800 bg-slate-950"
-                    : "border-red-500/30 bg-red-500/10 active:bg-red-500/20",
-                )}
-                disabled={bookmarks.length === 0 || isClearing}
-              >
-                <Text
-                  className={cn(
-                    "text-sm font-bold",
-                    bookmarks.length === 0 ? "text-slate-500" : "text-red-300",
-                  )}
-                >
-                  {isClearing ? "Clearing bookmarks..." : "Clear Bookmarks"}
-                </Text>
-              </Pressable>
-            </AlertDialogTrigger>
+          <Button
+            accessibilityLabel="Clear all bookmarks"
+            className="h-auto w-full rounded-2xl px-4 py-3"
+            disabled={bookmarks.length === 0 || isClearing}
+            variant="appDangerSoft"
+            onPress={() => setDestructiveDialog("clearBookmarks")}
+          >
+            <Text
+              className={cn(
+                "text-sm font-bold",
+                bookmarks.length === 0
+                  ? "text-app-text-subtle"
+                  : "text-app-destructive",
+              )}
+            >
+              {isClearing ? "Clearing bookmarks..." : "Clear Bookmarks"}
+            </Text>
+          </Button>
 
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Clear all bookmarks?</AlertDialogTitle>
-                <AlertDialogDescription>
-                  This will remove every saved word from your account. This
-                  action cannot be undone.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-
-              <AlertDialogFooter>
-                <AlertDialogCancel>
-                  <UiText className="text-sm font-medium text-slate-300">
-                    Cancel
-                  </UiText>
-                </AlertDialogCancel>
-                <AlertDialogAction
-                  className="border-red-200 bg-red-50 active:bg-red-100"
-                  onPress={() => {
-                    clearBookmarks().catch((error) => {
-                      console.error("Failed to clear bookmarks:", error);
-                    });
-                  }}
-                >
-                  <UiText className="text-sm font-bold text-red-500">
-                    Clear Bookmarks
-                  </UiText>
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
+          <AlertDialog
+            open={destructiveDialog === "clearBookmarks"}
+            onOpenChange={(open) => {
+              if (!open) {
+                setDestructiveDialog(null);
+              }
+            }}
+          >
+            <DestructiveConfirmContent
+              actionLabel="Clear Bookmarks"
+              description="This will remove every saved word from your account. This action cannot be undone."
+              title="Clear all bookmarks?"
+              onCancel={() => setDestructiveDialog(null)}
+              onConfirm={() => {
+                setDestructiveDialog(null);
+                clearBookmarks().catch((error) => {
+                  console.error("Failed to clear bookmarks:", error);
+                });
+              }}
+            />
           </AlertDialog>
         </SettingsSection>
 
-        <Pressable
-          accessibilityLabel="Sign out"
-          accessibilityRole="button"
-          className="mt-2 items-center rounded-2xl border border-red-500/30 bg-red-500/10 px-4 py-3 active:bg-red-500/20"
-          onPress={() => supabase.auth.signOut()}
-        >
-          <Text className="text-sm font-bold text-red-300">Sign Out</Text>
-        </Pressable>
+        <SettingsSection title="Account">
+          <Button
+            accessibilityLabel="Sign out"
+            className="h-auto w-full rounded-2xl px-4 py-3"
+            variant="appDangerSoft"
+            onPress={() => setDestructiveDialog("signOut")}
+          >
+            <Text className="text-sm font-bold text-app-destructive">
+              Sign Out
+            </Text>
+          </Button>
+
+          <AlertDialog
+            open={destructiveDialog === "signOut"}
+            onOpenChange={(open) => {
+              if (!open) {
+                setDestructiveDialog(null);
+              }
+            }}
+          >
+            <DestructiveConfirmContent
+              actionLabel="Sign Out"
+              description="You will need to sign in again to continue learning with your account."
+              title="Sign out?"
+              onCancel={() => setDestructiveDialog(null)}
+              onConfirm={() => {
+                setDestructiveDialog(null);
+                supabase.auth.signOut().catch((error) => {
+                  console.error("Failed to sign out:", error);
+                });
+              }}
+            />
+          </AlertDialog>
+        </SettingsSection>
       </ScrollView>
 
       <AlertDialog
@@ -586,55 +593,29 @@ export default function SettingsScreen() {
           }
         }}
       >
-        <AlertDialogContent>
+        <AlertDialogContent className="border-app-border bg-app-surface">
           <AlertDialogHeader>
-            <AlertDialogTitle>{feedbackDialog?.title}</AlertDialogTitle>
-            <AlertDialogDescription>
+            <AlertDialogTitle className="text-app-text">
+              {feedbackDialog?.title}
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-app-text-muted">
               {feedbackDialog?.description}
             </AlertDialogDescription>
           </AlertDialogHeader>
 
           <AlertDialogFooter>
-            <AlertDialogAction onPress={() => setFeedbackDialog(null)}>
-              <UiText className="text-sm font-bold text-primary-foreground">
+            <AlertDialogAction
+              className="bg-app-primary active:bg-app-primary/90"
+              onPress={() => setFeedbackDialog(null)}
+            >
+              <Text className="text-sm font-bold text-app-primary-foreground">
                 OK
-              </UiText>
+              </Text>
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
     </View>
-  );
-}
-
-function Chip({
-  label,
-  active,
-  onPress,
-}: {
-  label: string;
-  active: boolean;
-  onPress: () => void;
-}) {
-  return (
-    <Pressable
-      className={cn(
-        "rounded-full border px-3.5 py-2",
-        active
-          ? "border-emerald-400 bg-emerald-400/15"
-          : "border-slate-700 bg-slate-950 active:bg-slate-800",
-      )}
-      onPress={onPress}
-    >
-      <Text
-        className={cn(
-          "text-sm font-bold",
-          active ? "text-emerald-300" : "text-slate-200",
-        )}
-      >
-        {label}
-      </Text>
-    </Pressable>
   );
 }
 
@@ -648,25 +629,70 @@ function ActionButton({
   disabled?: boolean;
 }) {
   return (
-    <Pressable
-      className={cn(
-        "items-center rounded-2xl border px-4 py-3",
-        disabled
-          ? "border-slate-800 bg-slate-950"
-          : "border-emerald-400/30 bg-emerald-400/15 active:bg-emerald-400/20",
-      )}
+    <Button
+      className="h-auto rounded-2xl px-4 py-3"
       disabled={disabled}
       onPress={onPress}
+      variant={disabled ? "appOutline" : "app"}
     >
       <Text
         className={cn(
           "text-sm font-bold",
-          disabled ? "text-slate-500" : "text-emerald-300",
+          disabled ? "text-app-text-subtle" : "text-app-primary",
         )}
       >
         {label}
       </Text>
-    </Pressable>
+    </Button>
+  );
+}
+
+function DestructiveConfirmContent({
+  actionLabel,
+  description,
+  title,
+  onCancel,
+  onConfirm,
+}: {
+  actionLabel: string;
+  description: string;
+  title: string;
+  onCancel: () => void;
+  onConfirm: () => void;
+}) {
+  return (
+    <AlertDialogContent className="border-app-border bg-app-surface">
+      <AlertDialogHeader>
+        <AlertDialogTitle className="text-app-text">{title}</AlertDialogTitle>
+        <AlertDialogDescription className="text-app-text-muted">
+          {description}
+        </AlertDialogDescription>
+      </AlertDialogHeader>
+
+      <AlertDialogFooter
+        className="self-stretch"
+        style={{ alignSelf: "stretch", width: "100%" }}
+      >
+        <Button
+          className="h-auto self-stretch rounded-2xl px-4 py-3"
+          variant="appOutline"
+          style={{ alignSelf: "stretch", width: "100%" }}
+          onPress={onCancel}
+        >
+          <Text className="text-sm font-bold text-app-text">Cancel</Text>
+        </Button>
+        <Button
+          className="h-auto self-stretch rounded-2xl px-4 py-3"
+          variant="appDangerSoft"
+          style={{ alignSelf: "stretch", width: "100%" }}
+          onPress={onConfirm}
+        >
+          <Text className="text-sm font-bold text-app-destructive">
+            {actionLabel}
+          </Text>
+        </Button>
+      </AlertDialogFooter>
+    </AlertDialogContent>
   );
 }
 
@@ -680,11 +706,9 @@ function SettingsSection({
   children: ReactNode;
 }) {
   return (
-    <View className="gap-3 rounded-3xl border border-slate-800 bg-slate-900 px-4 py-4">
+    <Card variant="app">
       <View className="gap-1">
-        <Text className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-500">
-          {title}
-        </Text>
+        <Text variant="sectionLabel">{title}</Text>
         {description ? (
           <Text className="text-sm font-semibold leading-6 text-slate-300">
             {description}
@@ -692,7 +716,7 @@ function SettingsSection({
         ) : null}
       </View>
       <View className="flex-row flex-wrap gap-2">{children}</View>
-    </View>
+    </Card>
   );
 }
 

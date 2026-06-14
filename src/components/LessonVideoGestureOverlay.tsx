@@ -167,7 +167,7 @@ export default function LessonVideoGestureOverlay({
 
       <Animated.View
         pointerEvents="none"
-        className="absolute left-5 top-1/3 rounded-full border border-sky-200/60 bg-slate-950/80 px-3 py-2"
+        className="absolute left-5 top-1/3 rounded-full border border-sky-200/60 bg-app-surface-inset/80 px-3 py-2"
         style={leftHoldStyle}
       >
         <Text className="text-xs font-black uppercase tracking-wide text-sky-100">
@@ -177,7 +177,7 @@ export default function LessonVideoGestureOverlay({
 
       <Animated.View
         pointerEvents="none"
-        className="absolute right-5 top-1/3 rounded-full border border-emerald-200/60 bg-slate-950/80 px-3 py-2"
+        className="absolute right-5 top-1/3 rounded-full border border-emerald-200/60 bg-app-surface-inset/80 px-3 py-2"
         style={rightHoldStyle}
       >
         <Text className="text-xs font-black uppercase tracking-wide text-emerald-100">
@@ -190,7 +190,7 @@ export default function LessonVideoGestureOverlay({
         className="absolute inset-0 items-center justify-center"
         style={feedbackStyle}
       >
-        <View className="h-24 w-24 items-center justify-center rounded-full border border-white/20 bg-slate-950/55">
+        <View className="h-24 w-24 items-center justify-center rounded-full border border-white/20 bg-app-surface-inset/55">
           <Animated.View style={feedbackIconStyle}>
             <Ionicons name="heart" size={52} color="#34d399" />
           </Animated.View>

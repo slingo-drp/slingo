@@ -19,6 +19,7 @@
     --accent: 0 0% 96.1%;
     --accent-foreground: 0 0% 9%;
     --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
     --border: 0 0% 89.8%;
     --input: 0 0% 89.8%;
     --ring: 0 0% 63%;
@@ -28,6 +29,28 @@
     --chart-3: 197 37% 24%;
     --chart-4: 43 74% 66%;
     --chart-5: 27 87% 67%;
+
+    --app-background: 222 84% 5%;
+    --app-surface: 222 47% 11%;
+    --app-surface-inset: 222 84% 5%;
+    --app-border: 215 28% 17%;
+    --app-border-strong: 215 25% 27%;
+    --app-text: 0 0% 100%;
+    --app-text-muted: 215 20% 65%;
+    --app-text-subtle: 215 16% 47%;
+    --app-primary: 156 72% 67%;
+    --app-primary-foreground: 166 76% 10%;
+    --app-primary-surface: 158 64% 52%;
+    --app-primary-border: 158 64% 52%;
+    --app-success: 152 76% 80%;
+    --app-success-surface: 158 64% 52%;
+    --app-success-border: 152 76% 80%;
+    --app-destructive: 0 94% 82%;
+    --app-destructive-surface: 0 84% 60%;
+    --app-destructive-border: 0 84% 60%;
+    --app-warning: 43 96% 56%;
+    --app-warning-surface: 43 96% 56%;
+    --app-warning-border: 43 96% 56%;
   }
 
   .dark:root {
@@ -46,6 +69,7 @@
     --accent: 0 0% 14.9%;
     --accent-foreground: 0 0% 98%;
     --destructive: 0 70.9% 59.4%;
+    --destructive-foreground: 0 0% 98%;
     --border: 0 0% 14.9%;
     --input: 0 0% 14.9%;
     --ring: 300 0% 45%;
@@ -54,5 +78,27 @@
     --chart-3: 30 80% 55%;
     --chart-4: 280 65% 60%;
     --chart-5: 340 75% 55%;
+
+    --app-background: 222 84% 5%;
+    --app-surface: 222 47% 11%;
+    --app-surface-inset: 222 84% 5%;
+    --app-border: 215 28% 17%;
+    --app-border-strong: 215 25% 27%;
+    --app-text: 0 0% 100%;
+    --app-text-muted: 215 20% 65%;
+    --app-text-subtle: 215 16% 47%;
+    --app-primary: 156 72% 67%;
+    --app-primary-foreground: 166 76% 10%;
+    --app-primary-surface: 158 64% 52%;
+    --app-primary-border: 158 64% 52%;
+    --app-success: 152 76% 80%;
+    --app-success-surface: 158 64% 52%;
+    --app-success-border: 152 76% 80%;
+    --app-destructive: 0 94% 82%;
+    --app-destructive-surface: 0 84% 60%;
+    --app-destructive-border: 0 84% 60%;
+    --app-warning: 43 96% 56%;
+    --app-warning-surface: 43 96% 56%;
+    --app-warning-border: 43 96% 56%;
   }
 }

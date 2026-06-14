@@ -136,7 +136,7 @@ export default function Feed({
 
   return (
     <View
-      className="flex-1 bg-slate-950"
+      className="flex-1 bg-app-background"
       onLayout={(e) => setHeight(e.nativeEvent.layout.height)}
     >
       <StatusBar style="light" />

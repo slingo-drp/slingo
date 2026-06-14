@@ -16,8 +16,8 @@ export default function ClipInfo({ clip }: Props) {
       <View className="flex-row gap-2.5">
         <Text className="text-sm font-bold text-white">@{creator}</Text>
 
-        <View className="rounded-full border border-emerald-400/40 bg-emerald-400/15 px-2.5 py-0.5">
-          <Text className="text-xs font-semibold uppercase text-emerald-300">
+        <View className="rounded-full border border-app-primary-border/40 bg-app-primary-surface/15 px-2.5 py-0.5">
+          <Text className="text-xs font-semibold uppercase text-app-primary">
             {formatTopicLabel(topic)}
           </Text>
         </View>

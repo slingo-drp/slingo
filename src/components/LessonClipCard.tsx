@@ -125,7 +125,7 @@ export default function LessonClipCard({
   const toggleLike = useCallback(() => setLiked((prev) => !prev), []);
 
   return (
-    <View className="w-full overflow-hidden bg-slate-900" style={{ height }}>
+    <View className="w-full overflow-hidden bg-app-surface" style={{ height }}>
       <LessonVideo
         clip={clip}
         initialSeekMs={initialSeekMs}

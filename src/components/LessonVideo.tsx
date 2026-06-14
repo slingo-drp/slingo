@@ -115,7 +115,7 @@ export default function LessonVideo({
       <VideoScrubber player={player} />
 
       {!isReadyToDisplay ? (
-        <View className="absolute inset-0 items-center justify-center bg-slate-950">
+        <View className="absolute inset-0 items-center justify-center bg-app-background">
           <ActivityIndicator color="#34d399" size="large" />
         </View>
       ) : null}

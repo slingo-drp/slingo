@@ -25,9 +25,9 @@ type ActiveToast = Required<Pick<ToastOptions, "message" | "tone">> & {
 };
 
 const toneClassNames: Record<ToastTone, string> = {
-  error: "border-red-300 bg-red-950",
-  info: "border-slate-300 bg-slate-900",
-  success: "border-emerald-200 bg-slate-900",
+  error: "border-app-destructive/40 bg-app-surface",
+  info: "border-app-text-muted/30 bg-app-surface",
+  success: "border-app-success-border/40 bg-app-surface",
 };
 
 const textClassNames: Record<ToastTone, string> = {
@@ -36,10 +36,10 @@ const textClassNames: Record<ToastTone, string> = {
   success: "text-white",
 };
 
-const accentClassNames: Record<ToastTone, string> = {
-  error: "bg-red-300",
-  info: "bg-slate-300",
-  success: "bg-emerald-300",
+const dotClassNames: Record<ToastTone, string> = {
+  error: "bg-app-destructive",
+  info: "bg-app-text-muted",
+  success: "bg-app-success",
 };
 
 export default function ToastProvider({ children }: PropsWithChildren) {
@@ -135,7 +135,7 @@ export default function ToastProvider({ children }: PropsWithChildren) {
     <ToastContext.Provider value={value}>
       {children}
       <View
-        className="absolute inset-x-0 items-center px-5"
+        className="absolute inset-x-0 items-center px-6"
         pointerEvents="none"
         style={{
           bottom: insets.bottom + TOAST_BOTTOM_OFFSET,
@@ -147,7 +147,7 @@ export default function ToastProvider({ children }: PropsWithChildren) {
           <Animated.View
             key={activeToast.id}
             className={cn(
-              "max-w-full overflow-hidden rounded-2xl border shadow-2xl shadow-black/60",
+              "max-w-full flex-row items-center gap-2.5 rounded-full border px-4 py-2.5 shadow-lg shadow-black/30",
               toneClassNames[activeToast.tone],
             )}
             style={{
@@ -155,23 +155,21 @@ export default function ToastProvider({ children }: PropsWithChildren) {
               transform: [{ translateY }],
             }}
           >
-            <View className="flex-row items-center">
-              <View
-                className={cn(
-                  "h-full w-1.5",
-                  accentClassNames[activeToast.tone],
-                )}
-              />
-              <Text
-                className={cn(
-                  "px-4 py-3 text-center text-[15px] font-black tracking-tight",
-                  textClassNames[activeToast.tone],
-                )}
-                numberOfLines={2}
-              >
-                {activeToast.message}
-              </Text>
-            </View>
+            <View
+              className={cn(
+                "h-1.5 w-1.5 rounded-full",
+                dotClassNames[activeToast.tone],
+              )}
+            />
+            <Text
+              className={cn(
+                "text-[13px] font-semibold tracking-tight",
+                textClassNames[activeToast.tone],
+              )}
+              numberOfLines={2}
+            >
+              {activeToast.message}
+            </Text>
           </Animated.View>
         ) : null}
       </View>

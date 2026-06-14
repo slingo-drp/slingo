@@ -40,8 +40,10 @@ function AlertDialogOverlay({
         {...props}
       >
         <NativeOnlyAnimatedView
+          className="w-full items-center"
           entering={FadeIn.duration(200).delay(50)}
           exiting={FadeOut.duration(150)}
+          style={{ alignSelf: "stretch", width: "100%" }}
         >
           <>{children}</>
         </NativeOnlyAnimatedView>
@@ -53,6 +55,7 @@ function AlertDialogOverlay({
 function AlertDialogContent({
   className,
   portalHost,
+  style,
   ...props
 }: React.ComponentProps<typeof AlertDialogPrimitive.Content> & {
   portalHost?: string;
@@ -62,12 +65,13 @@ function AlertDialogContent({
       <AlertDialogOverlay>
         <AlertDialogPrimitive.Content
           className={cn(
-            "z-50 flex w-full max-w-[calc(100%-2rem)] flex-col gap-4 rounded-lg border border-border bg-background p-6 shadow-lg shadow-black/5 sm:max-w-lg",
+            "z-50 flex w-full flex-col gap-4 self-center rounded-lg border border-border bg-background p-6 shadow-lg shadow-black/5 sm:max-w-lg",
             Platform.select({
               web: "duration-200 animate-in fade-in-0 zoom-in-95",
             }),
             className,
           )}
+          style={[{ alignSelf: "center", maxWidth: 448, width: "100%" }, style]}
           {...props}
         />
       </AlertDialogOverlay>
@@ -87,7 +91,7 @@ function AlertDialogFooter({ className, ...props }: ViewProps) {
   return (
     <View
       className={cn(
-        "flex flex-col-reverse gap-2 sm:flex-row sm:justify-end",
+        "flex w-full flex-col-reverse gap-2 self-stretch sm:flex-row sm:justify-end",
         className,
       )}
       {...props}

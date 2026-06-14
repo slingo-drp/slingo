@@ -1,9 +1,11 @@
 import SlideUpSheet from "@/components/animated/SlideUpSheet";
 import PronunciationButton from "@/components/PronunciationButton";
-import { Input } from "@/components/ui/input";
+import { Card } from "@/components/ui/card";
+import { SheetHandle } from "@/components/ui/sheet-handle";
+import { Text } from "@/components/ui/text";
 import { useBookmarks } from "@/hooks/use-bookmarks";
-import { buildLessonHref } from "@/lib/lesson-links";
 import type { Bookmark } from "@/lib/bookmarks";
+import { buildLessonHref } from "@/lib/lesson-links";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { StatusBar } from "expo-status-bar";
@@ -12,7 +14,7 @@ import {
   ActivityIndicator,
   Pressable,
   ScrollView,
-  Text,
+  TextInput,
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -60,7 +62,7 @@ export default function BookmarksScreen() {
 
   if (isLoading) {
     return (
-      <View className="flex-1 items-center justify-center bg-slate-950">
+      <View className="flex-1 items-center justify-center bg-app-background">
         <StatusBar style="light" />
         <ActivityIndicator color="#34d399" size="large" />
         <Text className="mt-4 text-sm font-bold text-white/60">
@@ -71,7 +73,7 @@ export default function BookmarksScreen() {
   }
 
   return (
-    <View className="flex-1 bg-slate-950">
+    <View className="flex-1 bg-app-background">
       <StatusBar style="light" />
       <ScrollView
         className="flex-1"
@@ -84,50 +86,48 @@ export default function BookmarksScreen() {
         showsVerticalScrollIndicator={false}
       >
         <View className="gap-2">
-          <Text className="text-3xl font-black tracking-tight text-white">
-            Bookmarks
-          </Text>
+          <Text variant="screenTitle">Bookmarks</Text>
         </View>
 
         {sortedBookmarks.length > 0 ? (
-          <View className="gap-2 rounded-3xl border border-slate-800 bg-slate-900 px-4 py-4">
-            <View className="flex-row items-center gap-3 rounded-2xl border border-slate-700 bg-slate-950 px-3">
+          <Card variant="app" className="gap-2">
+            <View className="flex-row items-center gap-3 rounded-2xl border border-app-border-strong bg-app-surface-inset px-3">
               <Ionicons name="search" size={16} color="#94a3b8" />
-              <Input
+              <TextInput
                 autoCapitalize="none"
                 autoCorrect={false}
-                className="h-12 flex-1 border-0 bg-transparent px-0 py-0 text-sm font-semibold text-white shadow-none"
+                className="h-12 min-w-0 flex-1 px-0 py-0 text-sm font-semibold text-app-text"
                 placeholder="Search saved words"
                 placeholderTextColor="#64748b"
                 value={searchQuery}
                 onChangeText={setSearchQuery}
               />
             </View>
-          </View>
+          </Card>
         ) : null}
 
         {sortedBookmarks.length === 0 ? (
-          <View className="mt-6 rounded-3xl border border-slate-800 bg-slate-900 px-5 py-8">
+          <Card variant="app" className="mt-6 px-5 py-8">
             <Text className="text-lg font-black text-white">
               No bookmarks yet
             </Text>
             <Text className="mt-2 text-sm leading-6 text-slate-400">
               Open a lesson, tap a word, and save it from the insight panel.
             </Text>
-          </View>
+          </Card>
         ) : filteredBookmarks.length === 0 ? (
-          <View className="mt-2 rounded-3xl border border-slate-800 bg-slate-900 px-5 py-8">
+          <Card variant="app" className="mt-2 px-5 py-8">
             <Text className="text-lg font-black text-white">
               No bookmarks matched your search
             </Text>
-          </View>
+          </Card>
         ) : (
           filteredBookmarks.map((bookmark) => (
             <Pressable
               key={bookmark.id}
               accessibilityLabel={`Open bookmark for ${bookmark.lemma}`}
               accessibilityRole="button"
-              className="rounded-3xl border border-slate-800 bg-slate-900 px-4 py-4 active:border-emerald-400/60"
+              className="rounded-3xl border border-app-border bg-app-surface px-4 py-4 active:border-app-primary-border/60"
               onPress={() => setSelectedBookmark(bookmark)}
             >
               <View className="flex-row items-start justify-between gap-3">
@@ -137,8 +137,8 @@ export default function BookmarksScreen() {
                       {bookmark.lemma}
                     </Text>
                     {bookmark.role && (
-                      <View className="rounded-full bg-emerald-400/15 px-2 py-0.5">
-                        <Text className="text-[10px] font-black uppercase tracking-widest text-emerald-300">
+                      <View className="rounded-full bg-app-primary-surface/15 px-2 py-0.5">
+                        <Text className="text-[10px] font-black uppercase tracking-widest text-app-primary">
                           {bookmark.role}
                         </Text>
                       </View>
@@ -147,7 +147,7 @@ export default function BookmarksScreen() {
                   <Text className="text-sm font-semibold leading-6 text-slate-300">
                     {bookmark.sentence}
                   </Text>
-                  <Text className="text-xs font-bold uppercase tracking-widest text-slate-500">
+                  <Text className="text-xs font-bold uppercase tracking-widest text-app-text-subtle">
                     {bookmark.videoTitle}
                   </Text>
                 </View>
@@ -208,9 +208,7 @@ function BookmarkDetailSheet({
       isOpen={bookmark != null}
       onClose={onClose}
     >
-      <View className="items-center pb-4">
-        <View className="h-1.5 w-12 rounded-full bg-slate-700" />
-      </View>
+      <SheetHandle />
 
       <View className="flex-row items-start justify-between gap-3">
         <View className="flex-1 gap-2">
@@ -219,8 +217,8 @@ function BookmarkDetailSheet({
               {bookmark.lemma}
             </Text>
             {bookmark.role && (
-              <View className="rounded-full bg-emerald-400/15 px-2 py-0.5">
-                <Text className="text-[10px] font-black uppercase tracking-widest text-emerald-300">
+              <View className="rounded-full bg-app-primary-surface/15 px-2 py-0.5">
+                <Text className="text-[10px] font-black uppercase tracking-widest text-app-primary">
                   {bookmark.role}
                 </Text>
               </View>
@@ -241,7 +239,7 @@ function BookmarkDetailSheet({
         <Pressable
           accessibilityLabel="Close bookmark details"
           accessibilityRole="button"
-          className="h-8 w-8 items-center justify-center rounded-full bg-slate-900"
+          className="h-8 w-8 items-center justify-center rounded-full bg-app-surface"
           onPress={onClose}
         >
           <Ionicons name="close" size={16} color="#cbd5e1" />
@@ -267,7 +265,7 @@ function BookmarkDetailSheet({
         <Pressable
           accessibilityLabel="See this word in the video"
           accessibilityRole="button"
-          className="flex-row items-center gap-3 rounded-2xl bg-emerald-500 px-4 py-3 active:bg-emerald-400"
+          className="flex-row items-center gap-3 rounded-2xl bg-emerald-500 px-4 py-3 active:bg-app-primary"
           onPress={onOpenLesson}
         >
           <Ionicons name="play" size={16} color="#022c22" />
@@ -288,12 +286,12 @@ function BookmarkDetailSheet({
         <Pressable
           accessibilityLabel="Remove this bookmark"
           accessibilityRole="button"
-          className="flex-row items-center justify-center gap-2 rounded-2xl border border-red-500/30 bg-red-500/10 px-4 py-3 active:bg-red-500/20"
+          className="flex-row items-center justify-center gap-2 rounded-2xl border border-app-destructive-border/30 bg-app-destructive-surface/10 px-4 py-3 active:bg-app-destructive-surface/20"
           disabled={isPending}
           onPress={onRemove}
         >
           <Ionicons name="trash-outline" size={16} color="#fca5a5" />
-          <Text className="text-sm font-black text-red-300">
+          <Text className="text-sm font-black text-app-destructive">
             {isPending ? "Removing..." : "Remove Bookmark"}
           </Text>
         </Pressable>
@@ -312,16 +310,16 @@ function InfoCard({
   value: string;
 }) {
   return (
-    <View className="rounded-2xl border border-slate-800 bg-slate-900 px-4 py-3">
+    <Card variant="appInset" className="px-4 py-3">
       <View className="mb-2 flex-row items-center gap-2">
         <Ionicons name={icon} size={14} color="#34d399" />
-        <Text className="text-[10px] font-black uppercase tracking-widest text-slate-500">
+        <Text className="text-[10px] font-black uppercase tracking-widest text-app-text-subtle">
           {label}
         </Text>
       </View>
       <Text className="text-sm font-semibold leading-6 text-slate-200">
         {value}
       </Text>
-    </View>
+    </Card>
   );
 }

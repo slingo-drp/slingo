@@ -6,7 +6,10 @@ function Skeleton({
   ...props
 }: React.ComponentProps<typeof View> & React.RefAttributes<View>) {
   return (
-    <View className={cn("rounded-md bg-slate-700", className)} {...props} />
+    <View
+      className={cn("rounded-md bg-app-border-strong", className)}
+      {...props}
+    />
   );
 }
 

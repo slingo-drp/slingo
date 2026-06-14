@@ -41,7 +41,7 @@ export default function LessonFeedHeader({
         <Pressable
           accessibilityLabel="Open lesson search"
           accessibilityRole="button"
-          className="flex-1 flex-row items-center gap-3 rounded-lg bg-slate-950/40 px-3 py-2"
+          className="flex-1 flex-row items-center gap-3 rounded-lg bg-app-surface-inset/40 px-3 py-2"
           onPress={() => router.push("/lesson-search")}
         >
           <Ionicons name="search" size={16} color="#94a3b8" />
@@ -57,7 +57,7 @@ export default function LessonFeedHeader({
         </Pressable>
 
         {currentVideoLevel ? (
-          <View className="flex h-full min-w-12 items-center justify-center rounded-lg bg-slate-950/40 px-2.5 py-1.5">
+          <View className="flex h-full min-w-12 items-center justify-center rounded-lg bg-app-surface-inset/40 px-2.5 py-1.5">
             <Text className="text-sm font-extrabold text-white">
               {currentVideoLevel}
             </Text>

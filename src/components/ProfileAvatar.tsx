@@ -48,7 +48,7 @@ export function ProfileAvatar({ name, size = 80, uri }: ProfileAvatarProps) {
 
   return (
     <View
-      className="overflow-hidden rounded-full border border-slate-700 bg-slate-800"
+      className="overflow-hidden rounded-full border border-app-border-strong bg-app-border"
       style={{ height: size, width: size }}
     >
       {resolvedUri ? (
