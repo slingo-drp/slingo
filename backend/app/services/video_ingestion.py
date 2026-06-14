@@ -74,69 +74,66 @@ class VideoIngestionService:
 
         print("Processing transcript...")
         for segment in transcript["segments"]:
-            doc = nlp(segment["text"])
-            sentence_spans = list(doc.sents) or [doc[:]]
             segment_translation = segment.get("translation", "")
+            sentence_text = segment["text"].strip()
+            if not sentence_text:
+                continue
 
-            for sent in sentence_spans:
-                sentence_text = sent.text.strip()
-                if not sentence_text:
+            sentence_row = self._insert_one(
+                "sentences",
+                {
+                    "video_id": video["id"],
+                    "sentence_text": sentence_text,
+                    "translation": segment_translation,
+                    "start_ms": segment["start_ms"],
+                    "end_ms": segment["end_ms"],
+                },
+            )
+            sentence_ids.append(sentence_row["id"])
+
+            doc = nlp(segment["text"])
+            for token in doc:
+                if token.is_space or token.is_punct:
                     continue
 
-                sentence_row = self._insert_one(
-                    "sentences",
+                surface_form = token.text.strip()
+                if not surface_form:
+                    continue
+
+                lemma = normalize_key(token.lemma_ or token.text)
+                raw_pos = (token.pos_ or "X").lower()
+                if raw_pos in ("noun", "propn", "pron"):
+                    token_pos = "noun"
+                elif raw_pos in ("verb", "aux"):
+                    token_pos = "verb"
+                elif raw_pos == "adj":
+                    token_pos = "adjective"
+                elif raw_pos == "adv":
+                    token_pos = "adverb"
+                else:
+                    token_pos = "other"
+
+                word_row = self._get_or_create_word(lemma, language)
+
+                sense_id = self._create_or_match_sense(
+                    sentence_text=sentence_text,
+                    token_text=surface_form,
+                    token_lemma=lemma,
+                    token_pos=token_pos,
+                    word_row=word_row,
+                    tokenizer=tokenizer,
+                    model=model,
+                )
+
+                token_row = self._insert_one(
+                    "transcript_tokens",
                     {
-                        "video_id": video["id"],
-                        "sentence_text": sentence_text,
-                        "translation": segment_translation,
-                        "start_ms": segment["start_ms"],
-                        "end_ms": segment["end_ms"],
+                        "sentence_id": sentence_row["id"],
+                        "surface_form": surface_form,
+                        "sense_id": sense_id,
                     },
                 )
-                sentence_ids.append(sentence_row["id"])
-
-                for token in sent:
-                    if token.is_space or token.is_punct:
-                        continue
-
-                    surface_form = token.text.strip()
-                    if not surface_form:
-                        continue
-
-                    lemma = normalize_key(token.lemma_ or token.text)
-                    raw_pos = (token.pos_ or "X").lower()
-                    if raw_pos in ("noun", "propn", "pron"):
-                        token_pos = "noun"
-                    elif raw_pos in ("verb", "aux"):
-                        token_pos = "verb"
-                    elif raw_pos == "adj":
-                        token_pos = "adjective"
-                    elif raw_pos == "adv":
-                        token_pos = "adverb"
-                    else:
-                        token_pos = "other"
-
-                    word_row = self._get_or_create_word(lemma, language)
-
-                    sense_id = self._create_or_match_sense(
-                        sentence_text=sentence_text,
-                        token_text=surface_form,
-                        token_lemma=lemma,
-                        token_pos=token_pos,
-                        word_row=word_row,
-                        tokenizer=tokenizer,
-                        model=model,
-                    )
-
-                    token_row = self._insert_one(
-                        "transcript_tokens",
-                        {
-                            "sentence_id": sentence_row["id"],
-                            "surface_form": surface_form,
-                            "sense_id": sense_id,
-                        },
-                    )
-                    token_ids.append(token_row["id"])
+                token_ids.append(token_row["id"])
 
         return IngestedVideo(
             video_id=video["id"],
