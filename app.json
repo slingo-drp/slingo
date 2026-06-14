@@ -4,21 +4,19 @@
     "slug": "slingo",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/icon.png",
+    "icon": "./assets/app-icons/ios/iTunesArtwork@2x.png",
     "scheme": "slingo",
     "userInterfaceStyle": "automatic",
     "ios": {
       "bundleIdentifier": "com.slingo.app",
-      "icon": "./assets/expo.icon",
+      "icon": "./assets/app-icons/ios/iTunesArtwork@2x.png",
       "associatedDomains": ["applinks:slingo.app"]
     },
     "android": {
       "versionCode": 1,
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
-        "foregroundImage": "./assets/images/android-icon-foreground.png",
-        "backgroundImage": "./assets/images/android-icon-background.png",
-        "monochromeImage": "./assets/images/android-icon-monochrome.png"
+        "backgroundColor": "#000a14",
+        "foregroundImage": "./assets/app-icons/android/mipmap-xxxhdpi/ic_launcher_foreground.png"
       },
       "predictiveBackGestureEnabled": false,
       "package": "com.slingo.app",
@@ -39,7 +37,7 @@
     },
     "web": {
       "output": "static",
-      "favicon": "./assets/images/favicon.png",
+      "favicon": "./assets/app-icons/android/ic_launcher-web.png",
       "bundler": "metro"
     },
     "plugins": [
@@ -47,9 +45,9 @@
       [
         "expo-splash-screen",
         {
-          "backgroundColor": "#208AEF",
+          "backgroundColor": "#000a14",
           "android": {
-            "image": "./assets/images/splash-icon.png",
+            "image": "./assets/app-icons/android/mipmap-xxxhdpi/ic_launcher_foreground.png",
             "imageWidth": 76
           }
         }
