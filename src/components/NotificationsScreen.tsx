@@ -26,6 +26,7 @@ import { Input } from "@/components/ui/input";
 import { Text } from "@/components/ui/text";
 import { useAuthContext } from "@/hooks/use-auth-context";
 import { useNotifications } from "@/hooks/use-notifications";
+import { useToast } from "@/hooks/use-toast";
 import {
   searchSocialProfiles,
   type SocialConnection,
@@ -64,10 +65,13 @@ type FriendDialogState =
       username: string;
     };
 
-export default function NotificationsScreen({ mode }: NotificationsScreenProps) {
+export default function NotificationsScreen({
+  mode,
+}: NotificationsScreenProps) {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { profile } = useAuthContext();
+  const { showToast } = useToast();
   const {
     isLoading,
     isRefreshingSocial,
@@ -198,11 +202,7 @@ export default function NotificationsScreen({ mode }: NotificationsScreenProps) 
 
       try {
         await sendFriendRequest(result.id);
-        setDialogState({
-          description: `@${result.username} will see your request in their inbox.`,
-          kind: "feedback",
-          title: "Friend request sent",
-        });
+        showToast("✓ Friend request sent");
       } finally {
         trackPendingProfile(result.id, false);
       }
@@ -228,11 +228,7 @@ export default function NotificationsScreen({ mode }: NotificationsScreenProps) 
 
     try {
       await removeFriend(friendshipId);
-      setDialogState({
-        description: `@${username} has been removed from your friends list.`,
-        kind: "feedback",
-        title: "Friend removed",
-      });
+      showToast(`✓ Removed @${username}`);
     } catch (error) {
       console.error("Failed to remove friend:", error);
       setDialogState({

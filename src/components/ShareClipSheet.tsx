@@ -6,6 +6,8 @@ import { Input } from "@/components/ui/input";
 import { Text } from "@/components/ui/text";
 import { useAuthContext } from "@/hooks/use-auth-context";
 import { useNotifications } from "@/hooks/use-notifications";
+import { useToast } from "@/hooks/use-toast";
+import type { SocialConnection } from "@/lib/friends";
 import type { LessonClip } from "@/lib/lessons";
 import { cn } from "@/lib/utils";
 import { Ionicons } from "@expo/vector-icons";
@@ -34,6 +36,7 @@ export default function ShareClipSheet({
   const { profile } = useAuthContext();
   const { socialState, shareVideoToFriend, isRefreshingSocial } =
     useNotifications();
+  const { showToast } = useToast();
   const [mode, setMode] = useState<ShareSheetMode>("menu");
   const [selectedFriendId, setSelectedFriendId] = useState<string | null>(null);
   const [note, setNote] = useState("");
@@ -64,11 +67,10 @@ export default function ShareClipSheet({
 
     try {
       await shareVideoToFriend(selectedFriendId, clip.videoId, note);
-      Alert.alert(
-        "Lesson shared",
+      showToast(
         selectedFriend
-          ? `Sent to @${selectedFriend.username}.`
-          : "Your friend will see it in their inbox.",
+          ? `✓ Shared with ${getFriendDisplayName(selectedFriend)}`
+          : "✓ Video sent",
       );
       handleClose();
     } catch (error) {
@@ -275,6 +277,10 @@ export default function ShareClipSheet({
       ) : null}
     </SlideUpSheet>
   );
+}
+
+function getFriendDisplayName(friend: SocialConnection) {
+  return friend.fullName?.trim().split(/\s+/)[0] ?? `@${friend.username}`;
 }
 
 function ActionCard({

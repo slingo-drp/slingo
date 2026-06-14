@@ -2,6 +2,7 @@ import "../../global.css";
 
 import BookmarksProvider from "@/providers/bookmarks-provider";
 import NotificationsProvider from "@/providers/notifications-provider";
+import ToastProvider from "@/providers/toast-provider";
 import { SplashScreenController } from "@/components/splash-screen-controller";
 import { useAuthContext } from "@/hooks/use-auth-context";
 import { createSessionFromUrl } from "@/lib/auth";
@@ -52,9 +53,11 @@ export default function RootLayout() {
         <AuthProvider>
           <NotificationsProvider>
             <BookmarksProvider>
-              <SplashScreenController />
-              <RootNavigator />
-              <PortalHost />
+              <ToastProvider>
+                <SplashScreenController />
+                <RootNavigator />
+                <PortalHost />
+              </ToastProvider>
             </BookmarksProvider>
           </NotificationsProvider>
         </AuthProvider>

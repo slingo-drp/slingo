@@ -15,6 +15,7 @@ import { Text as UiText } from "@/components/ui/text";
 import { Input } from "@/components/ui/input";
 import { useAuthContext } from "@/hooks/use-auth-context";
 import { useBookmarks } from "@/hooks/use-bookmarks";
+import { useToast } from "@/hooks/use-toast";
 import {
   AVATAR_BUCKET,
   getUsernameValidationError,
@@ -56,6 +57,7 @@ export default function SettingsScreen() {
   const { claims, profile, isProfileLoading, refreshProfile } =
     useAuthContext();
   const { bookmarks, clearBookmarks, isClearing } = useBookmarks();
+  const { showToast } = useToast();
   const {
     language,
     level,
@@ -208,6 +210,7 @@ export default function SettingsScreen() {
       await refreshProfile();
       setUsernameDraft(nextProfile?.username ?? normalizedUsername);
       setHasEditedUsername(false);
+      showToast("✓ Username saved");
     } catch (error) {
       console.error("Failed to save username:", error);
       Alert.alert("Couldn't save username", getUsernameErrorMessage(error));
@@ -361,6 +364,7 @@ export default function SettingsScreen() {
           uri: nextAvatarUri,
         });
         setOptimisticAvatarUri(null);
+        showToast("✓ Avatar updated");
       }
     } catch (error) {
       if (isMountedRef.current) {
