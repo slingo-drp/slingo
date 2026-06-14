@@ -48,6 +48,9 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 type NotificationsTab = "inbox" | "friends";
 type InboxFilter = "all" | "read" | "unread";
+type NotificationsScreenProps = {
+  mode?: NotificationsTab;
+};
 type FriendDialogState =
   | {
       description: string;
@@ -61,7 +64,7 @@ type FriendDialogState =
       username: string;
     };
 
-export default function NotificationsScreen() {
+export default function NotificationsScreen({ mode }: NotificationsScreenProps) {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { profile } = useAuthContext();
@@ -89,12 +92,13 @@ export default function NotificationsScreen() {
   const [pendingProfileIds, setPendingProfileIds] = useState<string[]>([]);
   const hasUsername = !!profile?.username;
   const trimmedSearchQuery = searchQuery.trim();
+  const currentTab = mode ?? activeTab;
   const activeIncomingFriendshipIds = new Set(
     socialState.incomingRequests.map((entry) => entry.friendshipId),
   );
 
   useEffect(() => {
-    if (activeTab !== "friends" || !hasUsername) {
+    if (currentTab !== "friends" || !hasUsername) {
       return;
     }
 
@@ -129,7 +133,7 @@ export default function NotificationsScreen() {
       isCancelled = true;
       clearTimeout(timeoutId);
     };
-  }, [activeTab, hasUsername, trimmedSearchQuery]);
+  }, [currentTab, hasUsername, trimmedSearchQuery]);
 
   async function handleNotificationPress(notification: InboxNotification) {
     if (!notification.isRead) {
@@ -289,24 +293,26 @@ export default function NotificationsScreen() {
       >
         <View className="gap-2">
           <Text className="text-3xl font-black tracking-tight text-white">
-            Notifications
+            {currentTab === "friends" ? "Friends" : "Notifications"}
           </Text>
         </View>
 
-        <View className="flex-row rounded-2xl border border-slate-800 bg-slate-900 p-1">
-          <SegmentButton
-            active={activeTab === "inbox"}
-            label="Inbox"
-            onPress={() => setActiveTab("inbox")}
-          />
-          <SegmentButton
-            active={activeTab === "friends"}
-            label="Friends"
-            onPress={() => setActiveTab("friends")}
-          />
-        </View>
+        {mode == null ? (
+          <View className="flex-row rounded-2xl border border-slate-800 bg-slate-900 p-1">
+            <SegmentButton
+              active={currentTab === "inbox"}
+              label="Inbox"
+              onPress={() => setActiveTab("inbox")}
+            />
+            <SegmentButton
+              active={currentTab === "friends"}
+              label="Friends"
+              onPress={() => setActiveTab("friends")}
+            />
+          </View>
+        ) : null}
 
-        {activeTab === "inbox" ? (
+        {currentTab === "inbox" ? (
           <InboxTab
             activeIncomingFriendshipIds={activeIncomingFriendshipIds}
             notifications={notifications}
