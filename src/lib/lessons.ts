@@ -167,8 +167,6 @@ export async function fetchLessonClips(): Promise<LessonClip[]> {
     data: { session },
   } = await supabase.auth.getSession();
 
-  console.log(session?.access_token);
-
   if (clips.length === 0) {
     throw new Error(
       "No lesson clips found. Please add some videos and sentences to the database.",
