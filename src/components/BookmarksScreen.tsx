@@ -1,17 +1,22 @@
 import SlideUpSheet from "@/components/animated/SlideUpSheet";
 import PronunciationButton from "@/components/PronunciationButton";
 import { Card } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { SheetHandle } from "@/components/ui/sheet-handle";
 import { Text } from "@/components/ui/text";
 import { useBookmarks } from "@/hooks/use-bookmarks";
-import { buildLessonHref } from "@/lib/lesson-links";
 import type { Bookmark } from "@/lib/bookmarks";
+import { buildLessonHref } from "@/lib/lesson-links";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useDeferredValue, useMemo, useState } from "react";
-import { ActivityIndicator, Pressable, ScrollView, View } from "react-native";
+import {
+  ActivityIndicator,
+  Pressable,
+  ScrollView,
+  TextInput,
+  View,
+} from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 function matchesBookmarkSearch(bookmark: Bookmark, query: string) {
@@ -88,10 +93,10 @@ export default function BookmarksScreen() {
           <Card variant="app" className="gap-2">
             <View className="flex-row items-center gap-3 rounded-2xl border border-app-border-strong bg-app-surface-inset px-3">
               <Ionicons name="search" size={16} color="#94a3b8" />
-              <Input
+              <TextInput
                 autoCapitalize="none"
                 autoCorrect={false}
-                className="h-12 flex-1 border-0 bg-transparent px-0 py-0 text-sm font-semibold text-app-text shadow-none"
+                className="h-12 min-w-0 flex-1 px-0 py-0 text-sm font-semibold text-app-text"
                 placeholder="Search saved words"
                 placeholderTextColor="#64748b"
                 value={searchQuery}

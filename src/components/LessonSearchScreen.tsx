@@ -1,5 +1,4 @@
 import { Card } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { SelectableChip } from "@/components/ui/selectable-chip";
 import { Text } from "@/components/ui/text";
 import { LESSON_TOPICS, formatTopicLabel } from "@/lib/lesson-topics";
@@ -7,7 +6,7 @@ import { useLessonFiltersStore } from "@/store/useLessonFiltersStore";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { startTransition } from "react";
-import { Pressable, ScrollView, View } from "react-native";
+import { Pressable, ScrollView, TextInput, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function LessonSearchScreen() {
@@ -70,12 +69,12 @@ export default function LessonSearchScreen() {
         <Card variant="app">
           <View className="flex-row items-center gap-3 rounded-2xl border border-app-border-strong bg-app-surface-inset px-3">
             <Ionicons name="search" size={18} color="#94a3b8" />
-            <Input
+            <TextInput
               autoCapitalize="none"
               autoCorrect={false}
               autoComplete="off"
               autoFocus
-              className="h-12 flex-1 border-0 bg-transparent px-0 py-0 text-sm font-semibold text-app-text shadow-none"
+              className="h-12 min-w-0 flex-1 px-0 py-0 text-sm font-semibold text-app-text"
               placeholder="Search lessons or type a topic"
               placeholderTextColor="#64748b"
               returnKeyType="search"
