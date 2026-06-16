@@ -10,6 +10,7 @@ import { useSegments } from "expo-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Pressable, Share, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import CommentsSheet, { type LocalClipComment } from "./CommentsSheet";
 import ClipActions from "./ClipActions";
 import ClipInfo from "./ClipInfo";
 import LessonVideo from "./LessonVideo";
@@ -35,20 +36,29 @@ const getActiveSentence = (
 
 type LessonClipCardProps = {
   clip: LessonClip;
+  commentCount: number;
+  comments: LocalClipComment[];
+  commentsSheetKey: string;
   height: number;
   initialSeekMs: number | null;
   isActive: boolean;
   activeInsight: SelectedWord | null;
+  commentsSheetOpen: boolean;
+  onCloseComments: () => void;
   onWordPress: (
     word: SubtitleWord,
     clip: LessonClip,
     sentence: LessonSentence,
   ) => void;
+  onOpenComments: () => void;
+  onSubmitComment: (clip: LessonClip, text: string) => void;
+  onToggleSave: () => void;
   subtitlesVisible: boolean;
   onToggleSubtitles: () => void;
   onDismissWord: () => void;
   onOpenShare: () => void;
   onCloseShare: () => void;
+  saved: boolean;
   shareSheetKey: string;
   shareSheetOpen: boolean;
 };
@@ -57,16 +67,25 @@ type LessonClipCardProps = {
 
 export default function LessonClipCard({
   clip,
+  commentCount,
+  comments,
+  commentsSheetKey,
   height,
   initialSeekMs,
   isActive,
   activeInsight,
+  commentsSheetOpen,
+  onCloseComments,
   onWordPress,
+  onOpenComments,
+  onSubmitComment,
+  onToggleSave,
   subtitlesVisible,
   onToggleSubtitles,
   onDismissWord,
   onOpenShare,
   onCloseShare,
+  saved,
   shareSheetKey,
   shareSheetOpen,
 }: LessonClipCardProps) {
@@ -144,11 +163,15 @@ export default function LessonClipCard({
       />
 
       <ClipActions
+        commentCount={commentCount}
         liked={liked}
         onLike={toggleLike}
+        onOpenComments={onOpenComments}
+        onToggleSave={onToggleSave}
         subtitlesVisible={subtitlesVisible}
         onToggleSubtitles={onToggleSubtitles}
         onShare={onOpenShare}
+        saved={saved}
       />
 
       {activeInsight ? (
@@ -193,6 +216,16 @@ export default function LessonClipCard({
         onClose={onCloseShare}
         onShareLink={handleShareLink}
       />
+      {commentsSheetOpen ? (
+        <CommentsSheet
+          key={commentsSheetKey}
+          clip={clip}
+          comments={comments}
+          isOpen={commentsSheetOpen}
+          onClose={onCloseComments}
+          onSubmitComment={onSubmitComment}
+        />
+      ) : null}
       {/* </SafeAreaView> */}
     </View>
   );

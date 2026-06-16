@@ -8,8 +8,12 @@ import Animated, {
 } from "react-native-reanimated";
 
 type ClipActionsProps = {
+  commentCount?: number;
   liked: boolean;
   onLike: () => void;
+  onOpenComments: () => void;
+  onToggleSave: () => void;
+  saved: boolean;
   subtitlesVisible: boolean;
   onToggleSubtitles: () => void;
   onShare: () => void;
@@ -23,8 +27,12 @@ export const iconDropShadow = {
 };
 
 export default function ClipActions({
+  commentCount = 0,
   liked,
   onLike,
+  onOpenComments,
+  onToggleSave,
+  saved,
   subtitlesVisible,
   onToggleSubtitles,
   onShare,
@@ -46,8 +54,9 @@ export default function ClipActions({
       />
 
       <ClipActionButton
-        label="Comment"
-        accessibilityLabel="Comments"
+        label={commentCount > 0 ? `${commentCount}` : "Comment"}
+        accessibilityLabel="Open comments"
+        onPress={onOpenComments}
         icon={
           <Ionicons
             name="chatbubble"
@@ -59,13 +68,14 @@ export default function ClipActions({
       />
 
       <ClipActionButton
-        label="Save"
-        accessibilityLabel="Save this clip"
+        label={saved ? "Saved" : "Save"}
+        accessibilityLabel={saved ? "Remove saved clip" : "Save this clip"}
+        onPress={onToggleSave}
         icon={
           <Ionicons
             name="bookmark"
             size={32}
-            color="white"
+            color={saved ? "#34d399" : "white"}
             style={iconDropShadow}
           />
         }
