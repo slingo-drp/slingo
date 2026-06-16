@@ -54,6 +54,7 @@ export const domainEnum = pgEnum("domain", [
   "history",
   "science",
   "entertainment",
+  "family",
   "everyday",
   "other",
 ]);

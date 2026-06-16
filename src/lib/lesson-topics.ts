@@ -4,6 +4,7 @@ export const LESSON_TOPICS: readonly Domain[] = [
   "nature",
   "sports",
   "food",
+  "family",
   "technology",
   "politics",
   "business",

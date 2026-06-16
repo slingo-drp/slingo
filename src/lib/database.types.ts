@@ -236,6 +236,7 @@ export type Database = {
           language: Database["public"]["Enums"]["language"];
           level: Database["public"]["Enums"]["level"];
           title: string;
+          topic: Database["public"]["Enums"]["domain"];
           video_url: string;
         };
         Insert: {
@@ -245,6 +246,7 @@ export type Database = {
           language: Database["public"]["Enums"]["language"];
           level: Database["public"]["Enums"]["level"];
           title: string;
+          topic?: Database["public"]["Enums"]["domain"];
           video_url: string;
         };
         Update: {
@@ -254,6 +256,7 @@ export type Database = {
           language?: Database["public"]["Enums"]["language"];
           level?: Database["public"]["Enums"]["level"];
           title?: string;
+          topic?: Database["public"]["Enums"]["domain"];
           video_url?: string;
         };
         Relationships: [];
@@ -291,21 +294,21 @@ export type Database = {
         };
         Relationships: [
           {
-            foreignKeyName: "word_bookmarks_sense_id_word_senses_id_fk";
+            foreignKeyName: "word_bookmarks_sense_id_fkey";
             columns: ["sense_id"];
             isOneToOne: false;
             referencedRelation: "word_senses";
             referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "word_bookmarks_sentence_id_sentences_id_fk";
+            foreignKeyName: "word_bookmarks_sentence_id_fkey";
             columns: ["sentence_id"];
             isOneToOne: false;
             referencedRelation: "sentences";
             referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "word_bookmarks_word_id_words_id_fk";
+            foreignKeyName: "word_bookmarks_word_id_fkey";
             columns: ["word_id"];
             isOneToOne: false;
             referencedRelation: "words";
@@ -491,6 +494,7 @@ export type Database = {
         | "history"
         | "science"
         | "entertainment"
+        | "family"
         | "everyday"
         | "other";
       friendship_status: "pending" | "accepted" | "declined";
@@ -641,6 +645,7 @@ export const Constants = {
         "history",
         "science",
         "entertainment",
+        "family",
         "everyday",
         "other",
       ],
