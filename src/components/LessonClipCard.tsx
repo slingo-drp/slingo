@@ -8,7 +8,7 @@ import { buildSharedLessonUrl } from "@/lib/lesson-links";
 import { languageToFlag } from "@/lib/utils";
 import { useSegments } from "expo-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Share, View } from "react-native";
+import { Pressable, Share, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import ClipActions from "./ClipActions";
 import ClipInfo from "./ClipInfo";
@@ -74,6 +74,8 @@ export default function LessonClipCard({
   const segments = useSegments();
   const [currentTimeSeconds, setCurrentTimeSeconds] = useState(0);
   const [liked, setLiked] = useState(false);
+  const [subtitlePauseRequest, setSubtitlePauseRequest] = useState(0);
+  const [resumePlaybackRequest, setResumePlaybackRequest] = useState(0);
   const activeSentenceIdRef = useRef<number | null>(null);
   const isTabbedRoute = segments[0] === "(tabs)";
   const bottomOverlayOffset = isTabbedRoute ? 0 : insets.bottom + 8;
@@ -123,6 +125,10 @@ export default function LessonClipCard({
 
   const showSubtitleOverlay = subtitlesVisible && activeSentence != null;
   const toggleLike = useCallback(() => setLiked((prev) => !prev), []);
+  const handleDismissInsight = useCallback(() => {
+    onDismissWord();
+    setResumePlaybackRequest((request) => request + 1);
+  }, [onDismissWord]);
 
   return (
     <View className="w-full overflow-hidden bg-app-surface" style={{ height }}>
@@ -130,8 +136,11 @@ export default function LessonClipCard({
         clip={clip}
         initialSeekMs={initialSeekMs}
         isActive={isActive}
+        controlsEnabled={activeInsight == null}
         onDoubleTapLike={toggleLike}
         onPlaybackTimeChange={handlePlaybackTimeChange}
+        pauseRequest={subtitlePauseRequest}
+        playRequest={resumePlaybackRequest}
       />
 
       <ClipActions
@@ -142,6 +151,15 @@ export default function LessonClipCard({
         onShare={onOpenShare}
       />
 
+      {activeInsight ? (
+        <Pressable
+          accessibilityLabel="Close word insight"
+          accessibilityRole="button"
+          className="absolute inset-0"
+          onPress={handleDismissInsight}
+        />
+      ) : null}
+
       <View
         pointerEvents="box-none"
         className="absolute inset-x-0 bottom-0 gap-2.5 pl-4 pr-20"
@@ -151,14 +169,17 @@ export default function LessonClipCard({
           <View pointerEvents="box-none" className="gap-2">
             <WordInsightPanel
               key={activeInsight?.clip.videoId}
-              onDismiss={onDismissWord}
+              onDismiss={handleDismissInsight}
               selected={activeInsight}
             />
             {activeSentence && (
               <SubtitleLine
                 clip={clip}
                 sentence={activeSentence}
-                onWordPress={onWordPress}
+                onWordPress={(word, tappedClip, sentence) => {
+                  setSubtitlePauseRequest((request) => request + 1);
+                  onWordPress(word, tappedClip, sentence);
+                }}
               />
             )}
           </View>

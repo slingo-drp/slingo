@@ -8,19 +8,26 @@ import VideoScrubber from "./VideoScrubber";
 
 const PLAYBACK_UPDATE_INTERVAL_SECONDS = 0.1;
 const BASE_PLAYBACK_RATE = 1.0;
+const IGNORE_TOGGLE_AFTER_RESUME_MS = 300;
 
 export default function LessonVideo({
   clip,
   initialSeekMs,
   isActive,
+  controlsEnabled,
   onDoubleTapLike,
   onPlaybackTimeChange,
+  pauseRequest,
+  playRequest,
 }: {
   clip: LessonClip;
   initialSeekMs: number | null;
   isActive: boolean;
+  controlsEnabled: boolean;
   onDoubleTapLike: () => void;
   onPlaybackTimeChange: (currentTimeSeconds: number) => void;
+  pauseRequest: number;
+  playRequest: number;
 }) {
   const player = useVideoPlayer(clip.source, (p) => {
     p.loop = true;
@@ -31,6 +38,7 @@ export default function LessonVideo({
   });
 
   const playerRef = useRef(player);
+  const ignoreToggleUntilRef = useRef(0);
   const hasAppliedInitialSeekRef = useRef(false);
   const [readySourceKey, setReadySourceKey] = useState<string | null>(null);
   const currentSourceKey = useMemo(
@@ -60,6 +68,17 @@ export default function LessonVideo({
     else player.pause();
   }, [onPlaybackTimeChange, player, shouldPlay]);
 
+  useEffect(() => {
+    if (pauseRequest === 0 || !isActive) return;
+    playerRef.current.pause();
+  }, [isActive, pauseRequest]);
+
+  useEffect(() => {
+    if (playRequest === 0 || !isActive || !isReadyToDisplay) return;
+    ignoreToggleUntilRef.current = Date.now() + IGNORE_TOGGLE_AFTER_RESUME_MS;
+    playerRef.current.play();
+  }, [isActive, isReadyToDisplay, playRequest]);
+
   useEventListener(player, "timeUpdate", ({ currentTime }) => {
     onPlaybackTimeChange(currentTime);
   });
@@ -82,6 +101,10 @@ export default function LessonVideo({
   });
 
   const togglePlayback = useCallback(() => {
+    if (Date.now() < ignoreToggleUntilRef.current) {
+      return playerRef.current.playing;
+    }
+
     if (playerRef.current.playing) playerRef.current.pause();
     else playerRef.current.play();
 
@@ -107,6 +130,7 @@ export default function LessonVideo({
 
       <LessonVideoGestureOverlay
         isActive={shouldPlay}
+        interactionsEnabled={controlsEnabled}
         onDoubleTap={onDoubleTapLike}
         onHoldRateChange={setGesturePlaybackRate}
         onTogglePlayback={togglePlayback}

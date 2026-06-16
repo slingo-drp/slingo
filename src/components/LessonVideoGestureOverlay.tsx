@@ -17,11 +17,13 @@ const TAP_MAX_DELAY_MS = 240;
 
 export default function LessonVideoGestureOverlay({
   isActive,
+  interactionsEnabled,
   onDoubleTap,
   onHoldRateChange,
   onTogglePlayback,
 }: {
   isActive: boolean;
+  interactionsEnabled: boolean;
   onDoubleTap: () => void;
   onHoldRateChange: (playbackRate: number | null) => void;
   onTogglePlayback: () => boolean;
@@ -56,7 +58,7 @@ export default function LessonVideoGestureOverlay({
 
   const createTapGesture = () => {
     const singleTap = Gesture.Tap()
-      .enabled(isActive)
+      .enabled(isActive && interactionsEnabled)
       .maxDuration(TAP_MAX_DELAY_MS)
       .runOnJS(true)
       .onEnd((_event, success) => {
@@ -65,7 +67,7 @@ export default function LessonVideoGestureOverlay({
       });
 
     const doubleTap = Gesture.Tap()
-      .enabled(isActive)
+      .enabled(isActive && interactionsEnabled)
       .numberOfTaps(2)
       .maxDelay(TAP_MAX_DELAY_MS)
       .runOnJS(true)
@@ -79,7 +81,7 @@ export default function LessonVideoGestureOverlay({
 
   const createHoldGesture = (side: HoldSide, playbackRate: number) =>
     Gesture.LongPress()
-      .enabled(isActive)
+      .enabled(isActive && interactionsEnabled)
       .minDuration(HOLD_ACTIVATION_DURATION_MS)
       .onStart(() => {
         activeHoldSide.set(side);
@@ -151,7 +153,7 @@ export default function LessonVideoGestureOverlay({
   return (
     <View pointerEvents="box-none" className="absolute inset-0">
       <View
-        pointerEvents={isActive ? "auto" : "none"}
+        pointerEvents={isActive && interactionsEnabled ? "auto" : "none"}
         className="absolute inset-0 flex-row"
       >
         <GestureDetector gesture={leftGesture}>
