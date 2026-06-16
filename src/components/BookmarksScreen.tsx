@@ -4,45 +4,43 @@ import { Card } from "@/components/ui/card";
 import { SheetHandle } from "@/components/ui/sheet-handle";
 import { Text } from "@/components/ui/text";
 import { useBookmarks } from "@/hooks/use-bookmarks";
-import type { Bookmark } from "@/lib/bookmarks";
+import { filterBookmarks, type Bookmark } from "@/lib/bookmarks";
 import { buildLessonHref } from "@/lib/lesson-links";
+import { getTopicSearchSummary } from "@/lib/lesson-topics";
+import { useBookmarkFiltersStore } from "@/store/useBookmarkFiltersStore";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useDeferredValue, useMemo, useState } from "react";
-import {
-  ActivityIndicator,
-  Pressable,
-  ScrollView,
-  TextInput,
-  View,
-} from "react-native";
+import { ActivityIndicator, Pressable, ScrollView, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-
-function matchesBookmarkSearch(bookmark: Bookmark, query: string) {
-  const normalizedQuery = query.trim().toLocaleLowerCase();
-
-  if (!normalizedQuery) {
-    return true;
-  }
-
-  return [bookmark.lemma, bookmark.surfaceForm].some((value) =>
-    value.toLocaleLowerCase().includes(normalizedQuery),
-  );
-}
 
 export default function BookmarksScreen() {
   const insets = useSafeAreaInsets();
   const { bookmarks, isLoading, isPending, removeBookmark } = useBookmarks();
-  const [searchQuery, setSearchQuery] = useState("");
+  const searchQuery = useBookmarkFiltersStore((state) => state.searchQuery);
+  const selectedTopics = useBookmarkFiltersStore(
+    (state) => state.selectedTopics,
+  );
   const [selectedBookmark, setSelectedBookmark] = useState<Bookmark | null>(
     null,
   );
   const deferredSearchQuery = useDeferredValue(searchQuery);
-  const trimmedSearchQuery = deferredSearchQuery.trim();
   const selectedBookmarkPending = selectedBookmark
     ? isPending(selectedBookmark.wordId)
     : false;
+  const searchSummary = getTopicSearchSummary(
+    searchQuery,
+    selectedTopics.length,
+    "Search bookmarks",
+  );
+  const bookmarkFilters = useMemo(
+    () => ({
+      searchQuery: deferredSearchQuery,
+      topics: selectedTopics,
+    }),
+    [deferredSearchQuery, selectedTopics],
+  );
 
   const sortedBookmarks = useMemo(
     () =>
@@ -53,11 +51,8 @@ export default function BookmarksScreen() {
     [bookmarks],
   );
   const filteredBookmarks = useMemo(
-    () =>
-      sortedBookmarks.filter((bookmark) =>
-        matchesBookmarkSearch(bookmark, trimmedSearchQuery),
-      ),
-    [sortedBookmarks, trimmedSearchQuery],
+    () => filterBookmarks(sortedBookmarks, bookmarkFilters),
+    [bookmarkFilters, sortedBookmarks],
   );
 
   if (isLoading) {
@@ -90,19 +85,21 @@ export default function BookmarksScreen() {
         </View>
 
         {sortedBookmarks.length > 0 ? (
-          <Card variant="app" className="gap-2">
-            <View className="flex-row items-center gap-3 rounded-2xl border border-app-border-strong bg-app-surface-inset px-3">
+          <Card variant="app">
+            <Pressable
+              accessibilityLabel="Open bookmark search"
+              accessibilityRole="button"
+              className="flex-row items-center gap-3 rounded-2xl border border-app-border-strong bg-app-surface-inset px-3 py-3 active:bg-app-border"
+              onPress={() => router.push("/bookmark-search")}
+            >
               <Ionicons name="search" size={16} color="#94a3b8" />
-              <TextInput
-                autoCapitalize="none"
-                autoCorrect={false}
-                className="h-12 min-w-0 flex-1 px-0 py-0 text-sm font-semibold text-app-text"
-                placeholder="Search saved words"
-                placeholderTextColor="#64748b"
-                value={searchQuery}
-                onChangeText={setSearchQuery}
-              />
-            </View>
+              <Text
+                numberOfLines={1}
+                className="min-w-0 flex-1 text-sm font-semibold text-app-text"
+              >
+                {searchSummary}
+              </Text>
+            </Pressable>
           </Card>
         ) : null}
 
@@ -118,7 +115,7 @@ export default function BookmarksScreen() {
         ) : filteredBookmarks.length === 0 ? (
           <Card variant="app" className="mt-2 px-5 py-8">
             <Text className="text-lg font-black text-white">
-              No bookmarks matched your search
+              No bookmarks matched your search or topics
             </Text>
           </Card>
         ) : (

@@ -1,23 +1,10 @@
-import { useLessonFiltersStore } from "@/store/useLessonFiltersStore";
 import type { Level } from "@/lib/types";
+import { getTopicSearchSummary } from "@/lib/lesson-topics";
+import { useLessonFiltersStore } from "@/store/useLessonFiltersStore";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { ActivityIndicator, Pressable, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-
-function getSearchSummary(searchQuery: string, topicCount: number) {
-  const trimmedQuery = searchQuery.trim();
-
-  if (trimmedQuery) {
-    return trimmedQuery;
-  }
-
-  if (topicCount > 0) {
-    return `${topicCount} topic${topicCount === 1 ? "" : "s"} selected`;
-  }
-
-  return "Search";
-}
 
 export default function LessonFeedHeader({
   currentVideoLevel = null,
@@ -30,7 +17,7 @@ export default function LessonFeedHeader({
   const insets = useSafeAreaInsets();
   const searchQuery = useLessonFiltersStore((state) => state.searchQuery);
   const selectedTopics = useLessonFiltersStore((state) => state.selectedTopics);
-  const summary = getSearchSummary(searchQuery, selectedTopics.length);
+  const summary = getTopicSearchSummary(searchQuery, selectedTopics.length);
 
   return (
     <View

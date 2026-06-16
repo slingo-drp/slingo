@@ -23,6 +23,24 @@ export function formatTopicLabel(topic: Domain) {
   return topic.charAt(0).toUpperCase() + topic.slice(1);
 }
 
+export function getTopicSearchSummary(
+  searchQuery: string,
+  topicCount: number,
+  emptyLabel = "Search",
+) {
+  const trimmedQuery = searchQuery.trim();
+
+  if (trimmedQuery) {
+    return trimmedQuery;
+  }
+
+  if (topicCount > 0) {
+    return `${topicCount} topic${topicCount === 1 ? "" : "s"} selected`;
+  }
+
+  return emptyLabel;
+}
+
 export function sanitizeLessonSearchQuery(query: string | null | undefined) {
   return (query ?? "")
     .trim()
