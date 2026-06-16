@@ -8,8 +8,9 @@ import { buildSharedLessonUrl } from "@/lib/lesson-links";
 import { languageToFlag } from "@/lib/utils";
 import { useSegments } from "expo-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Share, View } from "react-native";
+import { Pressable, Share, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import CommentsSheet, { type LocalClipComment } from "./CommentsSheet";
 import ClipActions from "./ClipActions";
 import ClipInfo from "./ClipInfo";
 import LessonVideo from "./LessonVideo";
@@ -35,20 +36,29 @@ const getActiveSentence = (
 
 type LessonClipCardProps = {
   clip: LessonClip;
+  commentCount: number;
+  comments: LocalClipComment[];
+  commentsSheetKey: string;
   height: number;
   initialSeekMs: number | null;
   isActive: boolean;
   activeInsight: SelectedWord | null;
+  commentsSheetOpen: boolean;
+  onCloseComments: () => void;
   onWordPress: (
     word: SubtitleWord,
     clip: LessonClip,
     sentence: LessonSentence,
   ) => void;
+  onOpenComments: () => void;
+  onSubmitComment: (clip: LessonClip, text: string) => void;
+  onToggleSave: () => void;
   subtitlesVisible: boolean;
   onToggleSubtitles: () => void;
   onDismissWord: () => void;
   onOpenShare: () => void;
   onCloseShare: () => void;
+  saved: boolean;
   shareSheetKey: string;
   shareSheetOpen: boolean;
 };
@@ -57,16 +67,25 @@ type LessonClipCardProps = {
 
 export default function LessonClipCard({
   clip,
+  commentCount,
+  comments,
+  commentsSheetKey,
   height,
   initialSeekMs,
   isActive,
   activeInsight,
+  commentsSheetOpen,
+  onCloseComments,
   onWordPress,
+  onOpenComments,
+  onSubmitComment,
+  onToggleSave,
   subtitlesVisible,
   onToggleSubtitles,
   onDismissWord,
   onOpenShare,
   onCloseShare,
+  saved,
   shareSheetKey,
   shareSheetOpen,
 }: LessonClipCardProps) {
@@ -74,6 +93,8 @@ export default function LessonClipCard({
   const segments = useSegments();
   const [currentTimeSeconds, setCurrentTimeSeconds] = useState(0);
   const [liked, setLiked] = useState(false);
+  const [subtitlePauseRequest, setSubtitlePauseRequest] = useState(0);
+  const [resumePlaybackRequest, setResumePlaybackRequest] = useState(0);
   const activeSentenceIdRef = useRef<number | null>(null);
   const isTabbedRoute = segments[0] === "(tabs)";
   const bottomOverlayOffset = isTabbedRoute ? 0 : insets.bottom + 8;
@@ -123,6 +144,10 @@ export default function LessonClipCard({
 
   const showSubtitleOverlay = subtitlesVisible && activeSentence != null;
   const toggleLike = useCallback(() => setLiked((prev) => !prev), []);
+  const handleDismissInsight = useCallback(() => {
+    onDismissWord();
+    setResumePlaybackRequest((request) => request + 1);
+  }, [onDismissWord]);
 
   return (
     <View className="w-full overflow-hidden bg-app-surface" style={{ height }}>
@@ -130,17 +155,33 @@ export default function LessonClipCard({
         clip={clip}
         initialSeekMs={initialSeekMs}
         isActive={isActive}
+        controlsEnabled={activeInsight == null}
         onDoubleTapLike={toggleLike}
         onPlaybackTimeChange={handlePlaybackTimeChange}
+        pauseRequest={subtitlePauseRequest}
+        playRequest={resumePlaybackRequest}
       />
 
       <ClipActions
+        commentCount={commentCount}
         liked={liked}
         onLike={toggleLike}
+        onOpenComments={onOpenComments}
+        onToggleSave={onToggleSave}
         subtitlesVisible={subtitlesVisible}
         onToggleSubtitles={onToggleSubtitles}
         onShare={onOpenShare}
+        saved={saved}
       />
+
+      {activeInsight ? (
+        <Pressable
+          accessibilityLabel="Close word insight"
+          accessibilityRole="button"
+          className="absolute inset-0"
+          onPress={handleDismissInsight}
+        />
+      ) : null}
 
       <View
         pointerEvents="box-none"
@@ -151,14 +192,17 @@ export default function LessonClipCard({
           <View pointerEvents="box-none" className="gap-2">
             <WordInsightPanel
               key={activeInsight?.clip.videoId}
-              onDismiss={onDismissWord}
+              onDismiss={handleDismissInsight}
               selected={activeInsight}
             />
             {activeSentence && (
               <SubtitleLine
                 clip={clip}
                 sentence={activeSentence}
-                onWordPress={onWordPress}
+                onWordPress={(word, tappedClip, sentence) => {
+                  setSubtitlePauseRequest((request) => request + 1);
+                  onWordPress(word, tappedClip, sentence);
+                }}
               />
             )}
           </View>
@@ -172,6 +216,16 @@ export default function LessonClipCard({
         onClose={onCloseShare}
         onShareLink={handleShareLink}
       />
+      {commentsSheetOpen ? (
+        <CommentsSheet
+          key={commentsSheetKey}
+          clip={clip}
+          comments={comments}
+          isOpen={commentsSheetOpen}
+          onClose={onCloseComments}
+          onSubmitComment={onSubmitComment}
+        />
+      ) : null}
       {/* </SafeAreaView> */}
     </View>
   );

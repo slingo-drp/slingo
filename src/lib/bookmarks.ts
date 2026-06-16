@@ -1,8 +1,15 @@
 import { supabase } from "./supabase";
 import type { TablesInsert } from "./database.types";
+import {
+  findTopicsMatchingQuery,
+  formatTopicLabel,
+  sanitizeLessonSearchQuery,
+} from "./lesson-topics";
 import { buildSharedLessonUrl } from "./lesson-links";
-import type { WordSenseRow, WordRow } from "./types";
+import type { Domain, WordSenseRow, WordRow } from "./types";
 import type { LessonClip, LessonSentence, SelectedWord } from "./lessons";
+
+const DEFAULT_BOOKMARK_TOPIC: Domain = "everyday";
 
 export type Bookmark = {
   id: number;
@@ -19,10 +26,16 @@ export type Bookmark = {
   startMs: number;
   endMs: number;
   videoId: number;
+  topic: Domain;
   videoTitle: string;
   videoUrl: string;
   createdAt: string;
   updatedAt: string;
+};
+
+export type BookmarkFilters = {
+  searchQuery?: string | null;
+  topics?: Domain[];
 };
 
 const BOOKMARKS_QUERY = `
@@ -54,6 +67,7 @@ const BOOKMARKS_QUERY = `
     video_id,
     videos (
       id,
+      topic,
       title,
       video_url
     )
@@ -111,12 +125,23 @@ function mapBookmark(row: BookmarkQueryResult): Bookmark {
     end_ms: number;
     video_id: number;
     videos:
-      | { id: number; title: string; video_url: string }
-      | { id: number; title: string; video_url: string }[]
+      | {
+          id: number;
+          topic?: Domain | null;
+          title: string;
+          video_url: string;
+        }
+      | {
+          id: number;
+          topic?: Domain | null;
+          title: string;
+          video_url: string;
+        }[]
       | null;
   } | null;
   const video = unwrapRelation(sentence?.videos ?? null) as {
     id: number;
+    topic?: Domain | null;
     title: string;
     video_url: string;
   } | null;
@@ -140,6 +165,7 @@ function mapBookmark(row: BookmarkQueryResult): Bookmark {
     startMs: sentence.start_ms,
     endMs: sentence.end_ms,
     videoId: video.id,
+    topic: video.topic ?? DEFAULT_BOOKMARK_TOPIC,
     videoTitle: video.title,
     videoUrl: video.video_url,
     createdAt: row.created_at,
@@ -189,6 +215,7 @@ export function createOptimisticBookmark(
     startMs: selectedWord.sentence.startMs,
     endMs: selectedWord.sentence.endMs,
     videoId: selectedWord.clip.videoId,
+    topic: selectedWord.clip.topic,
     videoTitle: selectedWord.clip.title,
     videoUrl: selectedWord.clip.videoUrl,
     createdAt: existingBookmark?.createdAt ?? now,
@@ -253,4 +280,35 @@ export function isWordBookmarked(
 
 export function matchesBookmarkClip(bookmark: Bookmark, clip: LessonClip) {
   return bookmark.videoId === clip.videoId;
+}
+
+export function filterBookmarks(
+  bookmarks: Bookmark[],
+  filters: BookmarkFilters = {},
+) {
+  const sanitizedSearchQuery = sanitizeLessonSearchQuery(filters.searchQuery);
+  const normalizedQuery = sanitizedSearchQuery.toLocaleLowerCase();
+  const matchingTopics = findTopicsMatchingQuery(sanitizedSearchQuery);
+
+  return bookmarks.filter((bookmark) => {
+    if (filters.topics?.length && !filters.topics.includes(bookmark.topic)) {
+      return false;
+    }
+
+    if (!normalizedQuery) {
+      return true;
+    }
+
+    return (
+      matchingTopics.includes(bookmark.topic) ||
+      [
+        bookmark.lemma,
+        bookmark.surfaceForm,
+        bookmark.sentence,
+        bookmark.videoTitle,
+        bookmark.definition ?? "",
+        formatTopicLabel(bookmark.topic),
+      ].some((value) => value.toLocaleLowerCase().includes(normalizedQuery))
+    );
+  });
 }
