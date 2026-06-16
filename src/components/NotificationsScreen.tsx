@@ -39,7 +39,7 @@ import type { InboxNotification } from "@/lib/notifications";
 import { cn } from "@/lib/utils";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import { useEffect, useState, type ComponentProps } from "react";
+import { useEffect, useMemo, useState, type ComponentProps } from "react";
 import {
   ActivityIndicator,
   Pressable,
@@ -101,6 +101,11 @@ export default function NotificationsScreen({
   const currentTab = mode ?? activeTab;
   const activeIncomingFriendshipIds = new Set(
     socialState.incomingRequests.map((entry) => entry.friendshipId),
+  );
+  const resolvedSearchResults = useMemo(
+    () =>
+      searchResults.map((result) => resolveSearchResult(result, socialState)),
+    [searchResults, socialState],
   );
 
   useEffect(() => {
@@ -189,6 +194,10 @@ export default function NotificationsScreen({
 
         try {
           await respondToFriendRequest(result.friendshipId, true);
+          patchSearchResult(result.id, {
+            friendshipStatus: "accepted",
+            relationshipState: "friends",
+          });
         } finally {
           trackPendingFriendship(result.friendshipId, false);
         }
@@ -204,6 +213,10 @@ export default function NotificationsScreen({
 
       try {
         await sendFriendRequest(result.id);
+        patchSearchResult(result.id, {
+          friendshipStatus: "pending",
+          relationshipState: "outgoing_request",
+        });
         showToast("Friend request sent");
       } finally {
         trackPendingProfile(result.id, false);
@@ -264,6 +277,17 @@ export default function NotificationsScreen({
 
       return current.filter((entry) => entry !== profileId);
     });
+  }
+
+  function patchSearchResult(
+    profileId: string,
+    updates: Partial<SocialSearchResult>,
+  ) {
+    setSearchResults((current) =>
+      current.map((entry) =>
+        entry.id === profileId ? { ...entry, ...updates } : entry,
+      ),
+    );
   }
 
   return (
@@ -345,7 +369,7 @@ export default function NotificationsScreen({
             pendingFriendshipIds={pendingFriendshipIds}
             pendingProfileIds={pendingProfileIds}
             searchQuery={searchQuery}
-            searchResults={searchResults}
+            searchResults={resolvedSearchResults}
             setSearchQuery={setSearchQuery}
           />
         )}
@@ -1152,6 +1176,56 @@ function getSearchCta(
         variant: "default" as const,
       };
   }
+}
+
+function resolveSearchResult(
+  result: SocialSearchResult,
+  socialState: {
+    acceptedFriends: SocialConnection[];
+    incomingRequests: SocialConnection[];
+    outgoingRequests: SocialConnection[];
+  },
+): SocialSearchResult {
+  const acceptedFriend = socialState.acceptedFriends.find(
+    (entry) => entry.userId === result.id,
+  );
+
+  if (acceptedFriend) {
+    return {
+      ...result,
+      friendshipId: acceptedFriend.friendshipId,
+      friendshipStatus: acceptedFriend.status,
+      relationshipState: "friends",
+    };
+  }
+
+  const incomingRequest = socialState.incomingRequests.find(
+    (entry) => entry.userId === result.id,
+  );
+
+  if (incomingRequest) {
+    return {
+      ...result,
+      friendshipId: incomingRequest.friendshipId,
+      friendshipStatus: incomingRequest.status,
+      relationshipState: "incoming_request",
+    };
+  }
+
+  const outgoingRequest = socialState.outgoingRequests.find(
+    (entry) => entry.userId === result.id,
+  );
+
+  if (outgoingRequest) {
+    return {
+      ...result,
+      friendshipId: outgoingRequest.friendshipId,
+      friendshipStatus: outgoingRequest.status,
+      relationshipState: "outgoing_request",
+    };
+  }
+
+  return result;
 }
 
 function formatRelativeTime(dateString: string) {
