@@ -48,6 +48,8 @@ jobs:
         env:
           EXPO_PUBLIC_SUPABASE_URL: ${{ secrets.EXPO_PUBLIC_SUPABASE_URL }}
           EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY }}
+          EXPO_PUBLIC_WEB_SERVER_HOST: ${{ secrets.EXPO_PUBLIC_WEB_SERVER_HOST }}
+          EXPO_PUBLIC_WEB_SERVER_URL: ${{ secrets.EXPO_PUBLIC_WEB_SERVER_URL }}
 
       - name: Upload to GitHub Release
         uses: softprops/action-gh-release@v2
